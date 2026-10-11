@@ -8,9 +8,11 @@ from app.core.config import Settings
 
 
 def _settings() -> Settings:
-    return Settings(
-        SUPABASE_URL="https://project.supabase.co",
-        SUPABASE_PUBLISHABLE_KEY="sb_publishable_test",
+    return Settings.model_validate(
+        {
+            "SUPABASE_URL": "https://project.supabase.co",
+            "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_test",
+        }
     )
 
 
