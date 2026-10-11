@@ -6,9 +6,9 @@
 - Starting SHA: `2715b8f54d4d4b77f9725ba3b6c3dec0ecb60248`
 - Verified code SHA: `fa9e586b25ddb4b982b3b34fdec4d05324ff8c96`
 - Final handoff SHA: use the branch tip reported with this handoff (the handoff file itself is the final commit).
-- Status: **BLOCKED_NEEDS_OWNER** for the unresolved npm advisories. The functional baseline and all non-audit gates pass.
+- Status: **READY_WITH_ACCEPTED_RISK**. The functional baseline and all non-audit gates pass; the owner accepted the time-boxed build-tooling risk described below.
 
-## Dependency audit and remediation result
+## Dependency audit and accepted-risk decision
 
 The proposed root `packageExtensions` entry was removed because npm does not read that Yarn/pnpm field. A real clean install proves that Next `15.5.27` still installs its exact dependency `postcss@8.4.31`:
 
@@ -26,7 +26,17 @@ An npm-native override was tested both in isolation and in this workspace. In th
 - ESLint toolchain: five high dependency findings collapse to `braces@3.0.3` (`GHSA-vfj7-8cjw-p6xm`) through `micromatch -> fast-glob -> @next/eslint-plugin-next -> eslint-config-next`. `npm view braces version` returns `3.0.3`, so no patched braces release is available. npm proposes the incompatible `eslint-config-next@14.2.35` change.
 - `npm audit --omit=dev --json` reports zero, but this is not treated as proof that the Next/PostCSS path is fixed because `npm ls` directly confirms the nested vulnerable version.
 
-Per the owner rule, Next was not upgraded to 16. Owner approval is required to test and accept the Next 16 migration, or to explicitly time-box/accept the residual risk.
+### ACCEPTED_RISK: Next 15 / PostCSS advisory
+
+- Decision date: `2026-10-11`.
+- Review and expiry date: `2026-11-10` (30 days). The acceptance must be renewed explicitly or replaced by a verified remediation by that date.
+- Scope: retain Next `15.5.27` and its pinned `postcss@8.4.31` for the integration baseline. Next 16 is evaluated only on the separate `experiment/next-16-postcss` branch and does not block this baseline.
+- Exposure constraint: PostCSS is used during the trusted application build. CMS content is stored/rendered as application data and is never submitted to PostCSS; there is no runtime endpoint that compiles user- or CMS-controlled CSS.
+- Mitigations: builds use repository-controlled CSS only; do not accept untrusted CSS or source maps as build inputs; keep build workers isolated and least-privileged; preserve the committed lockfile; monitor Next/PostCSS and npm advisories; move to a supported patched dependency path as soon as compatibility verification succeeds.
+- Early invalidation: this acceptance ends immediately if CMS/user-controlled data can reach PostCSS, the build begins consuming untrusted CSS/source maps, exploitation is observed, or a compatible patched Next 15 release becomes available.
+- Verification owner action: review the separate Next 16 experiment result before the expiry date and decide whether to upgrade, renew with justification, or stop the affected build path.
+
+The `braces@3.0.3` finding is confined to the lint/build toolchain, has no patched npm release as of the decision date, and is covered by the same isolated-build controls and `2026-11-10` review deadline. Neither accepted item is marked PASS.
 
 ## Verification
 
@@ -78,4 +88,4 @@ The current Supabase changelog was reviewed. The recent Postgres extension-versi
 - Integrate the final branch tip reported with this handoff into the separate integration worktree.
 - Do not treat the removed `packageExtensions` proposal or an npm workspace override as remediation.
 - This branch does not touch `apps/web/src` UI files or the design worktree/branch.
-- Gate B.2 remains blocked only on the owner decision for the npm advisory path.
+- Gate B.2 is READY for integration under the time-boxed `ACCEPTED_RISK` decision above.
