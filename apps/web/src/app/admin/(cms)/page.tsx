@@ -1,4 +1,28 @@
 "use client";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { AdminPageHeader, QueryError } from "@/components/admin-shell";
 import { adminFetch } from "@/lib/admin-api";
-export default function DashboardPage() { const { data, isLoading, error } = useQuery({ queryKey: ["dashboard"], queryFn: () => adminFetch<Record<string, number>>("/dashboard/stats") }); const cards = [{ key: "products", label: "Sản phẩm" }, { key: "categories", label: "Danh mục" }, { key: "posts", label: "Bài viết" }, { key: "visible_products", label: "Đang hiển thị" }, { key: "contact_clicks", label: "Lượt nhấn liên hệ" }]; return <><h1 className="text-3xl font-bold">Tổng quan</h1><p className="mt-2 muted">Tình trạng nội dung hiện tại.</p>{error && <p className="error mt-5">{error.message}</p>}<div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{cards.map(card => <section key={card.key} className="rounded-md bg-white p-5"><p className="text-sm muted">{card.label}</p><p className="display mt-4 text-4xl">{isLoading ? "—" : data?.[card.key] ?? 0}</p></section>)}</div></>; }
+
+const cards = [
+  { key: "products", label: "Sản phẩm", href: "/admin/san-pham" },
+  { key: "visible_products", label: "Đang hiển thị", href: "/admin/san-pham" },
+  { key: "categories", label: "Danh mục", href: "/admin/danh-muc" },
+  { key: "posts", label: "Bài viết", href: "/admin/bai-viet" },
+  { key: "contact_clicks", label: "Lượt nhấn liên hệ" },
+];
+
+export default function DashboardPage() {
+  const { data, isLoading, error, refetch } = useQuery({ queryKey: ["dashboard"], queryFn: () => adminFetch<Record<string, number>>("/dashboard/stats") });
+  return <>
+    <AdminPageHeader title="Tổng quan" description="Số liệu nội dung hiện tại." action={<Link href="/admin/san-pham/moi" className="button"><Plus size={17} aria-hidden="true" />Thêm sản phẩm</Link>} />
+    {error && <div className="mb-5"><QueryError label="số liệu" onRetry={() => void refetch()} /></div>}
+    <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-line [gap:1px] lg:grid-cols-5">
+      {cards.map(card => {
+        const body = <><dt className="text-sm text-ink-soft">{card.label}</dt><dd className="mt-2 text-3xl font-semibold tabular-nums" aria-busy={isLoading}>{isLoading ? <span className="inline-block h-8 w-12 animate-pulse rounded bg-muted" /> : data?.[card.key] ?? 0}</dd></>;
+        return <div key={card.key} className="bg-surface">{card.href ? <Link href={card.href} className="block p-5 hover:bg-[#fcfaf7]">{body}</Link> : <div className="p-5">{body}</div>}</div>;
+      })}
+    </dl>
+  </>;
+}

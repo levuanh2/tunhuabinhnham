@@ -1,0 +1,448 @@
+[
+ {
+  "name": "admin-dashboard",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Tổng quan"
+  ]
+ },
+ {
+  "name": "admin-dashboard",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Tổng quan"
+  ]
+ },
+ {
+  "name": "admin-dashboard",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tổng quan"
+  ]
+ },
+ {
+  "name": "admin-dashboard",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tổng quan"
+  ]
+ },
+ {
+  "name": "admin-dashboard",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tổng quan"
+  ]
+ },
+ {
+  "name": "admin-products",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-products",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-products",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [
+   "TABLE.table",
+   "THEAD.",
+   "TR.",
+   "TH.",
+   "TBODY."
+  ],
+  "h1": [
+   "Sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-products",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-products",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-editor",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Sửa sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-editor",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Sửa sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-editor",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Sửa sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-editor",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Sửa sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-editor",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Sửa sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-new",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Thêm sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-new",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Thêm sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-new",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Thêm sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-new",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Thêm sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-new",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Thêm sản phẩm"
+  ]
+ },
+ {
+  "name": "admin-categories",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Danh mục"
+  ]
+ },
+ {
+  "name": "admin-categories",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Danh mục"
+  ]
+ },
+ {
+  "name": "admin-categories",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Danh mục"
+  ]
+ },
+ {
+  "name": "admin-categories",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Danh mục"
+  ]
+ },
+ {
+  "name": "admin-categories",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Danh mục"
+  ]
+ },
+ {
+  "name": "admin-posts",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Bài viết mới"
+  ]
+ },
+ {
+  "name": "admin-posts",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Bài viết mới"
+  ]
+ },
+ {
+  "name": "admin-posts",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Bài viết mới"
+  ]
+ },
+ {
+  "name": "admin-posts",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Bài viết mới"
+  ]
+ },
+ {
+  "name": "admin-posts",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Bài viết mới"
+  ]
+ },
+ {
+  "name": "admin-banners",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Banner trang chủ"
+  ]
+ },
+ {
+  "name": "admin-banners",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Banner trang chủ"
+  ]
+ },
+ {
+  "name": "admin-banners",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Banner trang chủ"
+  ]
+ },
+ {
+  "name": "admin-banners",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Banner trang chủ"
+  ]
+ },
+ {
+  "name": "admin-banners",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Banner trang chủ"
+  ]
+ },
+ {
+  "name": "admin-settings",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Cài đặt cửa hàng"
+  ]
+ },
+ {
+  "name": "admin-settings",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Cài đặt cửa hàng"
+  ]
+ },
+ {
+  "name": "admin-settings",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Cài đặt cửa hàng"
+  ]
+ },
+ {
+  "name": "admin-settings",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Cài đặt cửa hàng"
+  ]
+ },
+ {
+  "name": "admin-settings",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Cài đặt cửa hàng"
+  ]
+ }
+]

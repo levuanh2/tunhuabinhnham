@@ -16,5 +16,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
-  return <><SiteHeader storeName={settings?.store_name} logoUrl={settings?.logo_url} /><main>{children}</main><SiteFooter /></>;
+  return <><SiteHeader storeName={settings?.store_name} logoUrl={settings?.logo_url} /><main id="noi-dung">{children}</main><SiteFooter settings={settings} /></>;
 }

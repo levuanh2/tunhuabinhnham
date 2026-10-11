@@ -3,12 +3,21 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types/api";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const image = product.images.find((item) => item.is_primary) ?? product.images[0];
-  return <article className="group min-w-0">
-    <Link href={`/san-pham/${product.slug}`} className="block overflow-hidden rounded-md bg-[#e8edf6] aspect-[4/5]">
-      {image ? <Image src={image.url} alt={image.alt_text ?? product.name} width={720} height={900} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" /> : <div className="grid h-full place-items-center text-sm text-slate-500">Chưa có ảnh</div>}
-    </Link>
-    <div className="mt-4 flex items-start justify-between gap-3"><div><h3 className="font-semibold"><Link href={`/san-pham/${product.slug}`}>{product.name}</Link></h3><p className="mt-1 text-sm text-slate-500">{product.sku}</p></div><p className="shrink-0 font-bold text-[#1648d8]">{formatPrice(product.price)}</p></div>
+  return <article className="group relative min-w-0">
+    <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted">
+      {image
+        ? <Image src={image.url} alt={image.alt_text ?? product.name} fill priority={priority} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.025]" />
+        : <div className="grid h-full place-items-center text-sm text-ink-soft">Chưa có ảnh</div>}
+      {product.stock_status === "out_of_stock" && <span className="badge absolute left-3 top-3 bg-surface/95">Tạm hết hàng</span>}
+    </div>
+    <div className="mt-3.5 grid gap-1">
+      <h3 className="line-clamp-2 text-[.9375rem] font-medium leading-snug sm:text-base">
+        <Link href={`/san-pham/${product.slug}`} className="after:absolute after:inset-0 after:rounded-xl group-hover:text-primary">{product.name}</Link>
+      </h3>
+      <p className="text-base font-semibold tabular-nums text-ink sm:text-[1.0625rem]">{formatPrice(product.price)}</p>
+      <p className="truncate text-xs text-ink-soft">Mã {product.sku}</p>
+    </div>
   </article>;
 }

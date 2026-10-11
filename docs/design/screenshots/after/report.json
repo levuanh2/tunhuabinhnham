@@ -1,0 +1,608 @@
+[
+ {
+  "name": "home",
+  "w": 320,
+  "overflow": false,
+  "scroll": 320,
+  "client": 320,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 375,
+  "overflow": false,
+  "scroll": 375,
+  "client": 375,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 412,
+  "overflow": false,
+  "scroll": 412,
+  "client": 412,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 430,
+  "overflow": false,
+  "scroll": 430,
+  "client": 430,
+  "offenders": [
+   "LI.w-[64%] shrink-0 snap-start sm:w-[40%] m",
+   "A.group flex h-full flex-col overflow-hidd",
+   "SPAN.grid gap-1 p-4",
+   "SPAN.flex items-center justify-between gap-2 ",
+   "svg.[object SVGAnimatedString]"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 320,
+  "overflow": false,
+  "scroll": 320,
+  "client": 320,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 375,
+  "overflow": false,
+  "scroll": 375,
+  "client": 375,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 412,
+  "overflow": false,
+  "scroll": 412,
+  "client": 412,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 430,
+  "overflow": false,
+  "scroll": 430,
+  "client": 430,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 320,
+  "overflow": false,
+  "scroll": 320,
+  "client": 320,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 375,
+  "overflow": false,
+  "scroll": 375,
+  "client": 375,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 412,
+  "overflow": false,
+  "scroll": 412,
+  "client": 412,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 430,
+  "overflow": false,
+  "scroll": 430,
+  "client": 430,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover",
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [
+   "DIV.relative aspect-[4/5] w-full shrink-0 sn",
+   "IMG.object-cover"
+  ],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 320,
+  "overflow": false,
+  "scroll": 320,
+  "client": 320,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 375,
+  "overflow": false,
+  "scroll": 375,
+  "client": 375,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 412,
+  "overflow": false,
+  "scroll": 412,
+  "client": 412,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 430,
+  "overflow": false,
+  "scroll": 430,
+  "client": 430,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tin tức và mẹo hay"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 320,
+  "overflow": false,
+  "scroll": 320,
+  "client": 320,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 375,
+  "overflow": false,
+  "scroll": 375,
+  "client": 375,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 412,
+  "overflow": false,
+  "scroll": 412,
+  "client": 412,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 430,
+  "overflow": false,
+  "scroll": 430,
+  "client": 430,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ }
+]

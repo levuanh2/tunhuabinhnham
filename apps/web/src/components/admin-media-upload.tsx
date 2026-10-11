@@ -60,15 +60,15 @@ export function AdminMediaUpload({ label, bucket, value, onChange, onExistingRem
     } finally { setBusy(false); onBusyChange?.(false); }
   }
 
-  return <fieldset className="grid gap-3 rounded-md border border-slate-200 p-4">
-    <legend className="px-1 font-bold">{label}</legend>
-    {help && <p className="text-sm muted">{help}</p>}
+  return <fieldset className="grid gap-3 rounded-lg border border-line p-4">
+    <legend className="px-1 text-sm font-semibold">{label}</legend>
+    {help && <p className="hint">{help}</p>}
     {value ? <div className="grid gap-3 sm:grid-cols-[180px_1fr] sm:items-start">
-      <Image src={value} alt={`Xem trước ${label.toLowerCase()}`} width={360} height={240} unoptimized={allowIcon} className="max-h-44 w-full rounded-md border border-slate-200 object-contain" />
+      <Image src={value} alt={`Xem trước ${label.toLowerCase()}`} width={360} height={240} unoptimized={allowIcon} className="max-h-44 w-full rounded-lg border border-line bg-muted object-contain" />
       <div className="flex flex-wrap gap-3">
-        <label className="button secondary cursor-pointer">{busy ? "Đang xử lý…" : "Thay ảnh"}<input className="sr-only" type="file" accept={allowIcon ? "image/jpeg,image/png,image/webp,image/x-icon" : "image/jpeg,image/png,image/webp"} disabled={busy} onChange={choose} /></label>
-        <button className="button secondary text-red-700" type="button" disabled={busy} onClick={remove}>Gỡ ảnh</button>
+        <label className="button secondary sm cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary">{busy ? "Đang xử lý…" : "Thay ảnh"}<input className="sr-only" type="file" accept={allowIcon ? "image/jpeg,image/png,image/webp,image/x-icon" : "image/jpeg,image/png,image/webp"} disabled={busy} onChange={choose} /></label>
+        <button className="button danger sm" type="button" disabled={busy} onClick={remove}>Gỡ ảnh</button>
       </div>
-    </div> : <label className="button secondary w-fit cursor-pointer">{busy ? "Đang tải…" : "Chọn ảnh"}<input className="sr-only" type="file" accept={allowIcon ? "image/jpeg,image/png,image/webp,image/x-icon" : "image/jpeg,image/png,image/webp"} disabled={busy} onChange={choose} /></label>}
+    </div> : <label className="button secondary sm w-fit cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary">{busy ? "Đang tải…" : "Chọn ảnh"}<input className="sr-only" type="file" accept={allowIcon ? "image/jpeg,image/png,image/webp,image/x-icon" : "image/jpeg,image/png,image/webp"} disabled={busy} onChange={choose} /></label>}
   </fieldset>;
 }

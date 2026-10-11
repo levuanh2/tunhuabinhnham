@@ -73,7 +73,8 @@ test.describe("real Supabase CMS workflow", () => {
     await expect.poll(() => page.evaluate(() => sessionStorage.getItem("e2e-opened-url"))).toMatch(/^(https:\/\/)?(www\.)?(facebook\.com|m\.me|messenger\.com|fb\.me)/);
 
     await page.goto("/admin/san-pham");
-    await page.getByRole("row", { name: new RegExp(sku) }).getByRole("link", { name: "Sửa" }).click();
+    // Desktop shows a table, phones a card list: the product-name link exists in both layouts.
+    await page.getByRole("link", { name: product }).first().click();
     await page.getByLabel("Hiển thị sản phẩm").uncheck();
     await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
@@ -93,6 +94,8 @@ test.describe("real Supabase CMS workflow", () => {
     if (createdCategory) await request.delete(`${apiUrl}/admin/categories/${createdCategory.id}`, { headers });
 
     await page.goto("/admin");
+    const adminMenu = page.getByRole("button", { name: "Mở menu quản trị" });
+    if (await adminMenu.isVisible()) await adminMenu.click();
     await page.getByRole("button", { name: "Đăng xuất" }).click();
     await expect(page).toHaveURL(/\/admin\/login$/);
     await page.goto("/admin");
