@@ -143,3 +143,58 @@ test("10. media upload controls are reachable and touch sized", async ({ page })
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   await noOverflow(page);
 });
+
+test("11. Vietnamese text renders in the real web fonts, not a Georgia/system fallback", async ({ page }) => {
+  await page.goto("/");
+  const samples = ["Tủ Nhựa Bình Nhâm", "Nguyễn", "cầu", "về", "Chất lượng", "Tủ nhựa gia đình"];
+  const result = await page.evaluate(async (texts) => {
+    const probe = (cls: string) => { const el = document.createElement("p"); el.className = cls; el.textContent = texts.join(" "); document.body.append(el); return el; };
+    const display = probe("display"), body = probe("");
+    await document.fonts.ready;
+    const first = (el: Element) => getComputedStyle(el).fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
+    const families = { display: first(display), body: first(body) };
+    // Load the faces covering each sample, then compare rendered glyph pixels against Georgia/Arial.
+    // (Advance widths are not a valid signal: next/font tunes metrics so fallbacks match the web font.)
+    const canvas = document.createElement("canvas"); canvas.width = 900; canvas.height = 80;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const pixels = (font: string, text: string) => { ctx.clearRect(0, 0, 900, 80); ctx.font = font; ctx.fillText(text, 4, 56); return ctx.getImageData(0, 0, 900, 80).data.join(""); };
+    const rows = [];
+    for (const text of texts) {
+      await document.fonts.load(`500 40px "${families.display}"`, text);
+      await document.fonts.load(`400 40px "${families.body}"`, text);
+      rows.push({ text,
+        displayLoaded: document.fonts.check(`500 40px "${families.display}"`, text), bodyLoaded: document.fonts.check(`400 40px "${families.body}"`, text),
+        differsFromGeorgia: pixels(`500 40px "${families.display}"`, text) !== pixels("500 40px Georgia", text),
+        differsFromArial: pixels(`400 40px "${families.body}"`, text) !== pixels("400 40px Arial", text) });
+    }
+    display.remove(); body.remove();
+    return { families, rows };
+  }, samples);
+  expect(result.families.display).toMatch(/Newsreader/);
+  expect(result.families.body).toMatch(/Be_Vietnam_Pro|Be Vietnam Pro/);
+  for (const row of result.rows) expect(row, row.text).toEqual({ text: row.text, displayLoaded: true, bodyLoaded: true, differsFromGeorgia: true, differsFromArial: true });
+});
+
+test("12. saving one field keeps category and persists image order after reload (fixture round-trip)", async ({ page, request }) => {
+  test.skip(test.info().project.name !== "desktop", "mutates shared fixture state; run once");
+  const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
+  await request.post(`${mock}/__reset`);
+  try {
+    await login(page);
+    await page.goto("/admin/san-pham/p1");
+    await expect(page.getByLabel("Danh mục")).toHaveValue("c2");
+    await page.getByLabel("Mô tả", { exact: true }).fill("Mô tả cập nhật bởi kiểm thử giao diện.");
+    await page.getByRole("button", { name: "Đưa ảnh 1 ra sau" }).click();
+    await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    const saved = await (await request.get(`${mock}/api/v1/admin/products/p1`)).json();
+    expect(saved.category_id).toBe("c2");
+    expect(saved.images.map((i: { storage_key: string; sort_order: number }) => [i.storage_key, i.sort_order])).toEqual([["tu-ngan-keo", 0], ["tu-5-tang", 1], ["hop-dung-do", 2]]);
+    expect(saved.images.find((i: { is_primary: boolean }) => i.is_primary).storage_key).toBe("tu-5-tang");
+    await page.goto("/admin/san-pham/p1");
+    await expect(page.getByLabel("Danh mục")).toHaveValue("c2");
+    await expect(page.getByLabel("Mô tả", { exact: true })).toHaveValue("Mô tả cập nhật bởi kiểm thử giao diện.");
+  } finally {
+    await request.post(`${mock}/__reset`);
+  }
+});

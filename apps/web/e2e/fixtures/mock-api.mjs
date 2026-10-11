@@ -54,6 +54,7 @@ const b64 = o => Buffer.from(JSON.stringify(o)).toString("base64url");
 const user = { id: "00000000-0000-0000-0000-00000000qa01", aud: "authenticated", role: "authenticated", email: "qa@example.test", app_metadata: { provider: "email" }, user_metadata: {}, created_at: "2026-10-01T00:00:00Z" };
 const session = () => { const exp = Math.floor(Date.now() / 1000) + 3600; return { access_token: `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: user.id, role: "authenticated", aud: "authenticated", email: user.email, exp })}.qa`, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: "qa-refresh", user }; };
 products[3].publish_status = "draft"; products[5].is_visible = false;
+const initialProducts = structuredClone(products);
 const adminPosts = posts.map(p => ({ ...p, seo_title: null, seo_description: null }));
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x"); const path = u.pathname.replace(/^\/api\/v1/, ""); const q = u.searchParams;
@@ -62,7 +63,11 @@ http.createServer((req, res) => {
   if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (b.password && b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
   if (u.pathname === "/auth/v1/user") return (req.headers.authorization ?? "").length > 20 ? send(200, user) : send(401, { msg: "no session" });
   if (u.pathname === "/auth/v1/logout") return send(204, {});
+  if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
+    // In-memory only: PATCH /admin/products/:id lets UI tests verify the saved payload round-trip. Everything else stays read-only.
+    const pw = path.match(/^\/admin\/products\/(.+)$/);
+    if (pw && req.method === "PATCH") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const p = products.find(x => x.id === pw[1]); if (!p) return send(404, { error: { message: "Không tìm thấy" } }); const b = JSON.parse(body || "{}"); Object.assign(p, b, { category: cats.find(c => c.id === b.category_id) ?? null, images: (b.images ?? p.images).map((im, i) => ({ id: `${p.slug}-${im.storage_key}`, ...im, sort_order: im.sort_order ?? i })) }); send(200, p); }); return; }
     if (req.method !== "GET") return send(403, { error: { message: "QA mock: thao tác ghi bị tắt trong môi trường kiểm thử giao diện" } });
     const a = path.slice(6);
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
