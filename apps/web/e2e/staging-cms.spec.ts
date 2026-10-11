@@ -22,8 +22,23 @@ async function accessToken(page: import("@playwright/test").Page): Promise<strin
   });
 }
 
+/** Navigate and wait until the client has hydrated: react-hook-form/useState reset values typed into SSR markup. */
+async function gotoReady(page: import("@playwright/test").Page, url: string) {
+  await page.goto(url);
+  await waitForHydration(page);
+}
+
+/** React attaches __reactFiber* keys to DOM nodes only when it has hydrated them. */
+async function waitForHydration(page: import("@playwright/test").Page) {
+  await page.waitForLoadState("networkidle");
+  await page.waitForFunction(() => {
+    const el = document.querySelector("main input, main textarea, main select, main button");
+    return !el || Object.keys(el).some(key => key.startsWith("__reactFiber"));
+  });
+}
+
 async function login(page: import("@playwright/test").Page) {
-  await page.goto("/admin/login");
+  await gotoReady(page, "/admin/login");
   await page.getByLabel("Email").fill(email!);
   await page.getByLabel("Mật khẩu").fill(password!);
   await page.getByRole("button", { name: "Đăng nhập" }).click();
@@ -41,7 +56,7 @@ test.describe("real Supabase CMS workflow", () => {
     const product = `${recordPrefix}product_${suffix}`;
     const productSlug = `e2e-${suffix}-product`;
     const sku = `E2E-${suffix}`;
-    await page.goto("/admin/login");
+    await gotoReady(page, "/admin/login");
     await page.getByLabel("Email").fill(email!);
     await page.getByLabel("Mật khẩu").fill(password!);
     await page.getByRole("button", { name: "Đăng nhập" }).click();
@@ -49,15 +64,13 @@ test.describe("real Supabase CMS workflow", () => {
     const token = await accessToken(page);
     const headers = { Authorization: `Bearer ${token}` };
 
-    await page.goto("/admin/danh-muc");
+    await gotoReady(page, "/admin/danh-muc");
     await page.getByLabel("Tên").fill(category);
     await page.getByLabel("Slug").fill(categorySlug);
     await page.getByRole("button", { name: "Thêm", exact: true }).click();
     await expect(page.getByText(category, { exact: true })).toBeVisible({ timeout: 15_000 });
 
-    await page.goto("/admin/san-pham/moi");
-
-    await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+    await gotoReady(page, "/admin/san-pham/moi");
     await page.getByLabel("Tên sản phẩm").fill(product);
     await page.getByLabel("Slug").fill(productSlug);
     await page.getByLabel("SKU").fill(sku);
@@ -82,7 +95,7 @@ test.describe("real Supabase CMS workflow", () => {
     await page.getByRole("button", { name: /Nhắn tin để mua/i }).click();
     await expect.poll(() => page.evaluate(() => sessionStorage.getItem("e2e-opened-url"))).toMatch(/^(https:\/\/)?(www\.)?(facebook\.com|m\.me|messenger\.com|fb\.me)/);
 
-    await page.goto("/admin/san-pham");
+    await gotoReady(page, "/admin/san-pham");
     // Desktop shows a table, phones a card list: the product-name link exists in both layouts.
     await page.getByRole("link", { name: product }).first().click();
     await page.getByLabel("Hiển thị sản phẩm").uncheck();
@@ -103,12 +116,12 @@ test.describe("real Supabase CMS workflow", () => {
     const createdCategory = (await categoriesResponse.json()).find((item: { slug: string }) => item.slug === categorySlug);
     if (createdCategory) await request.delete(`${apiUrl}/admin/categories/${createdCategory.id}`, { headers });
 
-    await page.goto("/admin");
+    await gotoReady(page, "/admin");
     const adminMenu = page.getByRole("button", { name: "Mở menu quản trị" });
     if (await adminMenu.isVisible()) await adminMenu.click();
     await page.getByRole("button", { name: "Đăng xuất" }).click();
     await expect(page).toHaveURL(/\/admin\/login$/);
-    await page.goto("/admin");
+    await gotoReady(page, "/admin");
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
@@ -118,7 +131,7 @@ test.describe("real Supabase CMS workflow", () => {
     const postSlug = `e2e-${suffix}-post`;
     const bannerTitle = `${recordPrefix}banner_${suffix}`;
 
-    await page.goto("/admin/login");
+    await gotoReady(page, "/admin/login");
     await page.getByLabel("Email").fill(email!);
     await page.getByLabel("Mật khẩu").fill(password!);
     await page.getByRole("button", { name: "Đăng nhập" }).click();
@@ -134,7 +147,7 @@ test.describe("real Supabase CMS workflow", () => {
       await request.patch(`${apiUrl}/admin/banners/${banner.id}`, { headers, data: { sort_order: 1000 + index } });
     }
 
-    await page.goto("/admin/bai-viet");
+    await gotoReady(page, "/admin/bai-viet");
     await page.getByLabel("Tiêu đề").fill(postTitle);
     await page.getByLabel("Slug").fill(postSlug);
     await page.getByLabel("Nội dung HTML").fill("<p>Nội dung kiểm thử staging.</p>");
@@ -146,7 +159,7 @@ test.describe("real Supabase CMS workflow", () => {
     await page.goto(`/tin-tuc/${postSlug}`);
     await expect(page.getByRole("heading", { name: postTitle })).toBeVisible();
 
-    await page.goto("/admin/banner");
+    await gotoReady(page, "/admin/banner");
     await page.getByLabel("Tiêu đề").fill(bannerTitle);
     await page.locator('fieldset:has-text("Ảnh banner") input[type=file]').setInputFiles(image);
     await page.getByRole("button", { name: "Thêm banner" }).click();
@@ -154,7 +167,7 @@ test.describe("real Supabase CMS workflow", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: bannerTitle })).toBeVisible();
 
-    await page.goto("/admin/cai-dat");
+    await gotoReady(page, "/admin/cai-dat");
     await page.locator('fieldset:has-text("Logo") input[type=file]').setInputFiles(image);
     await page.locator('fieldset:has-text("Favicon") input[type=file]').setInputFiles(image);
     await page.getByRole("button", { name: "Lưu thay đổi" }).click();
@@ -215,8 +228,7 @@ test.describe("real Supabase CMS workflow", () => {
     const category = await (await request.post(`${apiUrl}/admin/categories`, { headers, data: { name: `${recordPrefix}cat_${suffix}`, slug: `e2e-${suffix}-cat`, is_visible: true, sort_order: 0 } })).json();
     let productId: string | undefined;
     try {
-      await page.goto("/admin/san-pham/moi");
-      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await gotoReady(page, "/admin/san-pham/moi");
       await page.getByLabel("Tên sản phẩm").fill(productName);
       await page.getByLabel("Slug").fill(productSlug);
       await page.getByLabel("SKU").fill(sku);
@@ -233,8 +245,7 @@ test.describe("real Supabase CMS workflow", () => {
       const keys = [...created.images].sort((x: { sort_order: number }, y: { sort_order: number }) => x.sort_order - y.sort_order).map((i: { storage_key: string }) => i.storage_key);
 
       // Edit an unrelated field only: category must be retained.
-      await page.goto(`/admin/san-pham/${productId}`);
-      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await gotoReady(page, `/admin/san-pham/${productId}`);
       await expect(page.getByLabel("Danh mục")).toHaveValue(category.id);
       await page.getByLabel("Mô tả", { exact: true }).fill("Mô tả kiểm thử Gate C1.");
       await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
@@ -244,8 +255,7 @@ test.describe("real Supabase CMS workflow", () => {
       expect(edited.description).toBe("Mô tả kiểm thử Gate C1.");
 
       // Reorder (1st image moves behind 2nd), make the last image primary, then publish.
-      await page.goto(`/admin/san-pham/${productId}`);
-      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await gotoReady(page, `/admin/san-pham/${productId}`);
       await page.getByRole("button", { name: "Đưa ảnh 1 ra sau" }).click();
       await page.locator("form li").nth(2).getByRole("button", { name: "Đặt làm ảnh chính" }).click();
       await page.getByLabel("Xuất bản").selectOption("published");
@@ -258,8 +268,7 @@ test.describe("real Supabase CMS workflow", () => {
       expect(saved.category_id).toBe(category.id);
 
       // Reload the editor: UI reflects the persisted order, primary and category.
-      await page.goto(`/admin/san-pham/${productId}`);
-      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await gotoReady(page, `/admin/san-pham/${productId}`);
       await expect(page.locator("form li").nth(2).getByText("Ảnh chính")).toBeVisible();
       await expect(page.getByLabel("Danh mục")).toHaveValue(category.id);
 
@@ -281,7 +290,7 @@ test.describe("real Supabase CMS workflow", () => {
 
   test("Supabase SSR session survives reload, invalid session is rejected, logout clears cookies", async ({ page, browser, baseURL }) => {
     await login(page);
-    await page.goto("/admin/san-pham");
+    await gotoReady(page, "/admin/san-pham");
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     await page.reload();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
@@ -313,7 +322,7 @@ test.describe("real Supabase CMS workflow", () => {
     await page.getByRole("button", { name: "Đăng xuất" }).click();
     await expect(page).toHaveURL(/\/admin\/login$/);
     expect((await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token") && c.value)).toHaveLength(0);
-    await page.goto("/admin/cai-dat");
+    await gotoReady(page, "/admin/cai-dat");
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
@@ -331,7 +340,7 @@ test.describe("real Supabase CMS workflow", () => {
       await expect(page).toHaveURL(/\/admin\/san-pham$/);
       await page.getByRole("link", { name: "Thêm sản phẩm" }).first().click();
       await expect(page).toHaveURL(/\/admin\/san-pham\/moi$/);
-      await page.waitForLoadState("networkidle");
+      await waitForHydration(page);
       await page.getByLabel("Tên sản phẩm").fill(productName);
       await page.getByLabel("Slug").fill(`e2e-${suffix}-mobile`);
       await page.getByLabel("SKU").fill(sku);

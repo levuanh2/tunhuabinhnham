@@ -81,6 +81,15 @@ http.createServer((req, res) => {
     if (cd && req.method === "DELETE") { const i = cats.findIndex(c => c.id === cd[1]); if (i >= 0) cats.splice(i, 1); return send(204, {}); }
     if (path === "/admin/media" && req.method === "POST") return readBody(() => { const key = `${new Date().toISOString().slice(0, 7).replace("-", "/")}/${crypto.randomUUID()}.png`; send(201, { id: crypto.randomUUID(), bucket: q.get("bucket"), storage_key: key, url: svg(10, 10, `<!-- ${key} --><rect width="10" height="10" fill="#d8c9b6"/>`) }); });
     if (path.startsWith("/admin/media") && req.method === "DELETE") return send(204, {});
+    const collection = path.match(/^\/admin\/(posts|banners)(?:\/([^/]+))?$/);
+    if (collection && req.method !== "GET") {
+      const list = collection[1] === "posts" ? adminPosts : banners; const id = collection[2];
+      if (req.method === "DELETE") { const i = list.findIndex(x => x.id === id); if (i >= 0) list.splice(i, 1); return send(204, {}); }
+      return readBody(raw => { const b = JSON.parse(raw.toString() || "{}");
+        if (req.method === "POST") { const item = { id: crypto.randomUUID(), images: [], published_at: new Date().toISOString(), is_active: true, sort_order: 0, ...b }; list.push(item); if (list === adminPosts) posts.push(item); return send(201, item); }
+        const item = list.find(x => x.id === id); if (!item) return send(404, { error: { message: "Không tìm thấy" } }); Object.assign(item, b); return send(200, item); });
+    }
+    if (path === "/admin/site-settings" && req.method === "PATCH" && process.env.MOCK_WRITABLE_SETTINGS === "1") return readBody(raw => { Object.assign(settings, JSON.parse(raw.toString() || "{}")); send(200, settings); });
     if (req.method !== "GET") return send(403, { error: { message: "QA mock: thao tác ghi bị tắt trong môi trường kiểm thử giao diện" } });
     const a = path.slice(6);
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
@@ -99,7 +108,7 @@ http.createServer((req, res) => {
   const m = path.match(/^\/(products|posts)\/(.+)$/); if (m) { const item = (m[1] === "products" ? products.filter(isPublic) : posts).find(x => x.slug === m[2]); return item ? send(200, item) : send(404, { error: { message: "Không tìm thấy" } }); }
   if (path === "/categories") return send(200, cats);
   if (path === "/posts") return send(200, page(posts, q));
-  if (path === "/banners") return send(200, banners);
+  if (path === "/banners") return send(200, banners.filter(b => b.is_active).sort((x, y) => x.sort_order - y.sort_order));
   if (path === "/site-settings") return send(200, settings);
   send(404, { error: { message: "not found" } });
 }).listen(Number(process.env.PORT ?? 8100), "127.0.0.1", () => console.log(`QA mock API on http://127.0.0.1:${process.env.PORT ?? 8100}`));
