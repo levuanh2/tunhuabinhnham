@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: tunhuabinhnham-api
+    runtime: python
+    region: singapore
+    plan: 0.5c-512mb
+    branch: main
+    buildCommand: python -m pip install -r apps/api/requirements.lock && python -m pip install --no-deps ./apps/api
+    startCommand: python -m uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port $PORT --workers ${WEB_CONCURRENCY:-1}
+    healthCheckPath: /health/ready
+    autoDeployTrigger: "off"
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "1"
+      - key: DB_POOL_TIMEOUT_SECONDS
+        value: "10"
+      - key: DB_CONNECT_TIMEOUT_SECONDS
+        value: "5"
+      - key: DB_DISABLE_PREPARED_STATEMENTS
+        value: "false"
+      - key: ADMIN_RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_JWT_ISSUER
+        sync: false
+      - key: SUPABASE_JWKS_URL
+        sync: false
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

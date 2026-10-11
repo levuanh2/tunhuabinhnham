@@ -1,0 +1,77 @@
+from fastapi.testclient import TestClient
+
+
+def test_admin_requires_authentication(client: TestClient) -> None:
+    response = client.get("/api/v1/admin/products")
+    assert response.status_code == 401
+
+
+def test_product_crud_and_soft_delete(admin_client: TestClient) -> None:
+    payload = {
+        "name": "Bình gốm",
+        "slug": "binh-gom",
+        "sku": "BG-001",
+        "price": "450000.00",
+        "stock_status": "in_stock",
+        "publish_status": "published",
+        "is_visible": True,
+        "is_featured": False,
+        "attributes": {"Chất liệu": "Gốm"},
+        "images": [],
+    }
+    created = admin_client.post("/api/v1/admin/products", json=payload)
+    assert created.status_code == 201, created.text
+    product_id = created.json()["id"]
+    updated = admin_client.patch(
+        f"/api/v1/admin/products/{product_id}", json={"name": "Bình gốm men lam"}
+    )
+    assert updated.status_code == 200
+    assert updated.json()["name"] == "Bình gốm men lam"
+    deleted = admin_client.delete(f"/api/v1/admin/products/{product_id}")
+    assert deleted.status_code == 204
+    assert admin_client.get(f"/api/v1/admin/products/{product_id}").status_code == 404
+
+
+def test_duplicate_sku_returns_conflict(admin_client: TestClient) -> None:
+    payload = {
+        "name": "A",
+        "slug": "a",
+        "sku": "ONE",
+        "stock_status": "contact",
+        "publish_status": "draft",
+        "attributes": {},
+        "images": [],
+    }
+    assert admin_client.post("/api/v1/admin/products", json=payload).status_code == 201
+    payload.update({"name": "B", "slug": "b"})
+    assert admin_client.post("/api/v1/admin/products", json=payload).status_code == 409
+
+
+def test_product_update_preserves_existing_image_storage_key(admin_client: TestClient) -> None:
+    image = {
+        "storage_key": "2026/10/image.webp",
+        "url": "https://example.supabase.co/storage/v1/object/public/product-images/2026/10/image.webp",
+        "alt_text": "Mặt trước",
+        "sort_order": 0,
+        "is_primary": True,
+    }
+    created = admin_client.post(
+        "/api/v1/admin/products",
+        json={
+            "name": "Tủ nhựa",
+            "slug": "tu-nhua",
+            "sku": "TN-01",
+            "images": [image],
+        },
+    )
+    assert created.status_code == 201, created.text
+    product_id = created.json()["id"]
+
+    image["alt_text"] = "Mặt trước đã cập nhật"
+    updated = admin_client.patch(
+        f"/api/v1/admin/products/{product_id}", json={"images": [image]}
+    )
+
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["images"][0]["storage_key"] == image["storage_key"]
+    assert updated.json()["images"][0]["alt_text"] == "Mặt trước đã cập nhật"

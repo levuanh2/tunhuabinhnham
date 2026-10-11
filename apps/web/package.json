@@ -1,0 +1,53 @@
+{
+  "name": "@tunhuabinhnham/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "upload:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "@tanstack/react-query": "^5.90.2",
+    "@tiptap/extension-link": "^3.6.1",
+    "@tiptap/react": "^3.6.1",
+    "@tiptap/starter-kit": "^3.6.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.545.0",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-hook-form": "^7.63.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.9",
+    "@playwright/test": "^1.55.1",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22.18.6",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "^15.5.4",
+    "jsdom": "^27.0.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vitest": "5.0.3"
+  }
+}

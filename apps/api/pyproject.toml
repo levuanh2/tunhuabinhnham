@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tunhuabinhnham-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "alembic>=1.16,<2",
+  "bleach>=6.2,<7",
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "pydantic-settings>=2.10,<3",
+  "psycopg[binary]>=3.2,<4",
+  "pyjwt[crypto]>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "sqlalchemy>=2.0.43,<3",
+  "supabase>=2.18,<3",
+  "uvicorn[standard]>=0.35,<1"
+]
+
+[project.optional-dependencies]
+dev = ["mypy>=1.18,<2", "pytest>=8.4,<9", "pytest-asyncio>=1.2,<2", "ruff>=0.13,<1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["integration_supabase: requires a real Supabase project"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["B008", "E501", "E701", "E702"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
