@@ -1,0 +1,505 @@
+[
+ {
+  "name": "home",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [
+   "A.shrink-0 rounded-full border border-slat",
+   "A.shrink-0 rounded-full border border-slat",
+   "A.shrink-0 rounded-full border border-slat"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [
+   "A.shrink-0 rounded-full border border-slat",
+   "A.shrink-0 rounded-full border border-slat",
+   "A.shrink-0 rounded-full border border-slat"
+  ],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "home",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Nhà gọn, mỗi ngày nhẹ nhàng hơn"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "products",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "detail",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tủ nhựa 5 tầng nắp trắng"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Tin tức & câu chuyện"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Tin tức & câu chuyện"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tin tức & câu chuyện"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tin tức & câu chuyện"
+  ]
+ },
+ {
+  "name": "news",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tin tức & câu chuyện"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "article",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Cách chọn tủ nhựa cho phòng ngủ nhỏ"
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Hỏi cửa hàng một câu."
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Hỏi cửa hàng một câu."
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Hỏi cửa hàng một câu."
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Hỏi cửa hàng một câu."
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Hỏi cửa hàng một câu."
+  ]
+ },
+ {
+  "name": "about",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Một chiếc tủ được chăm chút mỗi ngày."
+  ]
+ },
+ {
+  "name": "about",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Một chiếc tủ được chăm chút mỗi ngày."
+  ]
+ },
+ {
+  "name": "about",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Một chiếc tủ được chăm chút mỗi ngày."
+  ]
+ },
+ {
+  "name": "about",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Một chiếc tủ được chăm chút mỗi ngày."
+  ]
+ },
+ {
+  "name": "about",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Một chiếc tủ được chăm chút mỗi ngày."
+  ]
+ },
+ {
+  "name": "login",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Mọi sản phẩm"
+  ]
+ }
+]

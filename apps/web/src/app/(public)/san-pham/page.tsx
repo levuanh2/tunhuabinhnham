@@ -1,26 +1,70 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
+import { ProductFilters } from "@/components/product-filters";
 import { publicApi } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Sản phẩm", description: "Khám phá danh mục sản phẩm đang được trưng bày." };
+export const metadata: Metadata = { title: "Sản phẩm", description: "Tủ nhựa, tủ quần áo, tủ ngăn kéo và kệ lưu trữ. Lọc theo danh mục, giá và tìm theo tên." };
 
+const FILTER_KEYS = ["search", "category", "min_price", "max_price", "sort", "page"] as const;
 type Params = Promise<Record<string, string | string[] | undefined>>;
+
 export default async function ProductsPage({ searchParams }: { searchParams: Params }) {
-  const params = await searchParams;
-  const query = new URLSearchParams();
-  for (const key of ["search", "category", "min_price", "max_price", "sort", "page"]) { const value = params[key]; if (typeof value === "string" && value) query.set(key, value); }
-  const [result, categories] = await Promise.all([publicApi.products(query.toString()).catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 })), publicApi.categories().catch(() => [])]);
-  return <div className="section shell"><header className="max-w-3xl"><h1 className="display text-6xl">Mọi sản phẩm</h1><p className="mt-4 text-lg muted">Tìm theo tên, khoảng giá hoặc danh mục. Chọn một sản phẩm để xem ảnh và thông số đầy đủ.</p></header>
-    <form className="my-10 grid gap-3 border-y border-slate-200 py-5 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-      <input className="field" name="search" defaultValue={typeof params.search === "string" ? params.search : ""} placeholder="Tìm tên sản phẩm" aria-label="Tìm tên sản phẩm" />
-      <select className="field" name="category" defaultValue={typeof params.category === "string" ? params.category : ""} aria-label="Danh mục"><option value="">Mọi danh mục</option>{categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}</select>
-      <input className="field" name="min_price" type="number" min="0" placeholder="Giá từ" aria-label="Giá từ" />
-      <select className="field" name="sort" defaultValue={typeof params.sort === "string" ? params.sort : "-published_at"} aria-label="Sắp xếp"><option value="-published_at">Mới nhất</option><option value="price">Giá thấp trước</option><option value="-price">Giá cao trước</option></select>
-      <button className="button">Áp dụng</button>
+  const raw = await searchParams;
+  const params: Record<string, string> = {};
+  for (const key of FILTER_KEYS) { const value = raw[key]; if (typeof value === "string" && value) params[key] = value; }
+  const [result, categories] = await Promise.all([
+    publicApi.products(new URLSearchParams(params).toString()).catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 })),
+    publicApi.categories().catch(() => []),
+  ]);
+  const href = (patch: Record<string, string | undefined>) => {
+    const next = new URLSearchParams({ ...params, ...patch } as Record<string, string>);
+    for (const [key, value] of [...next.entries()]) if (!value || value === "undefined") next.delete(key);
+    const query = next.toString();
+    return query ? `/san-pham?${query}` : "/san-pham";
+  };
+  const active = categories.find(c => c.slug === params.category);
+  const filtered = Boolean(params.search || params.min_price || params.max_price || params.category);
+
+  return <div className="shell pb-20 pt-10 md:pt-14">
+    <header className="max-w-2xl">
+      <h1 className="display h-page">{active?.name ?? "Tất cả sản phẩm"}</h1>
+      <p className="lede mt-3">{active?.description ?? "Tủ quần áo, tủ ngăn kéo, tủ giày và kệ nhựa. Chọn một sản phẩm để xem ảnh, kích thước và giá."}</p>
+    </header>
+
+    {categories.length > 0 && <nav aria-label="Danh mục sản phẩm" className="mt-8 border-b border-line">
+      <ul className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:px-0">
+        {[{ id: "all", name: "Tất cả", slug: undefined as string | undefined }, ...categories].map(c => {
+          const current = (c.slug ?? undefined) === params.category;
+          return <li key={c.id} className="shrink-0"><Link href={href({ category: c.slug, page: undefined })} aria-current={current ? "page" : undefined} className="-mb-px block border-b-2 border-transparent px-3 py-3 text-[.9375rem] font-medium text-ink-soft hover:text-ink aria-[current=page]:border-primary aria-[current=page]:text-ink">{c.name}</Link></li>;
+        })}
+      </ul>
+    </nav>}
+
+    <form className="mt-6 flex gap-2 md:grid md:gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-end" role="search" aria-label="Lọc sản phẩm">
+      {params.category && <input type="hidden" name="category" value={params.category} />}
+      <label className="label min-w-0 flex-1"><span className="sr-only md:not-sr-only">Tìm theo tên</span>
+        <span className="relative"><Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft" /><input id="tim-kiem" className="field pl-10" type="search" name="search" enterKeyHint="search" defaultValue={params.search ?? ""} placeholder="Tìm tủ, kệ, hộp đựng…" /></span>
+      </label>
+      <ProductFilters minPrice={params.min_price} maxPrice={params.max_price} sort={params.sort} activeCount={[params.min_price, params.max_price, params.sort && params.sort !== "-published_at"].filter(Boolean).length} />
     </form>
-    <p className="mb-6 text-sm muted">{result.total} sản phẩm</p>
-    {result.items.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">{result.items.map(p => <ProductCard key={p.id} product={p} />)}</div> : <div className="py-24 text-center"><h2 className="text-2xl font-bold">Không tìm thấy sản phẩm</h2><p className="mt-2 muted">Thử bỏ bớt bộ lọc hoặc tìm bằng từ khóa khác.</p></div>}
-    {result.pages > 1 && <nav className="mt-14 flex justify-center gap-2" aria-label="Phân trang">{Array.from({ length: result.pages }, (_, i) => i + 1).map(page => <Link key={page} className={`grid size-11 place-items-center rounded border ${page === result.page ? "border-[#1648d8] bg-[#1648d8] text-white" : "border-slate-300"}`} href={{ query: { ...params, page } }}>{page}</Link>)}</nav>}
+
+    <div className="mb-6 mt-8 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
+      <p aria-live="polite">{result.total} sản phẩm{params.search ? ` cho “${params.search}”` : ""}</p>
+      {filtered && <Link href="/san-pham" className="link">Xoá bộ lọc</Link>}
+    </div>
+
+    {result.items.length
+      ? <div className="grid grid-cols-1 min-[340px]:grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">{result.items.map((p, i) => <ProductCard key={p.id} product={p} priority={i < 2} />)}</div>
+      : <div className="rounded-xl border border-dashed border-line-strong px-6 py-16 text-center">
+          <h2 className="display text-2xl">Không có sản phẩm phù hợp</h2>
+          <p className="mx-auto mt-2 max-w-md text-ink-soft">Thử từ khoá ngắn hơn, bỏ khoảng giá hoặc xem tất cả danh mục.</p>
+          <Link href="/san-pham" className="button secondary mt-6">Xem tất cả sản phẩm</Link>
+        </div>}
+
+    {result.pages > 1 && <nav className="mt-14 flex flex-wrap justify-center gap-2" aria-label="Phân trang">
+      {Array.from({ length: result.pages }, (_, i) => i + 1).map(page => <Link key={page} href={href({ page: String(page) })} aria-current={page === result.page ? "page" : undefined} aria-label={`Trang ${page}`} className="grid size-11 place-items-center rounded-full border border-line-strong text-sm font-medium hover:border-primary aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-white">{page}</Link>)}
+    </nav>}
   </div>;
 }

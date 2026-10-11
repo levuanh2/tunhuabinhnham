@@ -1,1 +1,19 @@
-export default function AboutPage() { return <div className="section shell grid gap-10 lg:grid-cols-2"><h1 className="display text-6xl">Một chiếc tủ được chăm chút mỗi ngày.</h1><div className="space-y-5 text-lg leading-8 muted"><p>Tủ Nhựa Bình Nhâm là không gian giới thiệu những sản phẩm được chọn vì công năng rõ ràng và câu chuyện tử tế.</p><p>Website không nhận thanh toán trực tiếp. Bạn có thể xem thông tin, lưu mã sản phẩm và trò chuyện cùng cửa hàng để được tư vấn chính xác.</p></div></div>; }
+import type { Metadata } from "next";
+import Link from "next/link";
+import { publicApi } from "@/lib/api";
+
+export const metadata: Metadata = { title: "Giới thiệu" };
+
+export default async function AboutPage() {
+  const settings = await publicApi.settings().catch(() => null);
+  const storeName = settings?.store_name ?? "Tủ Nhựa Bình Nhâm";
+  return <div className="section shell grid gap-10 lg:grid-cols-12">
+    <h1 className="display h-page lg:col-span-5">Về {storeName}</h1>
+    <div className="max-w-2xl space-y-5 text-lg leading-8 text-ink-soft lg:col-span-7">
+      {settings?.about_text && <p className="whitespace-pre-line text-ink">{settings.about_text}</p>}
+      <p>{storeName} giới thiệu tủ nhựa, tủ quần áo, tủ ngăn kéo và đồ lưu trữ cho gia đình. Mỗi sản phẩm trên website có ảnh, mã và giá (nếu có) để bạn dễ so sánh.</p>
+      <p>Website không nhận thanh toán trực tiếp. Hãy lưu mã sản phẩm rồi nhắn tin cho cửa hàng để được tư vấn kích thước, màu sắc và giao hàng.</p>
+      <div className="flex flex-wrap gap-3 pt-3"><Link href="/san-pham" className="button">Xem sản phẩm</Link><Link href="/lien-he" className="button secondary">Liên hệ</Link></div>
+    </div>
+  </div>;
+}

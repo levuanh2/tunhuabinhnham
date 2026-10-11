@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
+import { ArrowLeft, ArrowRight, ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -72,13 +73,64 @@ export function ProductForm({ product }: { product?: Product }) {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể lưu"); }
   }
 
-  return <form className="mt-8 grid max-w-3xl gap-6 rounded-md bg-white p-6" onSubmit={handleSubmit(submit)}>
-    <label className="label">Tên sản phẩm<input className="field" {...register("name")} />{errors.name && <span className="error">{errors.name.message}</span>}</label>
-    <div className="grid gap-5 sm:grid-cols-2"><label className="label">Slug<input className="field" {...register("slug")} />{errors.slug && <span className="error">{errors.slug.message}</span>}</label><label className="label">SKU<input className="field" {...register("sku")} /></label></div>
-    <div className="grid gap-5 sm:grid-cols-2"><label className="label">Danh mục<select className="field" {...register("category_id")}><option value="">Chưa phân loại</option>{categories.data?.map(category => <option value={category.id} key={category.id}>{category.name}</option>)}</select>{categories.isError && <span className="error">Không thể tải danh mục</span>}</label><label className="label">Giá (để trống nếu cần liên hệ)<input className="field" inputMode="numeric" {...register("price")} /></label></div>
-    <label className="label">Mô tả<textarea className="field min-h-36" {...register("description")} /></label>
-    <fieldset className="grid gap-4"><legend className="font-bold">Ảnh sản phẩm</legend><p className="text-sm muted">JPEG, PNG hoặc WebP; tối đa 8 MiB mỗi ảnh và 20 ảnh.</p><input aria-label="Ảnh sản phẩm" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={isUploading} onChange={upload} />{isUploading && <p>Đang tải ảnh lên…</p>}<div className="grid gap-4 sm:grid-cols-2">{images.map((image, index) => <div className="rounded-md border border-slate-200 p-3" key={image.storage_key}><Image src={image.url} alt={image.alt_text ?? "Ảnh sản phẩm"} width={400} height={300} className="aspect-4/3 w-full rounded object-cover" /><label className="label mt-3">Mô tả ảnh<input className="field" value={image.alt_text ?? ""} onChange={event => setImages(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, alt_text: event.target.value } : item))} /></label><div className="mt-3 flex gap-3"><button className="text-sm font-bold text-[#1648d8]" type="button" onClick={() => setImages(current => current.map((item, itemIndex) => ({ ...item, is_primary: itemIndex === index })))}>{image.is_primary ? "Ảnh chính" : "Đặt làm ảnh chính"}</button><button className="text-sm font-bold text-red-700" type="button" onClick={() => void removeImage(index)}>Gỡ ảnh</button></div></div>)}</div></fieldset>
-    <div className="grid gap-5 sm:grid-cols-2"><label className="label">Tình trạng<select className="field" {...register("stock_status")}><option value="in_stock">Còn hàng</option><option value="out_of_stock">Hết hàng</option><option value="contact">Liên hệ</option></select></label><label className="label">Xuất bản<select className="field" {...register("publish_status")}><option value="draft">Bản nháp</option><option value="published">Xuất bản</option></select></label></div>
-    <label className="flex gap-3"><input type="checkbox" {...register("is_visible")} />Hiển thị sản phẩm</label><div><button className="button" disabled={isSubmitting || isUploading}>{isSubmitting ? "Đang lưu…" : "Lưu sản phẩm"}</button></div>
+  function moveImage(index: number, offset: -1 | 1) {
+    setImages(current => {
+      const target = index + offset;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next.map((item, sort_order) => ({ ...item, sort_order }));
+    });
+  }
+
+  const fieldError = (message?: string) => message ? <span className="error">{message}</span> : null;
+
+  return <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start" onSubmit={handleSubmit(submit)}>
+    <div className="grid gap-6">
+      <section className="panel grid gap-5 p-5 sm:p-6" aria-labelledby="thong-tin">
+        <h2 id="thong-tin" className="text-base font-semibold">Thông tin</h2>
+        <label className="label">Tên sản phẩm<input className="field" aria-invalid={errors.name ? true : undefined} {...register("name")} />{fieldError(errors.name?.message)}</label>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="label">Slug<input className="field" aria-invalid={errors.slug ? true : undefined} {...register("slug")} />{errors.slug ? fieldError(errors.slug.message) : <span className="hint">Dùng trong đường dẫn: /san-pham/slug</span>}</label>
+          <label className="label">SKU<input className="field" aria-invalid={errors.sku ? true : undefined} {...register("sku")} />{fieldError(errors.sku && "Nhập mã SKU")}</label>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {/* key: remount once options load so react-hook-form re-applies the saved category instead of submitting "" */}
+          <label className="label">Danh mục<select key={categories.data ? "ready" : "loading"} className="field" {...register("category_id")}><option value="">Chưa phân loại</option>{categories.data?.map(category => <option value={category.id} key={category.id}>{category.name}</option>)}</select>{categories.isError && <span className="error">Không thể tải danh mục</span>}</label>
+          <label className="label">Giá (VNĐ)<input className="field" inputMode="numeric" placeholder="Để trống nếu cần liên hệ" {...register("price")} /></label>
+        </div>
+        <label className="label">Mô tả<textarea className="field min-h-36 leading-relaxed" {...register("description")} /></label>
+      </section>
+
+      <fieldset className="panel grid gap-4 p-5 sm:p-6">
+        <legend className="sr-only">Ảnh sản phẩm</legend>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div><h2 className="text-base font-semibold" aria-hidden="true">Ảnh sản phẩm</h2><p className="hint mt-0.5">JPEG, PNG hoặc WebP; tối đa 8 MiB mỗi ảnh và 20 ảnh. {images.length}/20</p></div>
+          <label className={`button secondary sm cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary ${isUploading || images.length >= 20 ? "pointer-events-none opacity-55" : ""}`}><ImagePlus size={16} aria-hidden="true" />{isUploading ? "Đang tải ảnh lên…" : "Tải ảnh lên"}<input className="sr-only" aria-label="Ảnh sản phẩm" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={isUploading} onChange={upload} /></label>
+        </div>
+        {images.length === 0
+          ? <p className="rounded-lg border border-dashed border-line-strong px-4 py-8 text-center text-sm text-ink-soft">Chưa có ảnh. Ảnh đầu tiên sẽ là ảnh chính.</p>
+          : <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{images.map((image, index) => <li className="overflow-hidden rounded-lg border border-line" key={image.storage_key}>
+              <div className="relative aspect-[4/3] bg-muted"><Image src={image.url} alt={image.alt_text ?? "Ảnh sản phẩm"} fill sizes="(min-width: 1280px) 20vw, (min-width: 640px) 40vw, 100vw" className="object-cover" />{image.is_primary && <span className="badge success absolute left-2 top-2">Ảnh chính</span>}</div>
+              <div className="grid gap-3 p-3">
+                <label className="label text-[.8125rem]">Mô tả ảnh<input className="field min-h-10" value={image.alt_text ?? ""} onChange={event => setImages(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, alt_text: event.target.value } : item))} /></label>
+                <div className="flex flex-wrap items-center gap-1">
+                  <button className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-muted disabled:opacity-35" type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} aria-label={`Đưa ảnh ${index + 1} lên trước`}><ArrowLeft size={16} aria-hidden="true" /></button>
+                  <button className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-muted disabled:opacity-35" type="button" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)} aria-label={`Đưa ảnh ${index + 1} ra sau`}><ArrowRight size={16} aria-hidden="true" /></button>
+                  <button className="button ghost sm ml-auto !text-danger hover:!bg-danger-soft" type="button" onClick={() => void removeImage(index)}>Gỡ ảnh</button>
+                </div>
+                {!image.is_primary && <button className="button secondary sm w-full" type="button" onClick={() => setImages(current => current.map((item, itemIndex) => ({ ...item, is_primary: itemIndex === index })))}>Đặt làm ảnh chính</button>}
+              </div>
+            </li>)}</ul>}
+      </fieldset>
+    </div>
+
+    <aside className="panel grid gap-5 p-5 lg:sticky lg:top-6">
+      <h2 className="text-base font-semibold">Hiển thị</h2>
+      <label className="label">Xuất bản<select className="field" {...register("publish_status")}><option value="draft">Bản nháp</option><option value="published">Xuất bản</option></select></label>
+      <label className="label">Tình trạng<select className="field" {...register("stock_status")}><option value="in_stock">Còn hàng</option><option value="out_of_stock">Hết hàng</option><option value="contact">Liên hệ</option></select></label>
+      <label className="flex items-center gap-3 text-sm font-medium"><input type="checkbox" {...register("is_visible")} />Hiển thị sản phẩm trên website</label>
+      <button className="button w-full" disabled={isSubmitting || isUploading}>{isSubmitting ? "Đang lưu…" : "Lưu sản phẩm"}</button>
+    </aside>
   </form>;
 }
