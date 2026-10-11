@@ -16,7 +16,10 @@ export default function LoginPage() {
   async function submit(values: Values) {
     setFormError(null);
     try { const { error } = await createClient().auth.signInWithPassword(values); if (error) throw error; router.replace("/admin"); router.refresh(); }
-    catch (error) { setFormError(error instanceof Error ? error.message : "Không thể đăng nhập"); }
+    catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setFormError(/invalid login credentials/i.test(message) ? "Email hoặc mật khẩu không đúng." : message || "Không thể đăng nhập");
+    }
   }
   return <main className="grid min-h-screen place-items-center bg-bg px-4 py-10">
     <div className="w-full max-w-[400px]">

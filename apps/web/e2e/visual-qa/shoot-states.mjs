@@ -38,7 +38,7 @@ await shot("state-login-validation", async page => {
 });
 await shot("state-login-wrong-password", async page => {
   await page.goto(base + "/admin/login"); await page.getByLabel("Email").fill("qa@example.test"); await page.getByLabel("Mật khẩu").fill("wrong-password");
-  await page.getByRole("button", { name: "Đăng nhập" }).click(); await page.getByRole("alert").waitFor();
+  await page.getByRole("button", { name: "Đăng nhập" }).click(); await page.locator("p[role=alert]").waitFor(); // Next also renders a route-announcer role=alert
 });
 async function login(page) {
   await page.goto(base + "/admin/login"); await page.getByLabel("Email").fill("qa@example.test"); await page.getByLabel("Mật khẩu").fill("qa-password-123");

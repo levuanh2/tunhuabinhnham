@@ -198,3 +198,12 @@ test("12. saving one field keeps category and persists image order after reload 
     await request.post(`${mock}/__reset`);
   }
 });
+
+test("13. login shows a Vietnamese inline error for wrong credentials", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill("qa@example.test");
+  await page.getByLabel("Mật khẩu").fill("wrong-password");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page.locator("p[role=alert]")).toHaveText("Email hoặc mật khẩu không đúng.");
+  await expect(page).toHaveURL(/\/admin\/login/);
+});
