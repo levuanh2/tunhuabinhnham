@@ -22,6 +22,14 @@ async function accessToken(page: import("@playwright/test").Page): Promise<strin
   });
 }
 
+async function login(page: import("@playwright/test").Page) {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(email!);
+  await page.getByLabel("Mật khẩu").fill(password!);
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page).toHaveURL(/\/admin(?:\/)?$/, { timeout: 15_000 });
+}
+
 test.describe("real Supabase CMS workflow", () => {
   test.describe.configure({ mode: "serial" });
   test.skip(!configured, "BLOCKED_EXTERNAL_CONFIGURATION: staging URL, admin credentials and explicit write approval are required");
@@ -48,6 +56,8 @@ test.describe("real Supabase CMS workflow", () => {
     await expect(page.getByText(category, { exact: true })).toBeVisible({ timeout: 15_000 });
 
     await page.goto("/admin/san-pham/moi");
+
+    await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
     await page.getByLabel("Tên sản phẩm").fill(product);
     await page.getByLabel("Slug").fill(productSlug);
     await page.getByLabel("SKU").fill(sku);
@@ -193,6 +203,155 @@ test.describe("real Supabase CMS workflow", () => {
     }
     for (const bannerItem of originalBanners) {
       await request.patch(`${apiUrl}/admin/banners/${bannerItem.id}`, { headers, data: { sort_order: bannerItem.sort_order, is_active: bannerItem.is_active } });
+    }
+  });
+  test("draft → publish keeps category, persists image order and primary, invalidates cache", async ({ page, request }) => {
+    const suffix = `${runId}-${Date.now()}`;
+    const productName = `${recordPrefix}order_${suffix}`;
+    const productSlug = `e2e-${suffix}-order`;
+    const sku = `E2E-O-${suffix}`;
+    await login(page);
+    const headers = { Authorization: `Bearer ${await accessToken(page)}` };
+    const category = await (await request.post(`${apiUrl}/admin/categories`, { headers, data: { name: `${recordPrefix}cat_${suffix}`, slug: `e2e-${suffix}-cat`, is_visible: true, sort_order: 0 } })).json();
+    let productId: string | undefined;
+    try {
+      await page.goto("/admin/san-pham/moi");
+      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await page.getByLabel("Tên sản phẩm").fill(productName);
+      await page.getByLabel("Slug").fill(productSlug);
+      await page.getByLabel("SKU").fill(sku);
+      await page.getByLabel("Danh mục").selectOption(category.id);
+      await page.getByLabel("Ảnh sản phẩm").setInputFiles(["a", "b", "c"].map(name => ({ ...image, name: `e2e-${name}.png` })));
+      await expect(page.locator("form li")).toHaveCount(3);
+      await expect(page.getByLabel("Xuất bản")).toHaveValue("draft");
+      await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+      await expect(page).toHaveURL(/\/admin\/san-pham$/);
+      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(sku)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
+      productId = created.id;
+      expect(created.publish_status).toBe("draft");
+      expect((await request.get(`${apiUrl}/products/${productSlug}`)).status()).toBe(404);
+      const keys = [...created.images].sort((x: { sort_order: number }, y: { sort_order: number }) => x.sort_order - y.sort_order).map((i: { storage_key: string }) => i.storage_key);
+
+      // Edit an unrelated field only: category must be retained.
+      await page.goto(`/admin/san-pham/${productId}`);
+      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await expect(page.getByLabel("Danh mục")).toHaveValue(category.id);
+      await page.getByLabel("Mô tả", { exact: true }).fill("Mô tả kiểm thử Gate C1.");
+      await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+      await expect(page).toHaveURL(/\/admin\/san-pham$/);
+      const edited = await (await request.get(`${apiUrl}/admin/products/${productId}`, { headers })).json();
+      expect(edited.category_id).toBe(category.id);
+      expect(edited.description).toBe("Mô tả kiểm thử Gate C1.");
+
+      // Reorder (1st image moves behind 2nd), make the last image primary, then publish.
+      await page.goto(`/admin/san-pham/${productId}`);
+      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await page.getByRole("button", { name: "Đưa ảnh 1 ra sau" }).click();
+      await page.locator("form li").nth(2).getByRole("button", { name: "Đặt làm ảnh chính" }).click();
+      await page.getByLabel("Xuất bản").selectOption("published");
+      await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+      await expect(page).toHaveURL(/\/admin\/san-pham$/);
+      const saved = await (await request.get(`${apiUrl}/admin/products/${productId}`, { headers })).json();
+      const ordered = [...saved.images].sort((x: { sort_order: number }, y: { sort_order: number }) => x.sort_order - y.sort_order);
+      expect(ordered.map((i: { storage_key: string }) => i.storage_key)).toEqual([keys[1], keys[0], keys[2]]);
+      expect(ordered.find((i: { is_primary: boolean }) => i.is_primary).storage_key).toBe(keys[2]);
+      expect(saved.category_id).toBe(category.id);
+
+      // Reload the editor: UI reflects the persisted order, primary and category.
+      await page.goto(`/admin/san-pham/${productId}`);
+      await page.waitForLoadState("networkidle"); // react-hook-form resets SSR-typed values on hydration
+      await expect(page.locator("form li").nth(2).getByText("Ảnh chính")).toBeVisible();
+      await expect(page.getByLabel("Danh mục")).toHaveValue(category.id);
+
+      // Cache invalidation: the published product is now public on detail and listing pages.
+      await expect.poll(async () => (await page.goto(`/san-pham/${productSlug}?e2e=${encodeURIComponent(suffix)}`))?.status()).toBe(200);
+      await expect(page.getByRole("heading", { name: productName })).toBeVisible();
+      await page.goto(`/san-pham?search=${encodeURIComponent(productName)}`);
+      await expect(page.getByRole("link", { name: productName })).toBeVisible();
+    } finally {
+      if (productId) {
+        const current = await (await request.get(`${apiUrl}/admin/products/${productId}`, { headers })).json();
+        await request.patch(`${apiUrl}/admin/products/${productId}`, { headers, data: { images: [], publish_status: "draft", is_visible: false } });
+        for (const media of current.images ?? []) await request.delete(`${apiUrl}/admin/media?url=${encodeURIComponent(media.url)}`, { headers });
+        await request.delete(`${apiUrl}/admin/products/${productId}`, { headers });
+      }
+      await request.delete(`${apiUrl}/admin/categories/${category.id}`, { headers });
+    }
+  });
+
+  test("Supabase SSR session survives reload, invalid session is rejected, logout clears cookies", async ({ page, browser, baseURL }) => {
+    await login(page);
+    await page.goto("/admin/san-pham");
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    await page.reload();
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    const authCookies = (await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+    expect(authCookies.length).toBeGreaterThan(0);
+
+    // A second page in the same browser context shares the SSR session (server-side middleware check).
+    const second = await page.context().newPage();
+    await second.goto("/admin/bai-viet");
+    await expect(second).toHaveURL(/\/admin\/bai-viet$/);
+    await second.close();
+
+    // Expired session: a well-formed Supabase SSR cookie whose access token expired and whose refresh token
+    // is unknown must be rejected by middleware (no refresh, redirect to login).
+    const ordered = [...authCookies].sort((x, y) => x.name.localeCompare(y.name, "en", { numeric: true }));
+    const raw = ordered.map(c => decodeURIComponent(c.value)).join("");
+    const json = JSON.parse(Buffer.from(raw.replace(/^base64-/, ""), "base64url").toString("utf8"));
+    const expired = { ...json, access_token: "expired.invalid.token", refresh_token: "e2e-unknown-refresh-token", expires_at: Math.floor(Date.now() / 1000) - 3600, expires_in: -3600 };
+    const baseName = ordered[0].name.replace(/\.\d+$/, "");
+    const stale = await browser.newContext({ baseURL });
+    await stale.addCookies([{ ...ordered[0], name: baseName, value: `base64-${Buffer.from(JSON.stringify(expired)).toString("base64url")}` }]);
+    const stalePage = await stale.newPage();
+    await stalePage.goto("/admin/san-pham");
+    await expect(stalePage).toHaveURL(/\/admin\/login/);
+    await stale.close();
+
+    const adminMenu = page.getByRole("button", { name: "Mở menu quản trị" });
+    if (await adminMenu.isVisible()) await adminMenu.click();
+    await page.getByRole("button", { name: "Đăng xuất" }).click();
+    await expect(page).toHaveURL(/\/admin\/login$/);
+    expect((await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token") && c.value)).toHaveLength(0);
+    await page.goto("/admin/cai-dat");
+    await expect(page).toHaveURL(/\/admin\/login/);
+  });
+
+  test("mobile admin workflow: drawer navigation and draft product creation", async ({ page, request }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "phone-only workflow");
+    const suffix = `${runId}-${Date.now()}`;
+    const productName = `${recordPrefix}mobile_${suffix}`;
+    const sku = `E2E-M-${suffix}`;
+    await login(page);
+    const headers = { Authorization: `Bearer ${await accessToken(page)}` };
+    let productId: string | undefined;
+    try {
+      await page.getByRole("button", { name: "Mở menu quản trị" }).click();
+      await page.getByRole("dialog", { name: "Menu quản trị" }).getByRole("link", { name: "Sản phẩm" }).click();
+      await expect(page).toHaveURL(/\/admin\/san-pham$/);
+      await page.getByRole("link", { name: "Thêm sản phẩm" }).first().click();
+      await expect(page).toHaveURL(/\/admin\/san-pham\/moi$/);
+      await page.waitForLoadState("networkidle");
+      await page.getByLabel("Tên sản phẩm").fill(productName);
+      await page.getByLabel("Slug").fill(`e2e-${suffix}-mobile`);
+      await page.getByLabel("SKU").fill(sku);
+      await page.getByLabel("Ảnh sản phẩm").setInputFiles({ ...image, name: "e2e-mobile.png" });
+      await expect(page.getByText("Ảnh chính")).toBeVisible();
+      await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+      await expect(page).toHaveURL(/\/admin\/san-pham$/);
+      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(sku)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
+      productId = created.id;
+      expect(created.publish_status).toBe("draft");
+      expect(created.images).toHaveLength(1);
+      const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+      expect(scroll).toBeLessThanOrEqual(client);
+    } finally {
+      if (productId) {
+        const current = await (await request.get(`${apiUrl}/admin/products/${productId}`, { headers })).json();
+        await request.patch(`${apiUrl}/admin/products/${productId}`, { headers, data: { images: [], is_visible: false } });
+        for (const media of current.images ?? []) await request.delete(`${apiUrl}/admin/media?url=${encodeURIComponent(media.url)}`, { headers });
+        await request.delete(`${apiUrl}/admin/products/${productId}`, { headers });
+      }
     }
   });
 });
