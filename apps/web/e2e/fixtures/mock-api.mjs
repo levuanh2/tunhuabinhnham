@@ -52,7 +52,8 @@ const banners = [{ id: "b1", title: "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
 const page = (items, q) => { const size = Number(q.get("page_size") ?? 20), p = Number(q.get("page") ?? 1); return { items: items.slice((p - 1) * size, p * size), page: p, page_size: size, total: items.length, pages: Math.ceil(items.length / size) }; };
 const b64 = o => Buffer.from(JSON.stringify(o)).toString("base64url");
 const user = { id: "00000000-0000-0000-0000-00000000qa01", aud: "authenticated", role: "authenticated", email: "qa@example.test", app_metadata: { provider: "email" }, user_metadata: {}, created_at: "2026-10-01T00:00:00Z" };
-const session = () => { const exp = Math.floor(Date.now() / 1000) + 3600; return { access_token: `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: user.id, role: "authenticated", aud: "authenticated", email: user.email, exp })}.qa`, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: "qa-refresh", user }; };
+const issued = new Set(); // fake auth only accepts tokens it issued, like real Supabase rejects tampered JWTs
+const session = () => { const exp = Math.floor(Date.now() / 1000) + 3600; const access_token = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: user.id, role: "authenticated", aud: "authenticated", email: user.email, exp, jti: crypto.randomUUID() })}.qa`; const refresh_token = crypto.randomUUID(); issued.add(access_token); issued.add(`r:${refresh_token}`); return { access_token, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token, user }; };
 products[3].publish_status = "draft"; products[5].is_visible = false;
 const initialProducts = structuredClone(products);
 const adminPosts = posts.map(p => ({ ...p, seo_title: null, seo_description: null }));
@@ -60,14 +61,26 @@ http.createServer((req, res) => {
   const u = new URL(req.url, "http://x"); const path = u.pathname.replace(/^\/api\/v1/, ""); const q = u.searchParams;
   const send = (code, body) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*" }); res.end(code === 204 ? "" : JSON.stringify(body)); };
   if (req.method === "OPTIONS") return send(204, {});
-  if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (b.password && b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
-  if (u.pathname === "/auth/v1/user") return (req.headers.authorization ?? "").length > 20 ? send(200, user) : send(401, { msg: "no session" });
-  if (u.pathname === "/auth/v1/logout") return send(204, {});
+  // ponytail: publish/visibility filtering applies only to spec-created "e2e-" records so fixture screenshots stay stable.
+  const isPublic = p => !p.slug.startsWith("e2e-") || (p.publish_status === "published" && p.is_visible && !p.deleted_at);
+  if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (u.searchParams.get("grant_type") === "refresh_token") return issued.delete(`r:${b.refresh_token}`) ? send(200, session()) : send(400, { error: "invalid_grant", msg: "Invalid Refresh Token", code: "refresh_token_not_found" }); if (b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
+  if (u.pathname === "/auth/v1/user") return issued.has((req.headers.authorization ?? "").replace(/^Bearer /, "")) ? send(200, user) : send(401, { msg: "invalid JWT" });
+  if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
   if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
-    // In-memory only: PATCH /admin/products/:id lets UI tests verify the saved payload round-trip. Everything else stays read-only.
+    // In-memory writes so UI specs can be dry-run locally (incl. staging-cms.spec.ts with E2E_* pointing here).
+    // Settings, posts and banners stay read-only (403) so write-failure feedback remains testable.
     const pw = path.match(/^\/admin\/products\/(.+)$/);
-    if (pw && req.method === "PATCH") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const p = products.find(x => x.id === pw[1]); if (!p) return send(404, { error: { message: "Không tìm thấy" } }); const b = JSON.parse(body || "{}"); Object.assign(p, b, { category: cats.find(c => c.id === b.category_id) ?? null, images: (b.images ?? p.images).map((im, i) => ({ id: `${p.slug}-${im.storage_key}`, ...im, sort_order: im.sort_order ?? i })) }); send(200, p); }); return; }
+    const readBody = fn => { const chunks = []; req.on("data", c => chunks.push(c)); req.on("end", () => fn(Buffer.concat(chunks))); };
+    const withImages = (p, imgs) => imgs.map((im, i) => ({ id: `${p.slug}-${im.storage_key}`, ...im, sort_order: im.sort_order ?? i }));
+    if (pw && req.method === "PATCH") return readBody(raw => { const p = products.find(x => x.id === pw[1]); if (!p) return send(404, { error: { message: "Không tìm thấy" } }); const b = JSON.parse(raw.toString() || "{}"); const category_id = "category_id" in b ? b.category_id : p.category_id; Object.assign(p, b, { category_id, category: cats.find(c => c.id === category_id) ?? null, images: withImages(p, b.images ?? p.images) }); send(200, p); });
+    if (pw && req.method === "DELETE") { const i = products.findIndex(x => x.id === pw[1]); if (i >= 0) products.splice(i, 1); return send(204, {}); }
+    if (path === "/admin/products" && req.method === "POST") return readBody(raw => { const b = JSON.parse(raw.toString() || "{}"); const p = { id: crypto.randomUUID(), is_featured: false, published_at: new Date().toISOString(), attributes: {}, ...b, category: cats.find(c => c.id === b.category_id) ?? null }; p.images = withImages(p, b.images ?? []); products.push(p); send(201, p); });
+    if (path === "/admin/categories" && req.method === "POST") return readBody(raw => { const c = { id: crypto.randomUUID(), description: null, ...JSON.parse(raw.toString() || "{}") }; cats.push(c); send(201, c); });
+    const cd = path.match(/^\/admin\/categories\/(.+)$/);
+    if (cd && req.method === "DELETE") { const i = cats.findIndex(c => c.id === cd[1]); if (i >= 0) cats.splice(i, 1); return send(204, {}); }
+    if (path === "/admin/media" && req.method === "POST") return readBody(() => { const key = `${new Date().toISOString().slice(0, 7).replace("-", "/")}/${crypto.randomUUID()}.png`; send(201, { id: crypto.randomUUID(), bucket: q.get("bucket"), storage_key: key, url: svg(10, 10, `<!-- ${key} --><rect width="10" height="10" fill="#d8c9b6"/>`) }); });
+    if (path.startsWith("/admin/media") && req.method === "DELETE") return send(204, {});
     if (req.method !== "GET") return send(403, { error: { message: "QA mock: thao tác ghi bị tắt trong môi trường kiểm thử giao diện" } });
     const a = path.slice(6);
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
@@ -81,9 +94,9 @@ http.createServer((req, res) => {
   }
   if (req.method === "POST" && path === "/contact-clicks") return send(201, {});
   if (process.env.MOCK_EMPTY) { if (path === "/site-settings") return send(200, settings); return send(200, path.startsWith("/products/") || path.startsWith("/posts/") ? null : (path === "/categories" || path === "/banners" ? [] : { items: [], page: 1, page_size: 20, total: 0, pages: 0 })); }
-  if (path === "/products") { let list = products; const s = q.get("search")?.toLowerCase(); if (s) list = list.filter(p => p.name.toLowerCase().includes(s)); const c = q.get("category"); if (c) list = list.filter(p => p.category?.slug === c);
+  if (path === "/products") { let list = products.filter(isPublic); const s = q.get("search")?.toLowerCase(); if (s) list = list.filter(p => p.name.toLowerCase().includes(s)); const c = q.get("category"); if (c) list = list.filter(p => p.category?.slug === c);
     const sort = q.get("sort"); if (sort === "price") list = [...list].sort((a, b) => Number(a.price ?? 1e12) - Number(b.price ?? 1e12)); if (sort === "-price") list = [...list].sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0)); return send(200, page(list, q)); }
-  const m = path.match(/^\/(products|posts)\/(.+)$/); if (m) { const item = (m[1] === "products" ? products : posts).find(x => x.slug === m[2]); return item ? send(200, item) : send(404, { error: { message: "Không tìm thấy" } }); }
+  const m = path.match(/^\/(products|posts)\/(.+)$/); if (m) { const item = (m[1] === "products" ? products.filter(isPublic) : posts).find(x => x.slug === m[2]); return item ? send(200, item) : send(404, { error: { message: "Không tìm thấy" } }); }
   if (path === "/categories") return send(200, cats);
   if (path === "/posts") return send(200, page(posts, q));
   if (path === "/banners") return send(200, banners);
