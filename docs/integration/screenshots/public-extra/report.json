@@ -1,0 +1,234 @@
+[
+ {
+  "name": "contact",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Liên hệ cửa hàng"
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Liên hệ cửa hàng"
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Liên hệ cửa hàng"
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Liên hệ cửa hàng"
+  ]
+ },
+ {
+  "name": "contact",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Liên hệ cửa hàng"
+  ]
+ },
+ {
+  "name": "about",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Về Tủ Nhựa Bình Nhâm"
+  ]
+ },
+ {
+  "name": "about",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Về Tủ Nhựa Bình Nhâm"
+  ]
+ },
+ {
+  "name": "about",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Về Tủ Nhựa Bình Nhâm"
+  ]
+ },
+ {
+  "name": "about",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Về Tủ Nhựa Bình Nhâm"
+  ]
+ },
+ {
+  "name": "about",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Về Tủ Nhựa Bình Nhâm"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "login",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Đăng nhập quản trị"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 360,
+  "overflow": false,
+  "scroll": 360,
+  "client": 360,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 390,
+  "overflow": false,
+  "scroll": 390,
+  "client": 390,
+  "offenders": [
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0",
+   "A.-mb-px block border-b-2 border-transpare",
+   "LI.shrink-0"
+  ],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 768,
+  "overflow": false,
+  "scroll": 768,
+  "client": 768,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 1024,
+  "overflow": false,
+  "scroll": 1024,
+  "client": 1024,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ },
+ {
+  "name": "search",
+  "w": 1440,
+  "overflow": false,
+  "scroll": 1440,
+  "client": 1440,
+  "offenders": [],
+  "h1": [
+   "Tất cả sản phẩm"
+  ]
+ }
+]
