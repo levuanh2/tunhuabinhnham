@@ -1,0 +1,360 @@
+{
+ "project_ref": "fyaourksnjeldsvuedox",
+ "ref_fingerprint": "cbda20f5bbaa",
+ "supabase_url_ref_matches": true,
+ "app_env": "development",
+ "server": [
+  "postgres",
+  "postgres",
+  "PostgreSQL 17.11",
+  "on"
+ ],
+ "alembic_version": [
+  [
+   "0003"
+  ]
+ ],
+ "counts": {
+  "admin_users": 0,
+  "categories": 2,
+  "products": 0,
+  "product_images": 0,
+  "posts": 0,
+  "post_images": 0,
+  "banners": 0,
+  "site_settings": 1,
+  "media_assets": 0,
+  "contact_clicks": 2,
+  "audit_logs": 0
+ },
+ "e2e_residue": {
+  "admin_users": 0,
+  "categories": 0,
+  "products": 0,
+  "product_images": 0,
+  "posts": 0,
+  "post_images": 0,
+  "banners": 0,
+  "site_settings": 0,
+  "media_assets": 0,
+  "contact_clicks": 0,
+  "audit_logs": 0
+ },
+ "auth_users": [
+  0,
+  0
+ ],
+ "buckets": [
+  [
+   "banners",
+   true,
+   8388608,
+   3,
+   0
+  ],
+  [
+   "branding",
+   true,
+   8388608,
+   4,
+   0
+  ],
+  [
+   "post-images",
+   true,
+   8388608,
+   3,
+   0
+  ],
+  [
+   "product-images",
+   true,
+   8388608,
+   3,
+   0
+  ]
+ ],
+ "site_settings": [
+  [
+   "Tủ Hòa Bình Nhâm",
+   false,
+   false,
+   "2026-10-11 03:55:37.248365+00"
+  ]
+ ],
+ "grants_anon_auth": [
+  [
+   "admin_users",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "admin_users",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "alembic_version",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "alembic_version",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "audit_logs",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "audit_logs",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "banners",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "banners",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "categories",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "categories",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "contact_clicks",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "contact_clicks",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "media_assets",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "media_assets",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "post_images",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "post_images",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "posts",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "posts",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "product_images",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "product_images",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "products",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "products",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "site_settings",
+   "anon",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ],
+  [
+   "site_settings",
+   "authenticated",
+   "DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE"
+  ]
+ ],
+ "rls": [
+  [
+   "admin_users",
+   true
+  ],
+  [
+   "alembic_version",
+   false
+  ],
+  [
+   "audit_logs",
+   true
+  ],
+  [
+   "banners",
+   true
+  ],
+  [
+   "categories",
+   true
+  ],
+  [
+   "contact_clicks",
+   true
+  ],
+  [
+   "media_assets",
+   true
+  ],
+  [
+   "post_images",
+   true
+  ],
+  [
+   "posts",
+   true
+  ],
+  [
+   "product_images",
+   true
+  ],
+  [
+   "products",
+   true
+  ],
+  [
+   "site_settings",
+   true
+  ]
+ ],
+ "fn_set_updated_at": [
+  [
+   false,
+   null,
+   "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  ]
+ ],
+ "default_acl": [
+  [
+   "postgres",
+   "r",
+   "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}"
+  ],
+  [
+   "postgres",
+   "f",
+   "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  ],
+  [
+   "postgres",
+   "S",
+   "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}"
+  ],
+  [
+   "supabase_admin",
+   "S",
+   "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}"
+  ],
+  [
+   "supabase_admin",
+   "r",
+   "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}"
+  ],
+  [
+   "supabase_admin",
+   "f",
+   "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}"
+  ]
+ ],
+ "policies_ref_admin_users": [],
+ "storage_policies": [],
+ "table_sizes_kb": [
+  [
+   "admin_users",
+   72
+  ],
+  [
+   "alembic_version",
+   24
+  ],
+  [
+   "audit_logs",
+   80
+  ],
+  [
+   "banners",
+   48
+  ],
+  [
+   "categories",
+   80
+  ],
+  [
+   "contact_clicks",
+   64
+  ],
+  [
+   "media_assets",
+   96
+  ],
+  [
+   "post_images",
+   80
+  ],
+  [
+   "posts",
+   64
+  ],
+  [
+   "product_images",
+   80
+  ],
+  [
+   "products",
+   120
+  ],
+  [
+   "site_settings",
+   32
+  ]
+ ],
+ "activity": [
+  [
+   8,
+   1,
+   "00:00:00"
+  ]
+ ],
+ "pg_dump_needs": [
+  [
+   "17.11"
+  ]
+ ]
+}
