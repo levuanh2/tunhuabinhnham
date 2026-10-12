@@ -61,6 +61,7 @@ This file contains the backend half of the Gate C2 environment inventory. It nam
 - [ ] `SUPABASE_JWKS_URL` equals the issuer plus `/.well-known/jwks.json`.
 - [ ] `SUPABASE_JWT_AUDIENCE=authenticated` unless the project's token audience is deliberately changed and retested.
 - [ ] Asymmetric tokens include `session_id`; revoked sessions return 401.
+- [ ] The `DATABASE_URL` role can `SELECT` on `auth.sessions`. Without it every admin request fails, valid sessions included. Verified read-only on 2026-10-12 for role `postgres` (owner-approved single check; lookup uses the `sessions_pkey` index).
 - [ ] Legacy HS256 tokens are checked through `/auth/v1/user`; no JWT secret is stored in the API.
 
 ### Web boundary
