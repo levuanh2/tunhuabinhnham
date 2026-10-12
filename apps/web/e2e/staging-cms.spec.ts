@@ -105,7 +105,7 @@ test.describe("real Supabase CMS workflow", () => {
     const hiddenResponse = await page.goto(`/san-pham/${productSlug}?e2e=${encodeURIComponent(runId)}`);
     expect(hiddenResponse?.status()).toBe(404);
 
-    const productsResponse = await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(sku)}`, { headers });
+    const productsResponse = await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(product)}`, { headers });
     const createdProduct = (await productsResponse.json()).items?.find((item: { sku: string }) => item.sku === sku);
     if (createdProduct) {
       await request.patch(`${apiUrl}/admin/products/${createdProduct.id}`, { headers, data: { images: [], publish_status: "draft", is_visible: false } });
@@ -238,7 +238,7 @@ test.describe("real Supabase CMS workflow", () => {
       await expect(page.getByLabel("Xuất bản")).toHaveValue("draft");
       await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
       await expect(page).toHaveURL(/\/admin\/san-pham$/);
-      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(sku)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
+      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(productName)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
       productId = created.id;
       expect(created.publish_status).toBe("draft");
       expect((await request.get(`${apiUrl}/products/${productSlug}`)).status()).toBe(404);
@@ -348,7 +348,7 @@ test.describe("real Supabase CMS workflow", () => {
       await expect(page.getByText("Ảnh chính")).toBeVisible();
       await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
       await expect(page).toHaveURL(/\/admin\/san-pham$/);
-      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(sku)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
+      const created = (await (await request.get(`${apiUrl}/admin/products?search=${encodeURIComponent(productName)}`, { headers })).json()).items.find((p: { sku: string }) => p.sku === sku);
       productId = created.id;
       expect(created.publish_status).toBe("draft");
       expect(created.images).toHaveLength(1);

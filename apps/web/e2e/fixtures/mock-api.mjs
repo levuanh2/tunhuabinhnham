@@ -93,7 +93,7 @@ http.createServer((req, res) => {
     if (req.method !== "GET") return send(403, { error: { message: "QA mock: thao tác ghi bị tắt trong môi trường kiểm thử giao diện" } });
     const a = path.slice(6);
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
-    if (a === "/products") { const t = q.get("search")?.toLowerCase(); return send(200, page(t ? products.filter(p => p.name.toLowerCase().includes(t) || p.sku.toLowerCase().includes(t)) : products, q)); }
+    if (a === "/products") { /* mirrors repositories/catalog.py: admin search matches name only */ const t = q.get("search")?.toLowerCase(); return send(200, page(t ? products.filter(p => p.name.toLowerCase().includes(t)) : products, q)); }
     const pm = a.match(/^\/products\/(.+)$/); if (pm) { const p = products.find(x => x.id === pm[1]); return p ? send(200, p) : send(404, { error: { message: "Không tìm thấy" } }); }
     if (a === "/categories") return send(200, cats);
     if (a === "/posts") return send(200, adminPosts);
