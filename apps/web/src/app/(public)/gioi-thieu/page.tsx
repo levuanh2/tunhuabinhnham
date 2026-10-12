@@ -1,3 +1,4 @@
+import { FALLBACK_STORE_NAME } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { publicApi } from "@/lib/api";
@@ -6,7 +7,7 @@ export const metadata: Metadata = { title: "Giới thiệu" };
 
 export default async function AboutPage() {
   const settings = await publicApi.settings().catch(() => null);
-  const storeName = settings?.store_name ?? "Tủ Nhựa Bình Nhâm";
+  const storeName = settings?.store_name ?? FALLBACK_STORE_NAME;
   return <div className="section shell grid gap-10 lg:grid-cols-12">
     <h1 className="display h-page lg:col-span-5">Về {storeName}</h1>
     <div className="max-w-2xl space-y-5 text-lg leading-8 text-ink-soft lg:col-span-7">

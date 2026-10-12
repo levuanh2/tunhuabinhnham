@@ -1,3 +1,4 @@
+import { FALLBACK_STORE_NAME } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
@@ -10,7 +11,7 @@ const navItems = [
   { href: "/lien-he", label: "Liên hệ" },
 ];
 
-export function SiteHeader({ storeName = "Tủ Nhựa Bình Nhâm", logoUrl }: { storeName?: string; logoUrl?: string | null }) {
+export function SiteHeader({ storeName = FALLBACK_STORE_NAME, logoUrl }: { storeName?: string; logoUrl?: string | null }) {
   return <header className="sticky top-0 z-40 border-b border-line bg-bg/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
     <a href="#noi-dung" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded focus:bg-surface focus:px-3 focus:py-2">Bỏ qua điều hướng</a>
     <div className="shell flex h-14 items-center justify-between gap-2 lg:h-[72px] md:gap-4">
