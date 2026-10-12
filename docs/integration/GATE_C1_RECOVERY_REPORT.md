@@ -7,7 +7,11 @@ Not done: deploy, DNS, push, merge to `main`, paid resources, a second run of mi
 
 ## Verdict
 
-**Gate C1: NOT PASS.** The single real E2E authorised for this recovery ran and cleaned up correctly, but one Playwright test failed. The root cause is a test-lookup defect, not a product defect, and it is now fixed and proven on the fixture. Gate C1 needs **one more real run**, which needs the owner's approval.
+**Gate C1: NOT PASS.** Two real runs took place in this recovery, both cleaned up to the baseline:
+- `38fbaf` failed on a spec lookup defect (fixed in `c81fd0f`);
+- `dc33e7` (owner-approved extra run) got past that point and found a **real backend defect**: re-saving a product after reordering images or moving the primary returns `409`.
+
+The backend fix is merged (`6f64a65`) and verified offline. Gate C1 needs one more real run, which needs the owner's approval.
 
 | Area | Result |
 |---|---|
@@ -18,6 +22,9 @@ Not done: deploy, DNS, push, merge to `main`, paid resources, a second run of mi
 | Real E2E `gc-20261012t024424z-38fbaf` | **TEST_FAILED**: pytest_live PASS; Playwright 4 passed, 2 failed, 4 did not run |
 | Cleanup and baseline (harness plus independent check) | **PASS / CLEAN** |
 | Spec fix for the failure | Done: `c81fd0f`. Fixture reproduces the failure with the old spec; the new spec gives 9 passed / 1 skipped |
+| Extra real E2E `gc-20261012t032934z-dc33e7` (owner-approved) | **TEST_FAILED**: pytest_live PASS; Playwright 4 passed, 2 failed (backend 409 on image reorder), 4 did not run. Cleanup **CLEAN** |
+| Backend image-reorder fix | **Done**: Codex `95152a8`, merged as `6f64a65`. Claude verified that the 2 new tests fail on the old code (`UNIQUE constraint failed: post_images.post_id, post_images.sort_order`) and pass with the fix |
+| Regression on `6f64a65` (backend) | PASS: ruff; mypy 46 files; pytest 44 passed / 2 deselected; pip-audit lockfile clean; live dry-run `gc-20261012t040851z-002311` PASS. Web is unchanged since `b2b79a4` (API-only merge) |
 | Backend regression (Codex `BACKEND_REGRESSION=PASS SHA=b2b79a4`, plus Claude independent) | PASS (see Phase G) |
 | Web regression (Claude) | PASS (see Phase G) |
 | npm audit | Not clean, unchanged: ACCEPTED_RISK until 2026-11-10 |
@@ -53,6 +60,7 @@ Pooler session mode ignores `options=-c default_transaction_read_only`, so the c
 | `gc-20261011T181418Z-fc85cd` | real | INTERRUPTED | Ctrl+C during a silent harness (hypothesis) | progress output, timeouts (`9ae8e6e`) |
 | `gc-20261011T185521Z-e0c14c` | real | TEST_FAILED | pytest PASS; Playwright test 1 failed because the uppercase `T`/`Z` in the run id broke the HTML5 slug pattern, so no POST was sent. Reproduced on the fixture | lowercase run id (`5185012`) |
 | `gc-20261012t024424z-38fbaf` | real (**the one authorised in this recovery**) | TEST_FAILED | see below | `c81fd0f` |
+| `gc-20261012t032934z-dc33e7` | real (owner-approved extra run) | TEST_FAILED | backend `409` on image reorder (see below) | Codex `95152a8` |
 
 Earlier root causes were fixed before these runs: CORS origin replacement in the harness (Codex), and form filling before hydration (`1dd0fc7`, Claude).
 
@@ -83,6 +91,29 @@ Earlier root causes were fixed before these runs: CORS origin replacement in the
   - old spec: same `TypeError` (1 failed);
   - fixed spec: **9 passed, 1 skipped** (phone-only test on desktop).
 - **Not yet verified on real Supabase:** the draft→publish/image-order/cache test, and the session/logout and mobile drawer tests, because they did not run.
+
+## Extra real run `gc-20261012t032934z-dc33e7` (owner-approved)
+
+- Integration `e07e42c` (code = `b2b79a4`). Codex was notified on Herdr beforehand.
+- Results:
+  - pytest_live: **PASS**.
+  - Playwright tests 1–2: **PASS** on both projects.
+  - Test 3: the draft was created and found by name, so the `c81fd0f` fix is confirmed on real Supabase. The test then reordered images, moved the primary, set `published` and saved. The page stayed on the editor with an alert, so `toHaveURL` timed out at `staging-cms.spec.ts:263` on both projects.
+  - Tests 4–5 did not run (serial suite).
+- `api.log`: `PATCH /api/v1/admin/products/09a9bd4d-… 409 Conflict` (desktop) and `…/8e8360fe-… 409 Conflict` (mobile).
+- **Root cause (product defect):** `apps/api/app/services/catalog.py:110-121` (`update_product`) updates the existing `ProductImage` rows in place.
+  - The per-row `UPDATE`s transiently collide with `UniqueConstraint(product_id, sort_order)` and with the partial unique index `uq_product_primary_image`; both are non-deferrable.
+  - The resulting `IntegrityError` is mapped by `_conflict()` to `409 "Slug or SKU already exists"`, which is misleading.
+  - The same pattern exists for posts in `apps/api/app/api/v1/admin.py` (`update_post`, `UniqueConstraint(post_id, sort_order)`).
+  - The fixture mock replaces arrays in memory and has no constraints, so it cannot catch this.
+- **Impact:** an admin cannot reorder product photos or change the main photo of an existing product, and is told the slug/SKU is a duplicate. Gate C1 exists to catch exactly this kind of defect.
+- **Fix (Codex `95152a8`):** no migration. Existing images are first moved to temporary `sort_order` values above both the current and the requested maximum (and, for products, `is_primary=False`) and flushed; the final values are applied afterwards. Tests: `test_product_update_swaps_existing_image_order_and_primary` and `test_post_update_swaps_existing_image_order`.
+- **Follow-up (pre-existing, low):** `update_post` does not catch `IntegrityError`, so a duplicate post slug returns 500 instead of 409. `_conflict()` still says "Slug or SKU" for any constraint.
+- Cleanup:
+  - harness: `cleanup_errors: []`, `baseline_problems: []`;
+  - independent read-only check (`ro: on`): identical to the counts below, with Auth/Storage/prefix hits 0;
+  - `site_settings`: only `updated_at` changed (02:52:16 → 03:40:16 UTC, branding test save and restore); `store_name` unchanged;
+  - ports free.
 
 ## Phase F: cleanup verification
 
@@ -146,7 +177,7 @@ Follow-up for Codex: bump the dev pin and the venv tooling.
 
 ## Next step (owner decision)
 
-Approve **one more** real run on `b2b79a4` (same command, same guards):
+Approve **one more** real run on `6f64a65` or later (same command, same guards):
 
 ```bash
 cd /e/Tunhuabinhnham-integration && RUN_LIVE_CMS_E2E=true E2E_RUN_PYTEST_LIVE=true E2E_SECRETS_ENV_FILE='E:\Tunhuabinhnham\apps\api\.env' E2E_EXPECTED_REF_FINGERPRINT=cbda20f5bbaa /e/Tunhuabinhnham/.venv/Scripts/python.exe apps/api/scripts/run_live_cms_e2e.py

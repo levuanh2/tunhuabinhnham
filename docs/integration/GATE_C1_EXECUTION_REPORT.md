@@ -141,7 +141,7 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 
 ## Remaining blockers
 
-1. Phase 5: the owner approves **one more** real run on `b2b79a4`. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
+1. Phase 5: two real runs failed (spec lookup, then a real backend 409 on image reorder, both fixed; see the recovery report). The owner approves **one more** real run on `6f64a65` or later. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
 2. Phase 6: the owner creates the Auth user in the Dashboard (with Auto Confirm) and reports the email. `admin_users` is then upserted (one row).
 3. Phase 7: the owner renames the store through Admin CMS. Claude then verifies header, footer, title/metadata and settings after reload.
 4. Dependency risk expiry 2026-11-10. The Next 16 trial is still BLOCKED_ENVIRONMENT.
