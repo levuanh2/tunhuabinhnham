@@ -4,7 +4,7 @@ This file prepares the temporary Gate C2.1 preview. Committing it does not creat
 
 ## Locked baseline
 
-- Source baseline: `integration/warm-editorial-v2` at `9a19175`, plus the approved Gate C2.1 security commit.
+- Source baseline: `integration/warm-editorial-v2` at `9a19175`, plus the accepted Gate C2.1 web commit `a62d5ac` and the reviewed Render preview commits.
 - Live database revision: `0004`. Gate C2.1 adds no migration.
 - Blueprint: root `render.yaml`, one Python web service, Singapore region, free plan, source branch `deploy/c2-preview`, one worker, auto-deploy off, no Render Postgres, no disk, and no pre-deploy command.
 - Python: `3.11.17`, pinned through the fully qualified `PYTHON_VERSION` environment variable. Python.org lists 3.11.17 as a released security version, and Render accepts any released fully qualified version from 3.7.3 onward.
@@ -96,7 +96,7 @@ The `auth.sessions` check adds one indexed database lookup for locally verified 
 7. Secret scan over tracked files and the staged diff.
 8. Blueprint schema validation without syncing or creating resources.
 
-Gate C2.1 replaces the temporary Next/PostCSS risk acceptance with Next `16.4.0` (PostCSS `8.5.23`), matching `eslint-config-next 16.4.0`, and `@opennextjs/cloudflare 1.20.10`. The release gate requires the installed production dependency audit to remain free of Moderate, High, and Critical findings.
+Gate C2.1 replaces the temporary Next/PostCSS risk acceptance with Next `16.3.8`, matching `eslint-config-next 16.3.8`, `@opennextjs/cloudflare 1.20.10`, and the deduplicated PostCSS `8.5.23` installed tree. The release gate requires the installed production dependency audit to remain free of Moderate, High, and Critical findings.
 
 ## Sources
 
