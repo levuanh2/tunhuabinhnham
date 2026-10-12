@@ -124,6 +124,11 @@ def _merge_frontend_origins(raw: str | None, web_port: int) -> str:
     return json.dumps(origins)
 
 
+def _make_run_id(now: datetime, suffix: str) -> str:
+    """Return an identifier that is safe inside HTML5/Zod slug fields."""
+    return f"gc-{now.astimezone(UTC):%Y%m%dt%H%M%Sz}-{suffix.lower()}"
+
+
 def _load_env_file(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -431,8 +436,8 @@ def main() -> int:
             _progress("guard", f"FAILED: port {port} is in use")
             return INFRA_FAILED
     projects = [p for p in os.environ.get("E2E_PROJECTS", "desktop,mobile").split(",") if p]
-    run_id = f"gc-{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{secrets.token_hex(3)}"
-    record_prefix, slug_prefix = f"__e2e_{run_id}_", f"e2e-{run_id}-"
+    run_id = _make_run_id(datetime.now(UTC), secrets.token_hex(3))
+    record_prefix, slug_prefix = f"__e2e_{run_id}_", f"e2e-{run_id}"
     run_dir = Path(os.environ.get("E2E_BACKUP_ROOT", r"E:\Tunhuabinhnham-backups")) / run_id
     manifest = Manifest(run_dir / "manifest.jsonl")
     manifest.add("run", run_id=run_id, dry_run=args.dry_run, fingerprint=expected, web_port=web_port,

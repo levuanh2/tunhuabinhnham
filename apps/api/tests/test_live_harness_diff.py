@@ -3,9 +3,11 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -74,6 +76,17 @@ def test_frontend_origins_merge_deduplicates_harness_origin() -> None:
 
     assert merged.count("http://localhost:3200") == 1
     assert "http://127.0.0.1:3200" in merged
+
+
+def test_run_id_and_slug_prefix_are_lowercase_slug_safe() -> None:
+    run_id = harness._make_run_id(
+        datetime(2026, 10, 11, 18, 55, 21, tzinfo=UTC), "A1B2C3"
+    )
+    slug_prefix = f"e2e-{run_id}"
+
+    assert run_id == "gc-20261011t185521z-a1b2c3"
+    assert re.fullmatch(r"[a-z0-9-]+", run_id)
+    assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug_prefix)
 
 
 def _settings_snapshot() -> dict[str, Any]:
