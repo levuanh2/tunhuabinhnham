@@ -25,7 +25,7 @@
     "@tiptap/starter-kit": "^3.6.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",
-    "next": "^15.5.4",
+    "next": "16.3.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.63.0",
@@ -34,7 +34,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "1.20.9",
+    "@opennextjs/cloudflare": "1.20.10",
     "@playwright/test": "^1.55.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@testing-library/jest-dom": "^6.8.0",
@@ -44,7 +44,7 @@
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9.36.0",
-    "eslint-config-next": "^15.5.4",
+    "eslint-config-next": "16.3.8",
     "jsdom": "^27.0.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
