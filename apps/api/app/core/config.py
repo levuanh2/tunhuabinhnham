@@ -7,10 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # hide_input_in_errors: a validation error must never echo DATABASE_URL or keys back.
-    model_config = SettingsConfigDict(
-        env_file=(".env", "apps/api/.env"), extra="ignore", hide_input_in_errors=True
-    )
+    model_config = SettingsConfigDict(env_file=(".env", "apps/api/.env"), extra="ignore")
 
     app_env: Literal["development", "test", "staging", "production"] = "development"
     port: int = Field(default=8000, ge=1, le=65535)

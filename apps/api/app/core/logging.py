@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import sys
 from datetime import UTC, datetime
 
 _SECRET_PATTERNS = (
@@ -58,5 +57,3 @@ def configure_logging() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(logging.INFO)
-    # Uncaught startup errors bypass logging; route them through the redacting formatter.
-    sys.excepthook = lambda kind, exc, tb: root.critical("Unhandled exception", exc_info=(kind, exc, tb))
