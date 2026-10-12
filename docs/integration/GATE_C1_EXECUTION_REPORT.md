@@ -1,6 +1,8 @@
 # Gate C1 execution report
 
-Integration branch `integration/warm-editorial-v2` @ **`5d4d62c`**. Date: 2026-10-12 (Asia/Ho_Chi_Minh).
+Integration branch `integration/warm-editorial-v2` @ **`b2b79a4`** (originally written at `5d4d62c`; updated after the recovery). Date: 2026-10-12 (Asia/Ho_Chi_Minh).
+
+Recovery details: [`GATE_C1_RECOVERY_REPORT.md`](GATE_C1_RECOVERY_REPORT.md).
 
 Not done in this gate: deploy, DNS change, push, merge to `main`, paid resources, destructive DB operations, incident rollback.
 
@@ -13,7 +15,8 @@ Not done in this gate: deploy, DNS change, push, merge to `main`, paid resources
 | 3. Migration 0004 | **PASS**: revision `0004` (Codex; independently verified read-only by Claude) |
 | 3. Supabase Security Advisor | **PASS**: 0 WARN/ERROR, 5 INFO (intended) |
 | 4. Harness repair + Playwright specs | **PASS** (harness dry-run against live, read-only; specs dry-run on fixture) |
-| 5. Real Supabase E2E (synthetic writes) | **BLOCKED**: the command was denied by Claude Code's auto-mode safety classifier ("Modify Shared Resources"). The owner must run it (see below) |
+| 5. Real Supabase E2E (synthetic writes) | **FAIL (cleanup PASS)**: run `gc-20261012t024424z-38fbaf`. pytest_live PASS; Playwright 4 passed / 2 failed / 4 did not run. Root cause was a spec lookup defect, fixed in `c81fd0f`. Another real run needs owner approval |
+| 5. Cleanup + baseline after real runs | **PASS**: harness and independent read-only check both CLEAN |
 | 6. Permanent admin account | **BLOCKED**: the owner has not created it yet |
 | 7. Store brand correction | **BLOCKED**: depends on Phase 6. The live value is still "Tủ Hòa Bình Nhâm" |
 | 8. Responsive QA, fixture data | **PASS**: 85/85 screenshots pixel-identical to the approved set, 0 overflow; Playwright 28 passed / 2 skipped |
@@ -90,7 +93,11 @@ Owner approvals given directly in Codex's pane during the run: Docker/inspect co
   - **New:** draft→publish with category retention after editing another field, image reorder + primary persisted after reload, cache invalidation on detail/listing; SSR session across reload/new page, **expired session** cookie rejected, logout clears `sb-*-auth-token`; mobile (WebKit) drawer + draft product.
   - Dry-run on the fixture API: 5 passed, 1 skipped (phone-only test on desktop).
 
-## Phase 5: Real E2E. **BLOCKED (permission)**
+## Phase 5: Real E2E. **FAIL, cleanup PASS** (see the recovery report)
+
+The permission block was later lifted; the harness ran from Claude's session. Three real runs took place (`fc85cd` interrupted, `e0c14c` and `38fbaf` TEST_FAILED), each cleaned up to the baseline. The last failure: the spec searched `/admin/products?search=<SKU>`, but the API searches `name` only. This is fixed in `c81fd0f`, and the fixture now reproduces the failure with the old spec. The original blocked note follows for the record.
+
+### Original note (superseded)
 
 Claude's attempt to start the run was denied by the session's auto-mode safety classifier. Claude did not work around it. **Owner command** (Bash, from this session with `!`, or any shell):
 
@@ -107,6 +114,8 @@ It prints one JSON summary line. The manifest, baseline, after and logs go to `E
 
 ## Phase 9: Regression on `5d4d62c`
 
+Rerun on **`b2b79a4`** after the recovery: everything below PASS again (Codex `BACKEND_REGRESSION=PASS`; Claude web matrix; visual 85/85; fixture Playwright 28 passed / 12 skipped; `staging-cms` fixture dry-run 9 passed / 1 skipped). Venv-wide pip-audit shows dev/tooling-only advisories (`pytest` 8.4.2, `pip`, `setuptools`); the runtime lockfile is clean. The table shows the original `5d4d62c` run.
+
 | Check | Result |
 |---|---|
 | Ruff | PASS |
@@ -120,7 +129,7 @@ It prints one JSON summary line. The manifest, baseline, after and logs go to `E
 | Playwright fixture suite (Chromium + WebKit) | PASS: 28 passed, 2 skipped |
 | Visual regression vs approved | PASS: 85/85 identical |
 | Playwright `public.spec` on the real API | PASS: 4/4 |
-| Real Supabase E2E | **BLOCKED** (Phase 5) |
+| Real Supabase E2E | **FAIL**, cleanup PASS (Phase 5) |
 | npm audit (all) | **7**: 6 high, 1 moderate |
 | npm audit `--omit=dev` | **2**: `postcss` **high**, `next` **moderate** |
 
@@ -132,12 +141,13 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 
 ## Remaining blockers
 
-1. Phase 5: the owner runs the harness command above, then Claude verifies the manifest, cleanup and baseline diff (including the 2 contact_clicks).
+1. Phase 5: the owner approves **one more** real run on `b2b79a4`. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
 2. Phase 6: the owner creates the Auth user in the Dashboard (with Auto Confirm) and reports the email. `admin_users` is then upserted (one row).
 3. Phase 7: the owner renames the store through Admin CMS. Claude then verifies header, footer, title/metadata and settings after reload.
 4. Dependency risk expiry 2026-11-10. The Next 16 trial is still BLOCKED_ENVIRONMENT.
 5. Follow-up migration for the sequence default ACL (low).
 6. Codex's checkpoint file is uncommitted in `fix/postcss-security`; Codex should commit or move it when its quota is available.
+7. Dev dependency hygiene: bump the `pytest<9` pin (PYSEC-2026-1845) and the venv `pip`/`setuptools` (Codex).
 
 ## Gate C2 readiness
 
