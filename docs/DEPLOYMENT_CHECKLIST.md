@@ -15,6 +15,7 @@
 ## Backend staging/production
 
 - [ ] Cấu hình secrets dashboard, không đưa vào YAML.
+- [ ] `SUPABASE_JWT_ISSUER` bằng chính xác `${SUPABASE_URL}/auth/v1` (không có dấu `/` cuối), khớp claim `iss` mà backend xác minh; `SUPABASE_JWKS_URL` bằng issuer + `/.well-known/jwks.json`.
 - [ ] `/health/live` 200 khi DB down; `/health/ready` 503 khi dependency lỗi và 200 khi bình thường.
 - [ ] Swagger hoạt động, production error không lộ trace/secrets.
 - [ ] Allowed/disallowed origin và Authorization preflight đúng.
