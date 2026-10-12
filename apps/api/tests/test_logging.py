@@ -74,3 +74,22 @@ def test_redact_secrets_redacts_complete_url_with_unencoded_at_in_password() -> 
     assert "synthetic-secret" not in redacted
     assert "hidden" not in redacted
     assert redacted == "postgresql://db_user:[REDACTED]@db.example:5432/postgres"
+
+
+def test_startup_validation_error_is_redacted_and_hides_settings(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from app.core.config import Settings
+    from app.core.logging import configure_logging
+
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:SYNTHETICPW@h.example:5432/db")
+    monkeypatch.setenv("SUPABASE_SECRET_KEY", "sb_secret_SYNTHETICKEY")
+    configure_logging()
+    try:
+        Settings(_env_file=None)  # type: ignore[call-arg]
+    except Exception:
+        sys.excepthook(*sys.exc_info())  # type: ignore[arg-type]
+    else:  # pragma: no cover
+        raise AssertionError("invalid production settings must fail")
+    err = capsys.readouterr().err
+    assert '"level": "CRITICAL"' in err
+    assert "SYNTHETICPW" not in err and "SYNTHETICKEY" not in err and "input_value" not in err
