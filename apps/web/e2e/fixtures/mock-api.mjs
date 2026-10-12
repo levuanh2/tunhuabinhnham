@@ -58,6 +58,7 @@ const session = () => { const exp = Math.floor(Date.now() / 1000) + 3600; const 
 products[3].publish_status = "draft"; products[5].is_visible = false;
 const initialProducts = structuredClone(products);
 const adminPosts = posts.map(p => ({ ...p, seo_title: null, seo_description: null }));
+let outage = false; /* POST /__outage?on=1 makes public endpoints return 503 (edge-cache degraded tests) */
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x"); const path = u.pathname.replace(/^\/api\/v1/, ""); const q = u.searchParams;
   const send = (code, body) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*" }); res.end(code === 204 ? "" : JSON.stringify(body)); };
@@ -67,6 +68,8 @@ http.createServer((req, res) => {
   if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (u.searchParams.get("grant_type") === "refresh_token") return issued.delete(`r:${b.refresh_token}`) ? send(200, session()) : send(400, { error: "invalid_grant", msg: "Invalid Refresh Token", code: "refresh_token_not_found" }); if (b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
   if (u.pathname === "/auth/v1/user") return issued.has((req.headers.authorization ?? "").replace(/^Bearer /, "")) ? send(200, user) : send(401, { msg: "invalid JWT" });
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
+  if (u.pathname === "/__outage" && req.method === "POST") { outage = q.get("on") === "1"; return send(200, { outage }); }
+  if (outage && !u.pathname.startsWith("/__") && !path.startsWith("/admin")) return send(503, { error: { message: "Simulated outage" } });
   if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); Object.assign(settings, structuredClone(initialSettings)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
     // In-memory writes so UI specs can be dry-run locally (incl. staging-cms.spec.ts with E2E_* pointing here).

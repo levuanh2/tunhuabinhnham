@@ -1,5 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { purgeEdgeCache } from "@/lib/edge-cache";
 
 export async function POST(request: Request) {
   const authorization = request.headers.get("authorization");
@@ -10,5 +12,11 @@ export async function POST(request: Request) {
   // Route handlers cannot use updateTag; expire: 0 makes the next request wait for fresh data instead of serving stale.
   revalidateTag("catalog", { expire: 0 });
   revalidatePath("/", "layout");
+  try {
+    await purgeEdgeCache(getCloudflareContext().ctx);
+  } catch {
+    // The save succeeded but cached pages would stay stale for up to s-maxage: report it to the admin.
+    return NextResponse.json({ error: "Edge cache purge failed" }, { status: 502, headers: { "Cache-Control": "no-store" } });
+  }
   return NextResponse.json({ revalidated: true }, { headers: { "Cache-Control": "no-store" } });
 }

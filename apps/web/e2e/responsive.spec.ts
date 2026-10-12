@@ -287,3 +287,72 @@ test("17. logout redirects, Back does not reopen admin, and replayed pre-logout 
   await expect(replayPage).toHaveURL(/\/admin\/login/);
   await replay.close();
 });
+
+/* Edge cache (worker.ts + src/lib/edge-cache.ts). The Workers Cache key ignores cookies, Authorization and
+   the host, so every response that is not anonymous public HTML must keep private/no-store. */
+const isPublic = (cc: string | null) => /\bpublic\b/.test(cc ?? "") && /s-maxage=\d+/.test(cc ?? "");
+
+test("18. only anonymous public HTML is edge-cacheable; admin, API, RSC and redirects stay private", async ({ request, baseURL }) => {
+  test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
+  for (const path of ["/", "/san-pham", "/san-pham?category=tu-quan-ao", "/san-pham/tu-5-tang", "/tin-tuc", "/tin-tuc/chon-tu-phong-ngu", "/lien-he", "/gioi-thieu"]) {
+    const response = await request.get(path);
+    expect(response.status(), path).toBe(200);
+    expect(isPublic(response.headers()["cache-control"]), path).toBe(true);
+    expect(response.headers()["cache-tag"], path).toBe("public-html");
+    expect(response.headers()["vary"], path).toMatch(/rsc/);
+    expect(response.headers()["set-cookie"], path).toBeUndefined();
+  }
+  const privatePaths: [string, Record<string, string>][] = [
+    ["/admin", {}], ["/admin/san-pham", {}], ["/admin/login", {}], ["/san-pham/khong-ton-tai", {}],
+    ["/?_rsc=1", { rsc: "1" }], ["/san-pham", { rsc: "1", "next-router-prefetch": "1" }],
+    ["/", { cookie: "sb-127-auth-token=base64-eyJ" }], ["/", { authorization: "Bearer a.b.c" }],
+  ];
+  for (const [path, headers] of privatePaths) {
+    const response = await request.get(path, { headers, maxRedirects: 0 });
+    expect(isPublic(response.headers()["cache-control"] ?? null), `${path} ${JSON.stringify(headers)}`).toBe(false);
+    expect(response.headers()["cache-tag"], path).toBeUndefined();
+  }
+  const logout = await request.post("/api/auth/logout", { headers: { origin: new URL(baseURL!).origin } });
+  expect(isPublic(logout.headers()["cache-control"] ?? null)).toBe(false);
+});
+
+test("19. signed-in admin pages, admin data and logout are never edge-cacheable", async ({ page }) => {
+  test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
+  const seen: string[] = [];
+  page.on("response", response => {
+    const url = new URL(response.url());
+    if (url.port === "8787" && (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/"))) {
+      if (isPublic(response.headers()["cache-control"] ?? null) || response.headers()["cache-tag"]) seen.push(`${response.status()} ${url.pathname}${url.search}`);
+    }
+  });
+  await login(page);
+  for (const path of ["/admin", "/admin/san-pham", "/admin/cai-dat", "/admin/bai-viet"]) await page.goto(path);
+  // A public page visited with the session cookie is rendered but not stored for others.
+  const withSession = await page.request.get("/");
+  expect(isPublic(withSession.headers()["cache-control"])).toBe(false);
+  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  expect(seen).toEqual([]);
+  // After logout an anonymous context gets the redirect, not a cached admin page.
+  const anonymous = await page.context().browser()!.newContext({ baseURL: new URL(page.url()).origin });
+  const anonPage = await anonymous.newPage();
+  await anonPage.goto("/admin/san-pham");
+  await expect(anonPage).toHaveURL(/\/admin\/login/);
+  await anonymous.close();
+});
+
+test("20. a page rendered while the API is failing is served but never marked cacheable", async ({ request }) => {
+  test.skip(test.info().project.name !== "desktop", "mutates the shared fixture outage switch");
+  const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
+  try {
+    await request.post(`${mock}/__outage?on=1`);
+    for (const path of ["/", "/san-pham", "/tin-tuc"]) {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200); // degraded page still served (C2 behaviour)
+      expect(isPublic(response.headers()["cache-control"]), path).toBe(false);
+    }
+  } finally {
+    await request.post(`${mock}/__outage?on=0`);
+  }
+  expect(isPublic((await request.get("/")).headers()["cache-control"])).toBe(true);
+});

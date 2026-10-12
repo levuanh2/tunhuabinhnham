@@ -1,0 +1,58 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+
+/*
+ * Workers Cache policy (worker.ts). The cache key is path + query only: cookies, Authorization and the host
+ * are NOT part of it, so a response marked public here is served to every visitor on every hostname.
+ * Only anonymous, fully rendered public pages may ever get the public header.
+ */
+
+export const EDGE_CACHE_TAG = "public-html";
+// s-maxage is a backstop; admin saves purge the tag through /api/revalidate.
+export const EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=300";
+
+const PUBLIC_PATH = /^\/(?:|san-pham(?:\/[^/]+)?|tin-tuc(?:\/[^/]+)?|lien-he|gioi-thieu)$/;
+const RSC_HEADERS = ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"];
+const SESSION_COOKIE = /(?:^|;\s*)sb-[^=;]*-auth-token/;
+
+type RenderState = { degraded: boolean };
+// One instance shared by worker.ts and the Next server bundle (they are bundled separately).
+const KEY = Symbol.for("tunhuabinhnham.render-state");
+const shared = globalThis as typeof globalThis & { [KEY]?: AsyncLocalStorage<RenderState> };
+export const renderState = (shared[KEY] ??= new AsyncLocalStorage<RenderState>());
+
+/** apiFetch calls this when it falls back: a page built from fallback data must never be cached. */
+export function markRenderDegraded() {
+  const state = renderState.getStore();
+  if (state) state.degraded = true;
+}
+
+export function isEdgeCacheableRequest(request: Request): boolean {
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+  const url = new URL(request.url);
+  if (!PUBLIC_PATH.test(url.pathname) || url.searchParams.has("_rsc")) return false;
+  const headers = request.headers;
+  if (headers.has("authorization") || RSC_HEADERS.some(name => headers.has(name))) return false;
+  return !SESSION_COOKIE.test(headers.get("cookie") ?? "");
+}
+
+/** Headers that make the response edge-cacheable, or null to keep Next's private/no-store headers. */
+export function edgeCacheHeaders(response: Response, degraded: boolean): Headers | null {
+  if (degraded || response.status !== 200 || response.headers.has("set-cookie")) return null;
+  if (!(response.headers.get("content-type") ?? "").startsWith("text/html")) return null;
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", EDGE_CACHE_CONTROL);
+  headers.set("Cache-Tag", EDGE_CACHE_TAG);
+  // An RSC request for the same URL must never be answered with this HTML variant.
+  if (!/\brsc\b/i.test(headers.get("vary") ?? "")) headers.append("Vary", RSC_HEADERS.join(", "));
+  return headers;
+}
+
+type CachePurger = { cache?: { purge(options: { tags: string[] }): Promise<unknown> } };
+
+/** Purges every cached public page. Returns false when the Worker has no cache API (local dev, cache disabled). */
+export async function purgeEdgeCache(ctx: unknown): Promise<boolean> {
+  const cache = (ctx as CachePurger | undefined)?.cache;
+  if (!cache) return false;
+  await cache.purge({ tags: [EDGE_CACHE_TAG] });
+  return true;
+}

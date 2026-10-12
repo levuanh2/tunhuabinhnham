@@ -1,9 +1,11 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tunhuabinhnham-web",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-10-10",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Workers Cache: worker.ts marks only anonymous public pages cacheable (src/lib/edge-cache.ts).
+  "cache": { "enabled": true },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
