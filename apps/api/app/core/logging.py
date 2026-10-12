@@ -6,7 +6,17 @@ from datetime import UTC, datetime
 _SECRET_PATTERNS = (
     (re.compile(r"(?i)bearer\s+[a-z0-9._~-]+"), "Bearer [REDACTED]"),
     (
-        re.compile(r"(?i)(postgres(?:ql)?(?:\+psycopg)?://[^:\s/@]+:)[^@\s]+(@)"),
+        re.compile(
+            r"(?i)(postgres(?:ql)?(?:\+psycopg)?://[^:\s/@]+:)"
+            r"[^\s'\"]+(@(?:\[[^\]\s]+\]|[^/@\s?#]+)(?::\d+)?)(?=[/?#'\"\s]|$)"
+        ),
+        r"\1[REDACTED]\2",
+    ),
+    (
+        re.compile(
+            r"(?i)(?<![a-z0-9._-])([a-z0-9._-]+:)"
+            r"[^\s'\"/]+(@(?:\[[^\]\s]+\]|[a-z0-9.-]+)(?::\d+)?)(?=[/'\"\s]|$)"
+        ),
         r"\1[REDACTED]\2",
     ),
     (re.compile(r"\bsb_(?:secret|service_role)_[A-Za-z0-9_-]+\b"), "[REDACTED_SUPABASE_KEY]"),
