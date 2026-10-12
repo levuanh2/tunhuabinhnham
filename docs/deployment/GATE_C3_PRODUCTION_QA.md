@@ -83,7 +83,11 @@ After redeploy, on both origins: `<link rel="canonical" href="https://tunhuabinh
 ## 4. Security blockers
 
 - **DB credential (P0):** a fragment was printed in a Claude tool output (Gate C2.1). Codex scanned Git history (51 commits, 5,548 blobs), the workspace, harness logs, scratch files and PowerShell history without printing values: no second copy apart from the expected ignored `apps/api/.env`. Render logs were not inspected (no access). **Rotation runbook:** backend report §1. Not rotated yet (owner deferred in C2.1).
-- **Redaction gaps (Codex finding):** the log redactor can miss scheme-less credential fragments, and the SQLAlchemy engine is created before the redacting formatter is installed, so a boot-time traceback could reach Render stderr unredacted. Code fix pending.
+- **Redaction gaps — fixed in code, not yet running on Render:**
+  - Codex `7cceb99`: the redacting formatter is installed when the `app` package is imported, before settings validation or the SQLAlchemy engine; the redactor also catches scheme-less `user:password@host` fragments and unencoded `@`.
+  - Claude `96884dc`: a failed production `Settings` validation printed a **raw traceback** whose pydantic message embeds `input_value={...all settings...}`. A probe with synthetic secrets showed only truncation was hiding `DATABASE_URL`. Fix: `hide_input_in_errors=True` and `sys.excepthook` routed through the redacting JSON formatter. Startup failures are now one JSON `CRITICAL` line naming the missing variables only. The new test fails on `7cceb99`.
+  - Backend 69 passed, ruff and mypy clean. Pushed in `deploy/c2-preview` @ `a99bed4`; it takes effect at the next Render deploy (auto-deploy off), which the password rotation needs anyway.
+  - `deploy/c2-preview` also carried `59f01f7` (removes `maxShutdownDelaySeconds`, unsupported on Render Free), pushed outside this session during Blueprint creation; merged, not overwritten.
 - **Secrets:** Worker bundle checked against the real secret values: clean. Production `npm audit`: 0. pip-audit on the lockfile: clean.
 - **JWT revocation:** unit-tested; live replay not verified. The legacy HS256 path relies on Supabase `/auth/v1/user`, not the `auth.sessions` check (backend report §3).
 
@@ -168,7 +172,7 @@ All of this is CMS data for the owner to enter; nothing was written.
 4. Sign in on the apex and run the admin checks, including the DevTools replay of a pre-logout request.
 5. Render dashboard: log search for leaked values (backend report §4) and memory readings.
 6. Enter real CMS content: Messenger, Facebook, hotline, address, logo, favicon, products, banners.
-7. Codex code fix for the log-redaction gaps.
+7. Redeploy Render from `deploy/c2-preview` (`a99bed4`) together with the password rotation, so the redaction fixes go live.
 8. Optional: Render Starter ($7/month) to remove the 37 s cold start.
 
 Rollback: `npx wrangler rollback 0c3003a0-f88c-4eb8-83ad-d60086d859e6` restores the pre-fix Worker. That version has the `workers.dev` canonical bug, so use it only if the new version breaks.
