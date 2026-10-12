@@ -220,15 +220,27 @@ def update_post(
         setattr(item, key, value)
     if data.images is not None:
         existing = {image.storage_key: image for image in item.images}
+        current_max = max((image.sort_order for image in item.images), default=-1)
+        requested_max = max((image.sort_order for image in data.images), default=-1)
+        temporary_order = max(current_max, requested_max) + 1
+        for image in item.images:
+            image.sort_order = temporary_order
+            temporary_order += 1
+        db.flush()
+
         reconciled: list[PostImage] = []
         for image_data in data.images:
-            image = existing.pop(image_data.storage_key, None)
-            if image is None:
-                image = PostImage(**image_data.model_dump())
+            reconciled_image = (
+                existing.pop(image_data.storage_key)
+                if image_data.storage_key in existing
+                else None
+            )
+            if reconciled_image is None:
+                reconciled_image = PostImage(**image_data.model_dump())
             else:
                 for key, value in image_data.model_dump().items():
-                    setattr(image, key, value)
-            reconciled.append(image)
+                    setattr(reconciled_image, key, value)
+            reconciled.append(reconciled_image)
         item.images[:] = reconciled
     if item.publish_status == PublishStatus.published and item.published_at is None:
         item.published_at = datetime.now(UTC)

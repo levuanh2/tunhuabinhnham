@@ -41,3 +41,39 @@ def test_post_image_sort_order_must_be_unique(admin_client: TestClient) -> None:
         },
     )
     assert response.status_code == 422
+
+
+def test_post_update_swaps_existing_image_order(admin_client: TestClient) -> None:
+    first = {
+        "storage_key": "2026/10/post-first.webp",
+        "url": "https://example.com/post-first.webp",
+        "alt_text": "First",
+        "sort_order": 0,
+    }
+    second = {
+        "storage_key": "2026/10/post-second.webp",
+        "url": "https://example.com/post-second.webp",
+        "alt_text": "Second",
+        "sort_order": 1,
+    }
+    created = admin_client.post(
+        "/api/v1/admin/posts",
+        json={
+            "title": "Reorderable post",
+            "slug": "reorderable-post",
+            "images": [first, second],
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    first["sort_order"] = 1
+    second["sort_order"] = 0
+    updated = admin_client.patch(
+        f"/api/v1/admin/posts/{created.json()['id']}",
+        json={"images": [second, first]},
+    )
+
+    assert updated.status_code == 200, updated.text
+    images = {image["storage_key"]: image for image in updated.json()["images"]}
+    assert images[first["storage_key"]]["sort_order"] == 1
+    assert images[second["storage_key"]]["sort_order"] == 0
