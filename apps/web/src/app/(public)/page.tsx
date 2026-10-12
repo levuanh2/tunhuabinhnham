@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { FALLBACK_STORE_NAME } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +9,8 @@ import { SectionHeading } from "@/components/section-heading";
 import { publicApi } from "@/lib/api";
 import { safeMessengerUrl } from "@/lib/messenger";
 import type { Product } from "@/types/api";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const primaryImage = (product: Product) => product.images.find(item => item.is_primary) ?? product.images[0];
 

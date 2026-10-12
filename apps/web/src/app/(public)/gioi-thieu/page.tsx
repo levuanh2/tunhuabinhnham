@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { publicApi } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Giới thiệu" };
+export const metadata: Metadata = { title: "Giới thiệu", alternates: { canonical: "/gioi-thieu" } };
 
 export default async function AboutPage() {
   const settings = await publicApi.settings().catch(() => null);

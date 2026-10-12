@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { publicApi } from "@/lib/api";
 import { safeMessengerUrl } from "@/lib/messenger";
 
-export const metadata: Metadata = { title: "Liên hệ" };
+export const metadata: Metadata = { title: "Liên hệ", alternates: { canonical: "/lien-he" } };
 
 export default async function ContactPage() {
   const settings = await publicApi.settings().catch(() => null);

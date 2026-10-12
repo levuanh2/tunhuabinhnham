@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PostCard } from "@/components/post-card";
 import { publicApi } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Tin tức", description: "Mẹo chọn tủ nhựa, sắp xếp nhà cửa và thông tin mới từ cửa hàng." };
+export const metadata: Metadata = { title: "Tin tức", description: "Mẹo chọn tủ nhựa, sắp xếp nhà cửa và thông tin mới từ cửa hàng.", alternates: { canonical: "/tin-tuc" } };
 
 export default async function PostsPage() {
   const posts = await publicApi.posts().catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 }));

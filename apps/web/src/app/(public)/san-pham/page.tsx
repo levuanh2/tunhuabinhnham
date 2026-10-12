@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import { ProductFilters } from "@/components/product-filters";
 import { publicApi } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Sản phẩm", description: "Tủ nhựa, tủ quần áo, tủ ngăn kéo và kệ lưu trữ. Lọc theo danh mục, giá và tìm theo tên." };
+export const metadata: Metadata = { title: "Sản phẩm", description: "Tủ nhựa, tủ quần áo, tủ ngăn kéo và kệ lưu trữ. Lọc theo danh mục, giá và tìm theo tên.", alternates: { canonical: "/san-pham" } };
 
 const FILTER_KEYS = ["search", "category", "min_price", "max_price", "sort", "page"] as const;
 type Params = Promise<Record<string, string | string[] | undefined>>;
