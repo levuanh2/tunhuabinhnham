@@ -1,3 +1,4 @@
+import { FALLBACK_STORE_NAME } from "@/lib/brand";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
@@ -23,7 +24,7 @@ export default async function HomePage() {
   const arrivals = products.items.filter(p => !featured.includes(p)).slice(0, 8);
   const withImages = products.items.filter(p => primaryImage(p));
   const introSrc = banners[1]?.image_url ?? (withImages[1] ? primaryImage(withImages[1])!.url : null);
-  const storeName = settings?.store_name ?? "Tủ Nhựa Bình Nhâm";
+  const storeName = settings?.store_name ?? FALLBACK_STORE_NAME;
   const messenger = safeMessengerUrl(settings?.messenger_url ?? settings?.facebook_url);
   const secondaryCta = banner?.cta_url && banner.cta_label && banner.cta_url !== "/san-pham" ? { href: banner.cta_url, label: banner.cta_label } : null;
 

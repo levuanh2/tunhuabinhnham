@@ -1,8 +1,9 @@
+import { FALLBACK_STORE_NAME } from "@/lib/brand";
 import Link from "next/link";
 import type { SiteSettings } from "@/types/api";
 
 export function SiteFooter({ settings }: { settings?: SiteSettings | null }) {
-  const storeName = settings?.store_name ?? "Tủ Nhựa Bình Nhâm";
+  const storeName = settings?.store_name ?? FALLBACK_STORE_NAME;
   const facebook = settings?.facebook_url;
   return <footer className="mt-auto bg-ink pb-[env(safe-area-inset-bottom)] text-[#d9d3cb]">
     <div className="shell grid gap-8 py-12 md:grid-cols-[1.4fr_1fr_1fr] md:gap-10 md:py-16">

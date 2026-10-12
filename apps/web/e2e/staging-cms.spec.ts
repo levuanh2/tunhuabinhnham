@@ -324,6 +324,18 @@ test.describe("real Supabase CMS workflow", () => {
     expect((await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token") && c.value)).toHaveLength(0);
     await gotoReady(page, "/admin/cai-dat");
     await expect(page).toHaveURL(/\/admin\/login/);
+
+    // Back button after logout must not resurrect a protected page (no bfcache/HTTP cache copy).
+    await page.goBack();
+    await expect(page).not.toHaveURL(/\/admin\/(san-pham|bai-viet|cai-dat)$/);
+
+    // Replaying the cookies captured while signed in must fail: logout revoked the Supabase session.
+    const replay = await browser.newContext({ baseURL });
+    await replay.addCookies(authCookies);
+    const replayPage = await replay.newPage();
+    await replayPage.goto("/admin/san-pham");
+    await expect(replayPage).toHaveURL(/\/admin\/login/);
+    await replay.close();
   });
 
   test("mobile admin workflow: drawer navigation and draft product creation", async ({ page, request }, testInfo) => {

@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -17,6 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  // Render public pages per request so a build without API access can never bake in fallback content.
+  // API responses stay in the Data Cache (revalidate 60s, tag "catalog"); admin saves call revalidateTag.
+  await connection();
   const settings = await getSettings();
   return <><SiteHeader storeName={settings?.store_name} logoUrl={settings?.logo_url} /><main id="noi-dung">{children}</main><SiteFooter settings={settings} /></>;
 }

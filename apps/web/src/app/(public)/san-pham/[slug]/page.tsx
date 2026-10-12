@@ -8,11 +8,21 @@ import { ProductGallery } from "@/components/product-gallery";
 import { SectionHeading } from "@/components/section-heading";
 import { StickyContact } from "@/components/sticky-contact";
 import { publicApi } from "@/lib/api";
+import { getStoreName } from "@/lib/brand";
 import { formatPrice } from "@/lib/format";
 import { allowedMessengerUrl } from "@/lib/messenger";
 
 type Props = { params: Promise<{ slug: string }> };
-export async function generateMetadata({ params }: Props): Promise<Metadata> { try { const product = await publicApi.product((await params).slug); return { title: product.name, description: product.description?.slice(0, 155), alternates: { canonical: `/san-pham/${product.slug}` }, openGraph: { title: product.name, images: product.images[0]?.url ? [product.images[0].url] : [] } }; } catch { return { title: "Không tìm thấy sản phẩm" }; } }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  try {
+    const [product, siteName] = await Promise.all([publicApi.product((await params).slug), getStoreName()]);
+    const url = `/san-pham/${product.slug}`;
+    const description = product.description?.slice(0, 155);
+    const image = (product.images.find(img => img.is_primary) ?? product.images[0])?.url;
+    // openGraph is replaced, not merged, by child segments: repeat siteName here.
+    return { title: product.name, description, alternates: { canonical: url }, openGraph: { type: "website", siteName, title: product.name, description, url, images: image ? [image] : [] } };
+  } catch { return { title: "Không tìm thấy sản phẩm", robots: { index: false } }; }
+}
 
 const availability = {
   in_stock: { label: "Còn hàng", tone: "success" },

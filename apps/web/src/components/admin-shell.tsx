@@ -19,7 +19,7 @@ const links = [
 
 const isActive = (pathname: string, href: string) => href === "/admin" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({ children, storeName }: { children: React.ReactNode; storeName: string }) {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,7 +38,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh bg-bg md:grid md:grid-cols-[232px_minmax(0,1fr)]">
       <aside className="sticky top-0 z-30 border-b border-line bg-surface pt-[env(safe-area-inset-top)] md:flex md:h-dvh md:flex-col md:border-b-0 md:border-r md:pt-0">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:h-16 md:px-5">
-          <Link href="/admin" className="grid min-w-0 leading-tight"><span className="display truncate text-lg">Tủ Nhựa Bình Nhâm</span><span className="text-xs text-ink-soft">Quản trị nội dung</span></Link>
+          <Link href="/admin" className="grid min-w-0 leading-tight"><span className="display truncate text-lg">{storeName}</span><span className="text-xs text-ink-soft">Quản trị nội dung</span></Link>
           <button type="button" className="-mr-2 grid size-11 place-items-center rounded-full hover:bg-muted md:hidden" aria-haspopup="dialog" aria-expanded={menuOpen} aria-label="Mở menu quản trị" onClick={() => setMenuOpen(true)}><Menu size={22} aria-hidden="true" /></button>
         </div>
         <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu quản trị" side="left" inlineFromMd className="md:min-h-0 md:flex-1">

@@ -1,12 +1,24 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { getStoreName } from "@/lib/brand";
 import { formatDate } from "@/lib/date";
 import type { Post } from "@/types/api";
 
-export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+type Props = { params: Promise<{ slug: string }> };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  try {
+    const [post, siteName] = await Promise.all([apiFetch<Post>(`/posts/${(await params).slug}`), getStoreName()]);
+    const url = `/tin-tuc/${post.slug}`;
+    const description = post.excerpt?.slice(0, 155) ?? undefined;
+    return { title: post.title, description, alternates: { canonical: url }, openGraph: { type: "article", siteName, title: post.title, description, url, publishedTime: post.published_at ?? undefined, images: post.cover_image_url ? [post.cover_image_url] : [] } };
+  } catch { return { title: "Không tìm thấy bài viết", robots: { index: false } }; }
+}
+
+export default async function PostPage({ params }: Props) {
   let post;
   try { post = await apiFetch<Post>(`/posts/${(await params).slug}`); } catch { notFound(); }
   return <article className="pb-20 pt-8 md:pt-12">
