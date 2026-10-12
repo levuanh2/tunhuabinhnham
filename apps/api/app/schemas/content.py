@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models import PublishStatus
 
@@ -116,7 +116,12 @@ def _facebook_destination(value: str | None) -> str | None:
     allowed = host in {"facebook.com", "m.me", "messenger.com", "fb.me"} or host.endswith(
         (".facebook.com", ".messenger.com")
     )
-    if parsed.scheme != "https" or not allowed:
+    if (
+        parsed.scheme != "https"
+        or not allowed
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
         raise ValueError("Contact destination must be an HTTPS Facebook or Messenger URL")
     return value
 
@@ -157,6 +162,23 @@ class SiteSettingsUpdate(BaseModel):
     @classmethod
     def validate_facebook_destination(cls, value: str | None) -> str | None:
         return _facebook_destination(value)
+
+    @model_validator(mode="after")
+    def required_fields_cannot_be_null(self) -> "SiteSettingsUpdate":
+        required_fields = {
+            "store_name",
+            "facebook_url",
+            "about_text",
+            "contact_tracking_enabled",
+        }
+        invalid = sorted(
+            field
+            for field in required_fields & self.model_fields_set
+            if getattr(self, field) is None
+        )
+        if invalid:
+            raise ValueError(f"Settings fields cannot be null: {', '.join(invalid)}")
+        return self
 
 
 class SiteSettingsOut(SiteSettingsBase):

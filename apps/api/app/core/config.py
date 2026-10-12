@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -46,8 +47,51 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
-        if self.app_env == "production" and not self.database_url.startswith("postgresql"):
+        if self.app_env != "production":
+            return self
+        if not self.database_url.startswith("postgresql"):
             raise ValueError("Production DATABASE_URL must use PostgreSQL")
+        required = {
+            "SUPABASE_URL": self.supabase_url,
+            "SUPABASE_PUBLISHABLE_KEY": self.supabase_publishable_key,
+            "SUPABASE_SECRET_KEY": self.supabase_secret_key,
+            "SUPABASE_JWT_ISSUER": self.supabase_jwt_issuer,
+            "SUPABASE_JWKS_URL": self.supabase_jwks_url,
+            "CORS_ORIGINS": self.cors_origins,
+            "FRONTEND_URL": self.frontend_url,
+        }
+        missing = sorted(name for name, value in required.items() if not value.strip())
+        if missing:
+            raise ValueError(f"Missing production settings: {', '.join(missing)}")
+
+        origins = self.allowed_origins
+        if not origins:
+            raise ValueError("CORS_ORIGINS must contain at least one production origin")
+        for origin in [*origins, self.frontend_url.rstrip("/")]:
+            parsed = urlsplit(origin)
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError("Production web origins must be exact HTTPS origins")
+        frontend_origin = self.frontend_url.rstrip("/")
+        if frontend_origin not in origins:
+            raise ValueError("FRONTEND_URL must be included in CORS_ORIGINS")
+
+        supabase_base = self.supabase_url.rstrip("/")
+        if not supabase_base.startswith("https://"):
+            raise ValueError("Production SUPABASE_URL must use HTTPS")
+        expected_issuer = f"{supabase_base}/auth/v1"
+        if self.supabase_jwt_issuer.rstrip("/") != expected_issuer:
+            raise ValueError("SUPABASE_JWT_ISSUER must match SUPABASE_URL")
+        expected_jwks = f"{expected_issuer}/.well-known/jwks.json"
+        if self.supabase_jwks_url != expected_jwks:
+            raise ValueError("SUPABASE_JWKS_URL must match SUPABASE_URL")
         return self
 
     @property

@@ -1,17 +1,13 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.conflicts import integrity_conflict
 from app.models import AuditLog, Category, Product, ProductImage, PublishStatus
 from app.repositories.catalog import CategoryRepository, ProductRepository
 from app.schemas.catalog import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate
-
-
-def _conflict(exc: IntegrityError) -> HTTPException:
-    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug or SKU already exists")
 
 
 class CatalogService:
@@ -36,7 +32,7 @@ class CatalogService:
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
-            raise _conflict(exc) from exc
+            raise integrity_conflict(exc) from exc
         self.db.refresh(item)
         return item
 
@@ -59,7 +55,7 @@ class CatalogService:
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
-            raise _conflict(exc) from exc
+            raise integrity_conflict(exc) from exc
         self.db.refresh(item)
         return item
 
@@ -94,7 +90,7 @@ class CatalogService:
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
-            raise _conflict(exc) from exc
+            raise integrity_conflict(exc) from exc
         return self.products.get(item.id) or item
 
     def update_product(self, item: Product, data: ProductUpdate, admin_id: uuid.UUID) -> Product:
@@ -145,7 +141,7 @@ class CatalogService:
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
-            raise _conflict(exc) from exc
+            raise integrity_conflict(exc) from exc
         return self.products.get(item.id) or item
 
     def delete_product(self, item: Product, admin_id: uuid.UUID) -> None:

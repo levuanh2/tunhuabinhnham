@@ -2,13 +2,16 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from typing import cast
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.auth import CurrentAdmin, require_admin, require_rate_limited_admin
 from app.core.config import Settings, get_settings
+from app.core.conflicts import integrity_conflict
 from app.db.session import get_db
 from app.models import (
     AuditLog,
@@ -185,7 +188,12 @@ def list_posts(db: Session = Depends(get_db)) -> list[PostOut]:
     ]
 
 
-@router.post("/posts", response_model=PostOut, status_code=201)
+@router.post(
+    "/posts",
+    response_model=PostOut,
+    status_code=201,
+    responses={409: {"description": "Conflict with existing unique data"}},
+)
 def create_post(
     data: PostCreate, db: Session = Depends(get_db), admin: CurrentAdmin = Depends(require_admin)
 ) -> PostOut:
@@ -195,15 +203,30 @@ def create_post(
         values["published_at"] = datetime.now(UTC)
     item = Post(**values)
     item.images = [PostImage(**image.model_dump()) for image in data.images]
-    db.add(item)
-    db.flush()
-    db.add(AuditLog(admin_user_id=admin.id, action="create", entity_type="post", entity_id=item.id))
-    db.commit()
+    try:
+        db.add(item)
+        db.flush()
+        db.add(
+            AuditLog(
+                admin_user_id=admin.id,
+                action="create",
+                entity_type="post",
+                entity_id=item.id,
+            )
+        )
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integrity_conflict(exc) from exc
     db.refresh(item)
     return PostOut.model_validate(item)
 
 
-@router.patch("/posts/{item_id}", response_model=PostOut)
+@router.patch(
+    "/posts/{item_id}",
+    response_model=PostOut,
+    responses={409: {"description": "Conflict with existing unique data"}},
+)
 def update_post(
     item_id: uuid.UUID,
     data: PostUpdate,
@@ -213,39 +236,50 @@ def update_post(
     item = db.scalar(select(Post).where(Post.id == item_id, Post.deleted_at.is_(None)))
     if item is None:
         raise missing("Post")
-    changes = data.model_dump(exclude_unset=True, exclude={"images"})
-    if "content_html" in changes:
-        changes["content_html"] = _sanitize(changes["content_html"])
-    for key, value in changes.items():
-        setattr(item, key, value)
-    if data.images is not None:
-        existing = {image.storage_key: image for image in item.images}
-        current_max = max((image.sort_order for image in item.images), default=-1)
-        requested_max = max((image.sort_order for image in data.images), default=-1)
-        temporary_order = max(current_max, requested_max) + 1
-        for image in item.images:
-            image.sort_order = temporary_order
-            temporary_order += 1
-        db.flush()
+    try:
+        changes = data.model_dump(exclude_unset=True, exclude={"images"})
+        if "content_html" in changes:
+            changes["content_html"] = _sanitize(changes["content_html"])
+        for key, value in changes.items():
+            setattr(item, key, value)
+        if data.images is not None:
+            existing = {image.storage_key: image for image in item.images}
+            current_max = max((image.sort_order for image in item.images), default=-1)
+            requested_max = max((image.sort_order for image in data.images), default=-1)
+            temporary_order = max(current_max, requested_max) + 1
+            for image in item.images:
+                image.sort_order = temporary_order
+                temporary_order += 1
+            db.flush()
 
-        reconciled: list[PostImage] = []
-        for image_data in data.images:
-            reconciled_image = (
-                existing.pop(image_data.storage_key)
-                if image_data.storage_key in existing
-                else None
+            reconciled: list[PostImage] = []
+            for image_data in data.images:
+                reconciled_image = (
+                    existing.pop(image_data.storage_key)
+                    if image_data.storage_key in existing
+                    else None
+                )
+                if reconciled_image is None:
+                    reconciled_image = PostImage(**image_data.model_dump())
+                else:
+                    for key, value in image_data.model_dump().items():
+                        setattr(reconciled_image, key, value)
+                reconciled.append(reconciled_image)
+            item.images[:] = reconciled
+        if item.publish_status == PublishStatus.published and item.published_at is None:
+            item.published_at = datetime.now(UTC)
+        db.add(
+            AuditLog(
+                admin_user_id=admin.id,
+                action="update",
+                entity_type="post",
+                entity_id=item.id,
             )
-            if reconciled_image is None:
-                reconciled_image = PostImage(**image_data.model_dump())
-            else:
-                for key, value in image_data.model_dump().items():
-                    setattr(reconciled_image, key, value)
-            reconciled.append(reconciled_image)
-        item.images[:] = reconciled
-    if item.publish_status == PublishStatus.published and item.published_at is None:
-        item.published_at = datetime.now(UTC)
-    db.add(AuditLog(admin_user_id=admin.id, action="update", entity_type="post", entity_id=item.id))
-    db.commit()
+        )
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integrity_conflict(exc) from exc
     db.refresh(item)
     return PostOut.model_validate(item)
 
@@ -330,6 +364,45 @@ def get_settings_route(db: Session = Depends(get_db)) -> SiteSettingsOut:
     return SiteSettingsOut.model_validate(item)
 
 
+_AUDITED_SETTINGS_FIELDS = frozenset(
+    {
+        "store_name",
+        "logo_url",
+        "favicon_url",
+        "facebook_url",
+        "messenger_url",
+        "hotline",
+        "address",
+        "about_text",
+        "default_seo_title",
+        "default_seo_description",
+        "contact_tracking_enabled",
+    }
+)
+_URL_SETTINGS_FIELDS = frozenset(
+    {"logo_url", "favicon_url", "facebook_url", "messenger_url"}
+)
+
+
+def _audit_setting_value(field: str, value: object) -> object:
+    if field not in _URL_SETTINGS_FIELDS or value is None:
+        return value
+    try:
+        parsed = urlsplit(str(value))
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            return "[redacted-url]"
+        host = parsed.hostname
+        if ":" in host:
+            host = f"[{host}]"
+        port = parsed.port
+        origin = f"{parsed.scheme}://{host}"
+        if port is not None:
+            origin = f"{origin}:{port}"
+        return {"present": True, "origin": origin}
+    except ValueError:
+        return "[redacted-url]"
+
+
 @router.patch("/site-settings", response_model=SiteSettingsOut)
 def update_settings(
     data: SiteSettingsUpdate,
@@ -337,17 +410,36 @@ def update_settings(
     admin: CurrentAdmin = Depends(require_admin),
 ) -> SiteSettingsOut:
     item = db.scalar(select(SiteSettings).limit(1))
+    creating = item is None
     if item is None:
-        item = SiteSettings(store_name="Tủ Nhựa Bình Nhâm", facebook_url="https://facebook.com")
+        item = SiteSettings()
         db.add(item)
-    for key, value in data.model_dump(exclude_unset=True).items():
+        before = {field: None for field in _AUDITED_SETTINGS_FIELDS}
+    else:
+        before = {field: getattr(item, field) for field in _AUDITED_SETTINGS_FIELDS}
+    requested = data.model_dump(exclude_unset=True)
+    for key, value in requested.items():
         setattr(item, key, value)
     db.flush()
-    db.add(
-        AuditLog(
-            admin_user_id=admin.id, action="update", entity_type="site_settings", entity_id=item.id
+    fields = _AUDITED_SETTINGS_FIELDS if creating else _AUDITED_SETTINGS_FIELDS & requested.keys()
+    changes = {
+        field: {
+            "before": _audit_setting_value(field, before[field]),
+            "after": _audit_setting_value(field, getattr(item, field)),
+        }
+        for field in sorted(fields)
+        if before[field] != getattr(item, field)
+    }
+    if changes:
+        db.add(
+            AuditLog(
+                admin_user_id=admin.id,
+                action="create" if creating else "update",
+                entity_type="site_settings",
+                entity_id=item.id,
+                changes=changes,
+            )
         )
-    )
     db.commit()
     db.refresh(item)
     return SiteSettingsOut.model_validate(item)

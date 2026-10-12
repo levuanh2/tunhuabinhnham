@@ -109,7 +109,7 @@ npx wrangler deploy --dry-run          # confirm bindings and size, no upload
 # 2. Deploy to the workers.dev URL (creates the Worker: owner approval required)
 npx opennextjs-cloudflare deploy
 
-# 3. Backend: add the workers.dev origin to FRONTEND_ORIGINS on Render, then redeploy the API (Codex plan)
+# 3. Backend: set FRONTEND_URL to the workers.dev origin and include it in CORS_ORIGINS on Render, then redeploy the API (Codex plan)
 ```
 
 `.env.production.local` is git-ignored (`.env.*`). It holds only public values, but it must still not be committed.
