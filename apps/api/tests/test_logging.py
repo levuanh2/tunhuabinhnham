@@ -93,3 +93,27 @@ def test_startup_validation_error_is_redacted_and_hides_settings(monkeypatch, ca
     err = capsys.readouterr().err
     assert '"level": "CRITICAL"' in err
     assert "SYNTHETICPW" not in err and "SYNTHETICKEY" not in err and "input_value" not in err
+
+
+def test_uvicorn_startup_failure_is_redacted_json(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import os
+    import subprocess
+    from pathlib import Path
+
+    api_dir = Path(__file__).resolve().parents[1]
+    env = {k: v for k, v in os.environ.items() if k in ("PATH", "SYSTEMROOT", "TEMP", "TMP")}
+    env |= {
+        "APP_ENV": "production",
+        "DATABASE_URL": "postgresql+psycopg://u:SYNTHETICPW@h.example:5432/db",
+        "SUPABASE_SECRET_KEY": "sb_secret_SYNTHETICKEY",
+        "PYTHONPATH": str(api_dir),
+    }
+    # cwd=tmp_path: Settings must not pick up a developer's real apps/api/.env.
+    result = subprocess.run(
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--app-dir", str(api_dir), "--port", "0"],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=60, check=False,
+    )
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert '"level": "CRITICAL"' in output and "Missing production settings" in output
+    assert "SYNTHETICPW" not in output and "SYNTHETICKEY" not in output and "input_value" not in output
