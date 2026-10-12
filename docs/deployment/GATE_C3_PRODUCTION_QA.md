@@ -1,36 +1,78 @@
 # Gate C3 — custom domain and production QA
 
-Date: 2026-10-13 (UTC+7). Release in production: web **`6f03aa5`** (Worker version `46243813-a2ad-4dca-976c-d960f95f20ca`); backend **`579c801`** on Render. Backend security detail: `GATE_C3_BACKEND_SECURITY.md` (Codex).
+Date: 2026-10-13 (UTC+7). Web in production: **`6f03aa5`** (Worker version `46243813-a2ad-4dca-976c-d960f95f20ca`). Backend: Render service redeployed by the owner from `deploy/c2-preview` after the password rotation; the exact deployed commit was not read back (see below). Integration / `deploy/c2-preview` head: see "Final verification". Backend security detail: `GATE_C3_BACKEND_SECURITY.md` (Codex).
 
-Legend: **PASS**, **FAIL**, **PARTIAL**, **BLOCKED** (needs an owner action or approval).
+Legend: **PASS** (verified by Claude or Codex against production), **OWNER-REPORTED** (owner confirmed; no independent evidence), **NOT VERIFIED**, **BLOCKED**.
 
 ## Verdict
 
-**Go-live: NOT YET.** The site works on `https://tunhuabinhnham.com`, but four blockers remain:
+**Gate C3: BLOCKED — not production-ready.**
 
-1. **P0 security**: the exposed database password has not been rotated (owner action, runbook in the backend report).
-2. **Workers Free CPU**: 46 of 53 live requests exceeded the 10 ms Free limit. Production needs Workers Paid ($5/month) — owner billing decision.
-3. **Content**: placeholder Messenger/Facebook links, hotline and address; no logo, favicon, products, posts or banners.
-4. **`www`** still points at the old TenTen host (DNS change awaiting owner approval).
+The domain, redirects, SEO, CORS, API protection, credential rotation and mobile layout pass. What still blocks a production sign-off:
 
-## Summary
+1. **Workers Free CPU** (billing decision): 68 of 78 full-page requests exceeded the 10 ms Free limit on live traffic. Workers Paid ($5/month) is required; nothing was purchased.
+2. **Content** (owner data): placeholder Messenger/Facebook links, hotline and address; no logo, favicon, products, posts or banners.
+3. **Unverified owner-side evidence:** the deployed Render commit and the Render log search were reported "OK" by the owner without the commit SHA or match counts; the apex admin session left no admin requests in the Worker log captured during the check. These are recorded as OWNER-REPORTED, not PASS.
 
-| Area | Status |
+Operational risks accepted for now: Render Free cold start (37.65 s after idle), single 512 MB Free instance.
+
+## Final verification (after owner rotation, DNS and HTTPS changes)
+
+| Check | Result | Evidence |
+|---|---|---|
+| DB password rotated | PASS | local read-only check with the new `.env`: fingerprint `cbda20f5bbaa`, revision `0004`, `transaction_read_only=on`, new password alphanumeric, `auth.sessions` SELECT true, 1 active admin, store name intact. The leaked fragment belongs to the old password |
+| Render uses the new credential | PASS (inferred) | `/health/ready` 200 (`SELECT 1`) after the old password was replaced |
+| Render runs the redaction fix | OWNER-REPORTED | no endpoint exposes the commit; owner said "ổn hết" without the Events SHA. Expected `416cd02` or later |
+| Render logs free of secrets | OWNER-REPORTED | owner did not send match counts for `Traceback`, `postgresql`, `password`, `Bearer`, `eyJ` |
+| Worker logs free of secrets | PASS | tail during QA and the owner window: 0 JWT, 0 bearer, 0 `postgres://`, 0 `sb_secret_`, 0 DB-password matches, 0 `sb-*-auth-token` cookies; 0 exceptions |
+| HTTP → HTTPS | PASS | `http://tunhuabinhnham.com/san-pham?category=do-dung&x=1` → `301 https://tunhuabinhnham.com/san-pham?category=do-dung&x=1` |
+| WWW → apex | PASS | `https://www.tunhuabinhnham.com/san-pham?category=do-dung&x=1` → `301 https://tunhuabinhnham.com/san-pham?category=do-dung&x=1`; `http://www…/san-pham?x=1` reaches the apex in 2 hops with path and query kept. `www` is now proxied (`2606:4700:3035::ac43:c29b`); certificate SAN `tunhuabinhnham.com, *.tunhuabinhnham.com` |
+| CORS | PASS | apex and `workers.dev` preflight 200 with exact ACAO; `www` and `evil.example.com` 400, no ACAO |
+| Protected APIs | PASS | `/admin/dashboard/stats`, `/admin/products`, `/admin/site-settings`, `/admin/posts`: anonymous 401, bogus bearer 401; anonymous `PATCH /admin/site-settings` 401 (nothing written) |
+| Public pages + SEO | PASS | `public.spec.ts` 6/6 on the apex and 6/6 on `workers.dev` (Chromium + WebKit): canonical, robots and sitemap on `https://tunhuabinhnham.com` |
+| Mobile (emulated) | PASS | 80 shots (8 pages × 5 widths × Chromium/WebKit): overflow 0, page/console/HTTP errors 0 (besides the intended 404), Be Vietnam Pro loaded |
+| Admin login, SSR session, Settings, logout on apex | OWNER-REPORTED | owner confirmed; the Worker log captured during the check shows no admin requests (only `GET /` and a `GET /login` 404). On `workers.dev` the same flow was log-verified in Gate C2.1 |
+| Old JWT after logout → 401 | OWNER-REPORTED / NOT VERIFIED | needs the DevTools replay described in the backend report §3 |
+
+### Code changes in this pass (need a Render redeploy only if not already deployed)
+
+- `5248e27` test: a real `uvicorn` start with synthetic secrets from an empty working directory must exit non-zero and print only redacted JSON. Requested by Codex's review of `96884dc` (`C3_REVIEW=CHANGES`: the unit test called `sys.excepthook` by hand). On `7cceb99` it fails, and the raw traceback shows **the tail of the synthetic `sb_secret_` key** inside pydantic's truncated `input_value` — so the pre-fix leak was real, not theoretical. Backend: 70 passed, ruff and mypy clean.
+- Test-only change: Render does not need a redeploy for it. The runtime fix it guards (`96884dc`) is in `a99bed4` and later.
+
+### Workers Free CPU on live traffic (419 requests, `wrangler tail`)
+
+| Request type | n | median | p90 | max | > 10 ms |
+|---|---|---|---|---|---|
+| Full HTML page | 78 | 18 ms | 56 ms | 95 ms | **68** |
+| RSC prefetch (`?_rsc=`) | 341 | 5 ms | 24 ms | 215 ms | 68 |
+
+All 419 outcomes `ok`, 0 exceptions. Correction to the first C3 pass: prefetches are 81 % of Worker requests but cheap (median 5 ms), so they mainly multiply the **request count** (Free: 100,000/day), not CPU. Full-page SSR is what exceeds 10 ms. Verdict unchanged: **Workers Paid required** for production.
+
+### Render (unchanged measurements)
+
+Cold start after 20 minutes idle: 37.65 s; warm `/health/live` ~0.1–0.3 s; `/health/ready` ~0.8–1.0 s (client-side, includes internet/TLS). Memory: owner Metrics not reported. Starter `0.5c-512mb` (~US$7/month) removes spin-down; not purchased.
+
+## Remaining owner actions
+
+1. Decide Workers Paid ($5/month).
+2. Enter real CMS content (Messenger, Facebook, hotline, address, logo, favicon, products, banners).
+3. To turn OWNER-REPORTED into PASS: Render Events commit SHA; Render log match counts (numbers only); one admin sign-in on the apex while Claude watches the Worker log; the DevTools replay → 401.
+4. Optional: Render Starter to remove the 37 s cold start.
+
+## First pass (earlier on 2026-10-13)
+
+The sections below record the first C3 pass. The DNS, HTTPS and credential items they list as blocked are resolved above.
+
+| Area | Status at first pass |
 |---|---|
 | Apex domain public pages | PASS |
-| `workers.dev` mirror (no regression) | PASS |
-| SEO (canonical, robots, sitemap, OG) | PASS after fix `6f03aa5` (was FAIL: robots/sitemap pointed at `workers.dev`, five pages had no canonical) |
+| `workers.dev` mirror | PASS |
+| SEO | PASS after fix `6f03aa5` |
 | CORS | PASS |
-| Admin on apex (login, Settings, SSR session, logout) | BLOCKED: owner sign-in needed |
-| Live JWT revocation (old token after logout) | NOT VERIFIED: owner-side DevTools replay, see backend report §3 |
-| DNS / `www` | BLOCKED: plan ready, owner approval needed |
-| HTTP → HTTPS | FAIL: `http://tunhuabinhnham.com` serves 200 instead of redirecting ("Always Use HTTPS" off) |
-| Security P0 (DB credential) | BLOCKED: rotation is an owner action |
+| DNS / `www`, HTTP → HTTPS | BLOCKED / FAIL (since resolved) |
+| Security P0 (DB credential) | BLOCKED (since resolved) |
 | Worker CPU vs Free | FAIL for Free |
-| Render cold / warm | PARTIAL: measured; memory needs owner Metrics |
-| Mobile QA (emulated) | PASS |
-| Content readiness | FAIL (data, not code) |
-| Regression | PASS |
+| Content readiness | FAIL |
 
 ## 1. DNS and domain
 
