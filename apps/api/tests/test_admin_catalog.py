@@ -44,7 +44,45 @@ def test_duplicate_sku_returns_conflict(admin_client: TestClient) -> None:
     }
     assert admin_client.post("/api/v1/admin/products", json=payload).status_code == 201
     payload.update({"name": "B", "slug": "b"})
-    assert admin_client.post("/api/v1/admin/products", json=payload).status_code == 409
+    conflict = admin_client.post("/api/v1/admin/products", json=payload)
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["message"] == "SKU already exists"
+
+
+def test_duplicate_product_slug_returns_precise_conflict(admin_client: TestClient) -> None:
+    first = {
+        "name": "A",
+        "slug": "same-slug",
+        "sku": "SKU-A",
+        "images": [],
+    }
+    second = {**first, "name": "B", "sku": "SKU-B"}
+    assert admin_client.post("/api/v1/admin/products", json=first).status_code == 201
+
+    conflict = admin_client.post("/api/v1/admin/products", json=second)
+
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["message"] == "Slug already exists"
+
+
+def test_duplicate_image_storage_key_returns_precise_conflict(
+    admin_client: TestClient,
+) -> None:
+    image = {
+        "storage_key": "2026/10/shared.webp",
+        "url": "https://example.com/shared.webp",
+        "sort_order": 0,
+        "is_primary": True,
+    }
+    first = {"name": "A", "slug": "image-a", "sku": "IMAGE-A", "images": [image]}
+    second = {"name": "B", "slug": "image-b", "sku": "IMAGE-B", "images": [image]}
+    assert admin_client.post("/api/v1/admin/products", json=first).status_code == 201
+
+    conflict = admin_client.post("/api/v1/admin/products", json=second)
+
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["message"] == "Image storage key already exists"
+    assert "product_images.storage_key" not in conflict.text
 
 
 def test_product_update_preserves_existing_image_storage_key(admin_client: TestClient) -> None:
