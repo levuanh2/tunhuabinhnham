@@ -15,7 +15,7 @@ Not done in this gate: deploy, DNS change, push, merge to `main`, paid resources
 | 3. Migration 0004 | **PASS**: revision `0004` (Codex; independently verified read-only by Claude) |
 | 3. Supabase Security Advisor | **PASS**: 0 WARN/ERROR, 5 INFO (intended) |
 | 4. Harness repair + Playwright specs | **PASS** (harness dry-run against live, read-only; specs dry-run on fixture) |
-| 5. Real Supabase E2E (synthetic writes) | **FAIL (cleanup PASS)**: run `gc-20261012t024424z-38fbaf`. pytest_live PASS; Playwright 4 passed / 2 failed / 4 did not run. Root cause was a spec lookup defect, fixed in `c81fd0f`. Another real run needs owner approval |
+| 5. Real Supabase E2E (synthetic writes) | **PASS**: run `gc-20261012t041055z-27f859` on `7061a35`. pytest_live PASS; Playwright 9 passed / 1 skipped. Earlier failed runs and their fixes are in the recovery report |
 | 5. Cleanup + baseline after real runs | **PASS**: harness and independent read-only check both CLEAN |
 | 6. Permanent admin account | **BLOCKED**: the owner has not created it yet |
 | 7. Store brand correction | **BLOCKED**: depends on Phase 6. The live value is still "Tủ Hòa Bình Nhâm" |
@@ -129,7 +129,7 @@ Rerun on **`b2b79a4`** after the recovery: everything below PASS again (Codex `B
 | Playwright fixture suite (Chromium + WebKit) | PASS: 28 passed, 2 skipped |
 | Visual regression vs approved | PASS: 85/85 identical |
 | Playwright `public.spec` on the real API | PASS: 4/4 |
-| Real Supabase E2E | **FAIL**, cleanup PASS (Phase 5) |
+| Real Supabase E2E | **PASS**, cleanup PASS (Phase 5, `27f859`) |
 | npm audit (all) | **7**: 6 high, 1 moderate |
 | npm audit `--omit=dev` | **2**: `postcss` **high**, `next` **moderate** |
 
@@ -141,7 +141,7 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 
 ## Remaining blockers
 
-1. Phase 5: two real runs failed (spec lookup, then a real backend 409 on image reorder, both fixed; see the recovery report). The owner approves **one more** real run on `6f64a65` or later. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
+1. ~~Phase 5~~: **done**. Real E2E PASS (`gc-20261012t041055z-27f859`), cleanup CLEAN. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
 2. Phase 6: the owner creates the Auth user in the Dashboard (with Auto Confirm) and reports the email. `admin_users` is then upserted (one row).
 3. Phase 7: the owner renames the store through Admin CMS. Claude then verifies header, footer, title/metadata and settings after reload.
 4. Dependency risk expiry 2026-11-10. The Next 16 trial is still BLOCKED_ENVIRONMENT.
@@ -151,4 +151,4 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 
 ## Gate C2 readiness
 
-**NOT READY.** Real E2E, permanent admin, brand correction and the dependency decision are outstanding. Deployment checks (Render, Cloudflare, DNS) have not started and are not approved.
+**NOT READY.** Real E2E is done (PASS). The permanent admin, brand correction and dependency decision are outstanding. Deployment checks (Render, Cloudflare, DNS) have not started and are not approved.
