@@ -1,13 +1,13 @@
 # Render backend deploy plan
 
-This is a pre-deployment plan only. Gate C2 does not create a Render service, sync a Blueprint, deploy code, change DNS, or write to the live database.
+This file prepares the temporary Gate C2.1 preview. Committing it does not create a Render service, sync a Blueprint, deploy code, change DNS, or write to the live database. The owner must complete all release gates before creating the service.
 
 ## Locked baseline
 
-- Source baseline: `integration/warm-editorial-v2` at `4f31346` plus approved Gate C2 commits.
-- Live database revision: `0004`. Gate C2 adds no migration.
-- Blueprint: root `render.yaml`, one Python web service, Singapore region, `0.5c-512mb`, one worker, auto-deploy off, no Render Postgres, no disk, and no pre-deploy command.
-- Python: `3.11.17`, pinned through the fully qualified `PYTHON_VERSION` environment variable.
+- Source baseline: `integration/warm-editorial-v2` at `9a19175`, plus the approved Gate C2.1 security commit.
+- Live database revision: `0004`. Gate C2.1 adds no migration.
+- Blueprint: root `render.yaml`, one Python web service, Singapore region, free plan, source branch `deploy/c2-preview`, one worker, auto-deploy off, no Render Postgres, no disk, and no pre-deploy command.
+- Python: `3.11.17`, pinned through the fully qualified `PYTHON_VERSION` environment variable. Python.org lists 3.11.17 as a released security version, and Render accepts any released fully qualified version from 3.7.3 onward.
 
 This plan supersedes the old revision statement in `docs/RENDER_DEPLOYMENT.md`; that file still says revision `0003` is live and must not be used as the Gate C2 source of truth.
 
@@ -20,7 +20,22 @@ Build: python -m pip install -r apps/api/build-requirements.lock && python -m pi
 Start: python -m uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port $PORT --workers ${WEB_CONCURRENCY:-1}
 ```
 
-The build uses pinned pip and setuptools versions, then the production dependency lock. One worker keeps the SQLAlchemy pool bounded to three persistent connections plus one overflow connection on the 512 MB plan.
+The build uses pinned pip and setuptools versions, then the production dependency lock. One worker keeps the SQLAlchemy pool bounded to three persistent connections plus one overflow connection on the free 512 MB instance.
+
+## Dashboard values the owner must paste
+
+Paste values for exactly these Blueprint prompts. Their values must stay in Render and must not be copied into Git, tickets, chat, screenshots, or command output:
+
+- `DATABASE_URL`
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `SUPABASE_JWT_ISSUER`
+- `SUPABASE_JWKS_URL`
+- `CORS_ORIGINS`
+- `FRONTEND_URL`
+
+Every item above is declared with `sync: false`. Render supplies `PORT`; all other application settings from `app/core/config.py` are explicitly declared in the Blueprint with reviewed non-secret values: `APP_ENV`, `SUPABASE_JWT_AUDIENCE`, `MAX_UPLOAD_BYTES`, `CONTACT_TRACKING_ENABLED`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT_SECONDS`, `DB_CONNECT_TIMEOUT_SECONDS`, `DB_DISABLE_PREPARED_STATEMENTS`, `PUBLIC_CACHE_SECONDS`, and `ADMIN_RATE_LIMIT_PER_MINUTE`. `PYTHON_VERSION` and `WEB_CONCURRENCY` are platform/runtime controls rather than `Settings` fields.
 
 ## Health and failure behavior
 
@@ -43,16 +58,9 @@ Do not infer the pooler hostname from the project region. Do not switch only the
 
 ## Region decision
 
-Render currently offers Oregon, Ohio, Virginia, Frankfurt, and Singapore. Supabase is in `ap-southeast-2` (Sydney). Singapore is the configured candidate, but region names do not prove latency.
+Render's current Blueprint reference lists `free` for web services, and its region documentation lists Singapore. Supabase is in `ap-southeast-2` (Sydney). Singapore is therefore the configured free-preview candidate, but region names do not prove latency.
 
-Before deployment approval, measure from a disposable Render service or approved equivalent:
-
-- TCP/TLS connection establishment to the exact Supabase pooler endpoint;
-- repeated read-only `select 1` timings after warm-up;
-- representative public read and authenticated admin-read timings;
-- pool checkout time and timeout count under expected concurrency.
-
-Record median and tail timings with timestamps. Do not claim a latency result until those measurements exist.
+After deployment, first warm the free instance and record repeated HTTPS timings for `/health/live` and `/health/ready`; readiness already executes read-only `select 1`. Those client-side timings measure the entire HTTP path and must not be presented as database latency. A free web service has no Render shell or one-off jobs, so a database-only measurement requires a separately reviewed temporary instrumentation commit that wraps only the existing `select 1` with a monotonic timer and logs the duration, timestamp, and request ID--never the URL, credentials, query parameters, or query result. Collect at least 20 warm samples, record median and tail timings, then remove the instrumentation. If that patch is not approved, report only end-to-end readiness timings and make no Render-to-Supabase latency claim.
 
 ## Authentication and CORS
 
@@ -65,7 +73,7 @@ The `auth.sessions` check adds one indexed database lookup for locally verified 
 
 ## Memory and process limits
 
-- Keep `WEB_CONCURRENCY=1` on the 512 MB plan.
+- Keep `WEB_CONCURRENCY=1` on the free 0.1 CPU, 512 MB instance.
 - Keep `DB_POOL_SIZE=3`, `DB_MAX_OVERFLOW=1`, pool timeout 10 seconds, connect timeout 5 seconds, and pool recycle 300 seconds.
 - Do not add an in-process worker count or enlarge the pool without memory and connection measurements.
 - Uploaded files are capped at 8 MiB, but the endpoint currently reads one file into memory. Watch resident memory during an approved upload smoke test.
@@ -81,14 +89,17 @@ The `auth.sessions` check adds one indexed database lookup for locally verified 
 7. Secret scan over tracked files and the staged diff.
 8. Blueprint schema validation without syncing or creating resources.
 
-The current lock's Next/PostCSS findings have a temporary risk-acceptance deadline of **2026-11-10**. The supported remediation candidate is Next `16.3.8`, its PostCSS `8.5.23`, matching `eslint-config-next 16.3.8`, and existing `@opennextjs/cloudflare 1.20.9`. Do not deploy on or after the deadline without either a clean audited/tested lock or a new explicit owner decision.
+Gate C2.1 replaces the temporary Next/PostCSS risk acceptance with Next `16.4.0` (PostCSS `8.5.23`), matching `eslint-config-next 16.4.0`, and `@opennextjs/cloudflare 1.20.10`. The release gate requires the installed production dependency audit to remain free of Moderate, High, and Critical findings.
 
 ## Sources
 
 - [Render Python versions](https://render.com/docs/python-version)
+- [Python 3.11.17 release](https://www.python.org/downloads/release/python-31117/)
 - [Render FastAPI deployment](https://render.com/docs/deploy-fastapi)
 - [Render regions](https://render.com/docs/regions)
 - [Render Blueprint reference](https://render.com/docs/blueprint-spec)
+- [Render free instance limits](https://render.com/docs/free)
+- [Render shell compatibility](https://render.com/docs/ssh)
 - [Supabase Postgres connections](https://supabase.com/docs/guides/database/connecting-to-postgres)
 - [Supabase JWTs](https://supabase.com/docs/guides/auth/jwts)
 

@@ -38,8 +38,9 @@ This file contains the backend half of the Gate C2 environment inventory. It nam
 
 - [ ] `APP_ENV=production` so fail-fast validation is active.
 - [ ] `PYTHON_VERSION` matches the fully qualified version in `render.yaml`.
-- [ ] `WEB_CONCURRENCY=1` for the 512 MB plan.
+- [ ] `WEB_CONCURRENCY=1` for the free 512 MB preview instance.
 - [ ] `MAX_UPLOAD_BYTES` remains within the reviewed memory budget.
+- [ ] `CONTACT_TRACKING_ENABLED` matches the reviewed application policy. It does not replace the database-backed site setting that controls the public contact-click endpoint.
 - [ ] `PUBLIC_CACHE_SECONDS` matches the approved public-cache policy.
 - [ ] `ADMIN_RATE_LIMIT_PER_MINUTE` matches the single-worker application limit. Edge rate limiting is a separate control.
 

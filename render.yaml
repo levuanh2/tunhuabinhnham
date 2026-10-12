@@ -4,8 +4,8 @@ services:
     name: tunhuabinhnham-api
     runtime: python
     region: singapore
-    plan: 0.5c-512mb
-    branch: main
+    plan: free
+    branch: deploy/c2-preview
     buildCommand: python -m pip install -r apps/api/build-requirements.lock && python -m pip install -r apps/api/requirements.lock && python -m pip install --no-deps ./apps/api
     startCommand: python -m uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port $PORT --workers ${WEB_CONCURRENCY:-1}
     healthCheckPath: /health/ready
@@ -18,6 +18,10 @@ services:
         value: 3.11.17
       - key: WEB_CONCURRENCY
         value: "1"
+      - key: MAX_UPLOAD_BYTES
+        value: "8388608"
+      - key: CONTACT_TRACKING_ENABLED
+        value: "true"
       - key: DB_POOL_SIZE
         value: "3"
       - key: DB_MAX_OVERFLOW
@@ -30,6 +34,8 @@ services:
         value: "false"
       - key: ADMIN_RATE_LIMIT_PER_MINUTE
         value: "120"
+      - key: PUBLIC_CACHE_SECONDS
+        value: "60"
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL
