@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
+import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
 
 const req = (path: string, init: RequestInit = {}) => new Request(`https://tunhuabinhnham.com${path}`, init);
 const html = (init: ResponseInit = {}) => new Response("<html></html>", { status: 200, ...init, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", vary: "rsc, next-router-state-tree", ...init.headers } });
@@ -21,14 +21,32 @@ describe("isEdgeCacheableRequest", () => {
 
   it("rejects non-GET, RSC/prefetch, Authorization and Supabase session cookies", () => {
     expect(isEdgeCacheableRequest(req("/", { method: "POST" }))).toBe(false);
-    expect(isEdgeCacheableRequest(req("/?_rsc=abc"))).toBe(false);
+    expect(isEdgeCacheableRequest(req("/?_rsc=abc"))).toBe(false); // _rsc without the RSC header
     for (const name of ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"]) {
-      expect(isEdgeCacheableRequest(req("/", { headers: { [name]: "1" } })), name).toBe(false);
+      expect(isEdgeCacheableRequest(req("/", { headers: { [name]: "1" } })), name).toBe(false); // router headers without _rsc
     }
     expect(isEdgeCacheableRequest(req("/", { headers: { authorization: "Bearer x" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "a=1; sb-fyaourksnjeldsvuedox-auth-token=eyJ" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "sb-x-auth-token.0=chunk" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "theme=dark" } }))).toBe(true);
+  });
+});
+
+describe("router (RSC) requests", () => {
+  const rscReq = (path: string, headers: Record<string, string> = {}) => req(path, { headers: { rsc: "1", "next-router-prefetch": "1", ...headers } });
+  it("are cacheable only for public paths with a signed _rsc and no session", () => {
+    expect(isRscRequest(rscReq("/san-pham?_rsc=h1"))).toBe(true);
+    expect(isEdgeCacheableRequest(rscReq("/san-pham?_rsc=h1"))).toBe(true);
+    expect(isEdgeCacheableRequest(rscReq("/admin/san-pham?_rsc=h1"))).toBe(false);
+    expect(isEdgeCacheableRequest(rscReq("/san-pham?_rsc=h1", { cookie: "sb-x-auth-token=1" }))).toBe(false);
+    expect(isEdgeCacheableRequest(rscReq("/san-pham?_rsc=h1", { authorization: "Bearer x" }))).toBe(false);
+  });
+  it("store only text/x-component bodies, never HTML, under the RSC rule", () => {
+    const flight = new Response("0:[]", { headers: { "content-type": "text/x-component", vary: "rsc" } });
+    expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toMatch(/public/);
+    expect(edgeCacheHeaders(html(), false, true)).toBeNull();
+    expect(edgeCacheHeaders(flight, false, false)).toBeNull();
+    expect(edgeCacheHeaders(flight, true, true)).toBeNull();
   });
 });
 

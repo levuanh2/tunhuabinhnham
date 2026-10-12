@@ -356,3 +356,22 @@ test("20. a page rendered while the API is failing is served but never marked ca
   }
   expect(isPublic((await request.get("/")).headers()["cache-control"])).toBe(true);
 });
+
+test("21. real router prefetches of public pages are edge-cacheable; forged _rsc is not", async ({ page, request }) => {
+  test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
+  const prefetches: { path: string; status: number; cc: string | null; type: string | null }[] = [];
+  page.on("response", response => {
+    const url = new URL(response.url());
+    if (url.searchParams.has("_rsc") && !url.pathname.startsWith("/admin")) prefetches.push({ path: url.pathname, status: response.status(), cc: response.headers()["cache-control"] ?? null, type: response.headers()["content-type"] ?? null });
+  });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const ok = prefetches.filter(p => p.status === 200);
+  expect(ok.length).toBeGreaterThan(0);
+  for (const p of ok) {
+    expect(p.type, p.path).toMatch(/text\/x-component/);
+    expect(isPublic(p.cc), p.path).toBe(true);
+  }
+  const forged = await request.get("/san-pham?_rsc=forged", { headers: { rsc: "1", "next-router-prefetch": "1" }, maxRedirects: 0 });
+  expect(isPublic(forged.headers()["cache-control"] ?? null)).toBe(false);
+});

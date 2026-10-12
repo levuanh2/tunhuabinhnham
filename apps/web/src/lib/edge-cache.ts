@@ -26,19 +26,25 @@ export function markRenderDegraded() {
   if (state) state.degraded = true;
 }
 
+/** Router (RSC) request: Next signs `_rsc` with a hash of the router headers and 307s on a mismatch,
+ * so the URL alone identifies the variant and a forged combination is never stored. */
+export const isRscRequest = (request: Request) => request.headers.get("rsc") === "1" && new URL(request.url).searchParams.has("_rsc");
+
 export function isEdgeCacheableRequest(request: Request): boolean {
   if (request.method !== "GET" && request.method !== "HEAD") return false;
   const url = new URL(request.url);
-  if (!PUBLIC_PATH.test(url.pathname) || url.searchParams.has("_rsc")) return false;
+  if (!PUBLIC_PATH.test(url.pathname)) return false;
   const headers = request.headers;
-  if (headers.has("authorization") || RSC_HEADERS.some(name => headers.has(name))) return false;
+  const rsc = isRscRequest(request);
+  if (!rsc && (url.searchParams.has("_rsc") || RSC_HEADERS.some(name => headers.has(name)))) return false;
+  if (headers.has("authorization")) return false;
   return !SESSION_COOKIE.test(headers.get("cookie") ?? "");
 }
 
 /** Headers that make the response edge-cacheable, or null to keep Next's private/no-store headers. */
-export function edgeCacheHeaders(response: Response, degraded: boolean): Headers | null {
+export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = false): Headers | null {
   if (degraded || response.status !== 200 || response.headers.has("set-cookie")) return null;
-  if (!(response.headers.get("content-type") ?? "").startsWith("text/html")) return null;
+  if (!(response.headers.get("content-type") ?? "").startsWith(rsc ? "text/x-component" : "text/html")) return null;
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", EDGE_CACHE_CONTROL);
   headers.set("Cache-Tag", EDGE_CACHE_TAG);
