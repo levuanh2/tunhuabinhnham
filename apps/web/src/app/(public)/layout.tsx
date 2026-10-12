@@ -7,10 +7,12 @@ async function getSettings() { try { return await publicApi.settings(); } catch 
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
+  const name = settings?.store_name;
+  // Omit keys instead of passing undefined: an explicit `title: undefined` drops the root default/template.
   return {
-    title: settings?.default_seo_title ?? undefined,
-    description: settings?.default_seo_description ?? undefined,
-    icons: settings?.favicon_url ? { icon: settings.favicon_url } : undefined,
+    ...(name && { title: { absolute: settings?.default_seo_title || name, template: `%s | ${name}` }, openGraph: { siteName: name } }),
+    ...(settings?.default_seo_description && { description: settings.default_seo_description }),
+    ...(settings?.favicon_url && { icons: { icon: settings.favicon_url } }),
   };
 }
 
