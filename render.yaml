@@ -6,7 +6,7 @@ services:
     region: singapore
     plan: 0.5c-512mb
     branch: main
-    buildCommand: python -m pip install -r apps/api/requirements.lock && python -m pip install --no-deps ./apps/api
+    buildCommand: python -m pip install -r apps/api/build-requirements.lock && python -m pip install -r apps/api/requirements.lock && python -m pip install --no-deps ./apps/api
     startCommand: python -m uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port $PORT --workers ${WEB_CONCURRENCY:-1}
     healthCheckPath: /health/ready
     autoDeployTrigger: "off"
@@ -15,7 +15,7 @@ services:
       - key: APP_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.11.17
       - key: WEB_CONCURRENCY
         value: "1"
       - key: DB_POOL_SIZE
