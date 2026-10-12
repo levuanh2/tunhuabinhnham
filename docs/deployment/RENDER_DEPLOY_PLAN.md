@@ -78,6 +78,13 @@ The `auth.sessions` check adds one indexed database lookup for locally verified 
 - Do not add an in-process worker count or enlarge the pool without memory and connection measurements.
 - Uploaded files are capped at 8 MiB, but the endpoint currently reads one file into memory. Watch resident memory during an approved upload smoke test.
 
+## Free-preview limits
+
+- Render documents the free web-service allocation as 0.1 CPU and 512 MB RAM. It is suitable for this temporary preview, not the production capacity decision.
+- A free web service spins down after 15 minutes without inbound HTTP or WebSocket traffic and starts again on the next request.
+- Measure this service's cold start instead of assigning a predicted duration: allow at least 15 minutes of inactivity, timestamp the first HTTPS request to `/health/live`, record time to the first successful response, then repeat the warm request. Run the same cold/warm pair for `/health/ready`, whose successful response also includes the read-only database check. Record timestamps and all observed durations, and keep cold-start, warm HTTP, and database-only measurements distinct.
+- Free services have no persistent disk, shell/SSH access, one-off jobs, multi-instance scaling, or edge caching. The Blueprint deliberately creates none of those resources.
+
 ## Pre-deploy evidence required
 
 1. `python -m ruff check apps/api`
