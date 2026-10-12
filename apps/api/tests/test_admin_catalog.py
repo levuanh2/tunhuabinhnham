@@ -75,3 +75,44 @@ def test_product_update_preserves_existing_image_storage_key(admin_client: TestC
     assert updated.status_code == 200, updated.text
     assert updated.json()["images"][0]["storage_key"] == image["storage_key"]
     assert updated.json()["images"][0]["alt_text"] == "Mặt trước đã cập nhật"
+
+
+def test_product_update_swaps_existing_image_order_and_primary(admin_client: TestClient) -> None:
+    first = {
+        "storage_key": "2026/10/front.webp",
+        "url": "https://example.com/front.webp",
+        "alt_text": "Front",
+        "sort_order": 0,
+        "is_primary": True,
+    }
+    second = {
+        "storage_key": "2026/10/back.webp",
+        "url": "https://example.com/back.webp",
+        "alt_text": "Back",
+        "sort_order": 1,
+        "is_primary": False,
+    }
+    created = admin_client.post(
+        "/api/v1/admin/products",
+        json={
+            "name": "Reorderable product",
+            "slug": "reorderable-product",
+            "sku": "REORDER-01",
+            "images": [first, second],
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    first.update(sort_order=1, is_primary=False)
+    second.update(sort_order=0, is_primary=True)
+    updated = admin_client.patch(
+        f"/api/v1/admin/products/{created.json()['id']}",
+        json={"images": [second, first]},
+    )
+
+    assert updated.status_code == 200, updated.text
+    images = {image["storage_key"]: image for image in updated.json()["images"]}
+    assert images[first["storage_key"]]["sort_order"] == 1
+    assert images[first["storage_key"]]["is_primary"] is False
+    assert images[second["storage_key"]]["sort_order"] == 0
+    assert images[second["storage_key"]]["is_primary"] is True

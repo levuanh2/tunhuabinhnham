@@ -107,28 +107,41 @@ class CatalogService:
             and item.published_at is None
         ):
             item.published_at = datetime.now(UTC)
-        if data.images is not None:
-            existing = {image.storage_key: image for image in item.images}
-            reconciled: list[ProductImage] = []
-            for image_data in data.images:
-                image = existing.pop(image_data.storage_key, None)
-                if image is None:
-                    image = ProductImage(**image_data.model_dump())
-                else:
-                    for key, value in image_data.model_dump().items():
-                        setattr(image, key, value)
-                reconciled.append(image)
-            item.images[:] = reconciled
-        self.db.add(
-            AuditLog(
-                admin_user_id=admin_id,
-                action="update",
-                entity_type="product",
-                entity_id=item.id,
-                changes={key: str(value) for key, value in changes.items()},
-            )
-        )
         try:
+            if data.images is not None:
+                existing = {image.storage_key: image for image in item.images}
+                current_max = max((image.sort_order for image in item.images), default=-1)
+                requested_max = max((image.sort_order for image in data.images), default=-1)
+                temporary_order = max(current_max, requested_max) + 1
+                for image in item.images:
+                    image.sort_order = temporary_order
+                    image.is_primary = False
+                    temporary_order += 1
+                self.db.flush()
+
+                reconciled: list[ProductImage] = []
+                for image_data in data.images:
+                    reconciled_image = (
+                        existing.pop(image_data.storage_key)
+                        if image_data.storage_key in existing
+                        else None
+                    )
+                    if reconciled_image is None:
+                        reconciled_image = ProductImage(**image_data.model_dump())
+                    else:
+                        for key, value in image_data.model_dump().items():
+                            setattr(reconciled_image, key, value)
+                    reconciled.append(reconciled_image)
+                item.images[:] = reconciled
+            self.db.add(
+                AuditLog(
+                    admin_user_id=admin_id,
+                    action="update",
+                    entity_type="product",
+                    entity_id=item.id,
+                    changes={key: str(value) for key, value in changes.items()},
+                )
+            )
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
