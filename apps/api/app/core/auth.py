@@ -6,7 +6,7 @@ import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
-from sqlalchemy import select
+from sqlalchemy import Uuid, column, select, table
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
@@ -25,7 +25,21 @@ class CurrentAdmin:
     role: str
 
 
-def _decode_token(token: str, settings: Settings) -> dict[str, object]:
+@dataclass(frozen=True)
+class DecodedToken:
+    claims: dict[str, object]
+    session_verified: bool
+
+
+AUTH_SESSIONS = table(
+    "sessions",
+    column("id", Uuid),
+    column("user_id", Uuid),
+    schema="auth",
+)
+
+
+def _decode_token(token: str, settings: Settings) -> DecodedToken:
     try:
         algorithm = str(jwt.get_unverified_header(token).get("alg", ""))
     except jwt.PyJWTError as exc:
@@ -56,13 +70,16 @@ def _decode_token(token: str, settings: Settings) -> dict[str, object]:
         signing_key = PyJWKClient(
             settings.supabase_jwks_url, cache_keys=True
         ).get_signing_key_from_jwt(token)
-        return jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=[algorithm],
-            audience=settings.supabase_jwt_audience,
-            issuer=settings.supabase_jwt_issuer,
-            options={"require": ["exp", "sub", "iss", "aud"]},
+        return DecodedToken(
+            claims=jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=[algorithm],
+                audience=settings.supabase_jwt_audience,
+                issuer=settings.supabase_jwt_issuer,
+                options={"require": ["exp", "sub", "iss", "aud"]},
+            ),
+            session_verified=False,
         )
     except jwt.PyJWTError as exc:
         raise HTTPException(
@@ -72,7 +89,7 @@ def _decode_token(token: str, settings: Settings) -> dict[str, object]:
         ) from exc
 
 
-def _verify_legacy_token(token: str, settings: Settings) -> dict[str, object]:
+def _verify_legacy_token(token: str, settings: Settings) -> DecodedToken:
     if not settings.supabase_url or not settings.supabase_publishable_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -107,7 +124,21 @@ def _verify_legacy_token(token: str, settings: Settings) -> dict[str, object]:
             detail="Invalid authentication response",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    return {"sub": str(user_id)}
+    return DecodedToken(claims={"sub": str(user_id)}, session_verified=True)
+
+
+def _session_is_active(
+    db: Session, auth_user_id: uuid.UUID, session_id: uuid.UUID
+) -> bool:
+    active_session_id = db.scalar(
+        select(AUTH_SESSIONS.c.id)
+        .where(
+            AUTH_SESSIONS.c.id == session_id,
+            AUTH_SESSIONS.c.user_id == auth_user_id,
+        )
+        .limit(1)
+    )
+    return active_session_id is not None
 
 
 def require_admin(
@@ -121,13 +152,29 @@ def require_admin(
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    claims = _decode_token(credentials.credentials, settings)
+    decoded = _decode_token(credentials.credentials, settings)
+    claims = decoded.claims
     try:
         auth_user_id = uuid.UUID(str(claims["sub"]))
     except (KeyError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject"
         ) from exc
+    if not decoded.session_verified:
+        try:
+            session_id = uuid.UUID(str(claims["session_id"]))
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired or signed out",
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from exc
+        if not _session_is_active(db, auth_user_id, session_id):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired or signed out",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     admin = db.scalar(
         select(AdminUser).where(
             AdminUser.auth_user_id == auth_user_id, AdminUser.is_active.is_(True)
