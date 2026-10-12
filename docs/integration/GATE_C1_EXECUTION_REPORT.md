@@ -1,6 +1,6 @@
 # Gate C1 execution report
 
-Integration branch `integration/warm-editorial-v2` @ **`b2b79a4`** (originally written at `5d4d62c`; updated after the recovery). Date: 2026-10-12 (Asia/Ho_Chi_Minh).
+Integration branch `integration/warm-editorial-v2` @ **`2f3f9c8`** (originally written at `5d4d62c`; updated after the recovery and after Phases 6–7). Date: 2026-10-12 (Asia/Ho_Chi_Minh).
 
 Recovery details: [`GATE_C1_RECOVERY_REPORT.md`](GATE_C1_RECOVERY_REPORT.md).
 
@@ -17,8 +17,9 @@ Not done in this gate: deploy, DNS change, push, merge to `main`, paid resources
 | 4. Harness repair + Playwright specs | **PASS** (harness dry-run against live, read-only; specs dry-run on fixture) |
 | 5. Real Supabase E2E (synthetic writes) | **PASS**: run `gc-20261012t041055z-27f859` on `7061a35`. pytest_live PASS; Playwright 9 passed / 1 skipped. Earlier failed runs and their fixes are in the recovery report |
 | 5. Cleanup + baseline after real runs | **PASS**: harness and independent read-only check both CLEAN |
-| 6. Permanent admin account | **BLOCKED**: the owner has not created it yet |
-| 7. Store brand correction | **BLOCKED**: depends on Phase 6. The live value is still "Tủ Hòa Bình Nhâm" |
+| 6. Permanent admin account | **PASS**: one `admin_users` row linked to the owner's Auth user, after read-only checks; real login, authorisation, SSR session and logout exercised by the owner |
+| 7. Store brand correction | **PASS**: renamed by the owner through Admin → Cài đặt to "Tủ Nhựa Bình Nhâm"; header, footer, title, `og:site_name` and cache verified on 5 public pages |
+| 6–7. Regression with the permanent admin present | **PASS**: real E2E `gc-20261012t053754z-3d0db1` (owner-approved) 9 passed / 1 skipped; the permanent admin, the owner's session and audit row, and the new name all survived cleanup |
 | 8. Responsive QA, fixture data | **PASS**: 85/85 screenshots pixel-identical to the approved set, 0 overflow; Playwright 28 passed / 2 skipped |
 | 8. Responsive QA, real API, read-only public pages | **PASS**: 63 screens / 9 viewports, 0 overflow; `public.spec` 4/4 (Chromium + WebKit) |
 | 9. Regression (local) | **PASS** (see table) |
@@ -107,6 +108,69 @@ cd /e/Tunhuabinhnham-integration && RUN_LIVE_CMS_E2E=true E2E_RUN_PYTEST_LIVE=tr
 
 It prints one JSON summary line. The manifest, baseline, after and logs go to `E:\Tunhuabinhnham-backups\<run id>\`. Exit code 2 means the baseline diff found a problem: stop and report it.
 
+## Phases 6–7: permanent admin and brand correction (2026-10-12, Asia/Ho_Chi_Minh)
+
+**Account**
+- First attempt: `auth.users` was empty in the project (ref `fyaourksnjeldsvuedox`, fingerprint `cbda20f5bbaa`). No harness run had deleted it: each run deleted only its own synthetic UID.
+- The owner then created a user with email `test@gmail.com`. Claude flagged it as a security risk before granting any rights: whoever controls that Gmail inbox could reset the password and take over admin. The owner supplied a second account instead; the `test@gmail.com` user no longer exists (read-only check after the final run).
+
+**Phase 6: link the admin** (`scratchpad/c0/admin_link.py`, outside Git)
+- Read-only checks: exactly one Auth user `3d5d2d66-3fb1-42ba-aa37-70b39ad84557` with `admin@tunhuabinhnham.com`; email confirmed; not deleted or banned; UID matches; no duplicate `admin_users` row.
+- Write: one transaction that re-checked and inserted **one** row, `d09c4f5f-ff10-4377-a2d2-78684fd37923` (role `admin`, active), verified, then committed. Read-only after: `admin_users` = 1; other tables unchanged.
+- No password was requested, displayed, logged or stored.
+
+**Phase 6: real session test**
+- The owner logged in on the local integration build (API 8200 + web 3200, live project) in their own browser. Claude never saw the password.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Login + authorisation | **PASS** | `/api/v1/admin/*` 200 from 05:22:18 UTC (API requires a valid JWT **and** an active `admin_users` row); `last_sign_in_at` set |
+| Admin CMS access (dashboard, products, banners, settings) | **PASS** | API log |
+| SSR session survives reload | **PASS** | the owner reloaded; admin requests stayed 200 |
+| Logout revokes the session | **PASS** | the first login's session no longer exists in `auth.sessions`; the only session is the owner's later re-login (05:23:15) |
+| Logged-out `/admin`, `/admin/cai-dat` | **PASS** | `307 → /admin/login` (no cookie) |
+| Admin API without a token | **PASS** | `401` |
+| Logged-out redirect observed in the owner's own browser right after logout | **not directly observed** | the owner logged in again straight away |
+
+**Phase 7: brand correction through the CMS** (not a DB edit)
+- `PATCH /api/v1/admin/site-settings` 200 at 05:22:57 UTC.
+- `audit_logs`: `update site_settings` by `admin_user_id d09c4f5f…`.
+- DB: `store_name = "Tủ Nhựa Bình Nhâm"`; `logo_url` and `favicon_url` unchanged (null).
+- Pre-existing defect fixed first, in `d270169` (merged `2f3f9c8`). Without `default_seo_title`, the public layout returned `title: undefined`, so the homepage had **no `<title>`** and section titles showed no brand; the root title was a hardcoded fallback. Titles and `og:site_name` now come from `store_name` (`absolute` on the homepage, `%s | <store>` below).
+  - Regression test `responsive.spec` #14, run on the fixture with a store name that differs from the hardcoded fallback: fails on the old code, passes on the new.
+
+**Brand verification** on 5 public pages (`/`, `/san-pham`, `/tin-tuc`, `/lien-he`, `/gioi-thieu`), two fetches:
+
+| Check | Before | After |
+|---|---|---|
+| API `store_name` | "Tủ Hòa Bình Nhâm" | "Tủ Nhựa Bình Nhâm" |
+| `<title>` | "…Tủ Hòa Bình Nhâm" | "Tủ Nhựa Bình Nhâm" / "Sản phẩm \| Tủ Nhựa Bình Nhâm" … |
+| `og:site_name` | old | new |
+| Header / footer | old | new |
+| Old string anywhere in HTML | 6–8 per page | **0** |
+| Cache | ISR `HIT` (old) | regenerated (`MISS` → `HIT`; homepage `HIT`/`STALE` serving new) |
+
+**Regression**
+- Web on `2f3f9c8`: **PASS**.
+  - lint, tsc, vitest 4/4, Next build, OpenNext;
+  - Playwright fixture 30 passed / 12 skipped;
+  - visual 85/85 pixel-identical, overflow 0.
+- Harness dry-run `gc-20261012t052454z-1223b8`: **PASS**. The baseline contains the permanent `admin_users` id and the owner's Auth UID, so cleanup refuses to touch them.
+- Real E2E `gc-20261012t053754z-3d0db1` (owner-approved): **PASS**.
+  - pytest_live PASS; Playwright 9 passed / 1 skipped.
+  - Cleanup: `cleanup_errors: []`, `baseline_problems: []`; the synthetic Auth user `9b64a5df…` and admin `15f3c93c…` were deleted.
+  - Independent read-only check after the run:
+    - the owner's Auth user, the `admin_users` row, the `audit_logs` rename row and the owner's session are all intact;
+    - `store_name` "Tủ Nhựa Bình Nhâm";
+    - categories 2, contact_clicks 2;
+    - Storage 0; e2e residue 0.
+- Backend: unchanged since `6f64a65` (no API commits); its regression PASS stands.
+
+**Follow-ups (low)**
+- The admin login page and the admin shell show a hardcoded store name, not the CMS value.
+- The `site_settings` audit row stores `changes = {}`.
+- Product detail pages set their own `openGraph`, which drops `og:site_name` there.
+
 ## Phase 8 notes (real API, read-only)
 
 - The homepage is statically prerendered at `next build`. When the API is unreachable during the build, the first render uses fallbacks (default brand text, no categories) until ISR (60 s) or an admin save revalidates it. The product listing (dynamic) showed the live `store_name` correctly. **Recommendation for Gate C2:** build with the API reachable, or warm `/` after deploy.
@@ -142,8 +206,8 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 ## Remaining blockers
 
 1. ~~Phase 5~~: **done**. Real E2E PASS (`gc-20261012t041055z-27f859`), cleanup CLEAN. Gate C1 passes only if it reports `PASS` and the independent read-only cleanup check is clean.
-2. Phase 6: the owner creates the Auth user in the Dashboard (with Auto Confirm) and reports the email. `admin_users` is then upserted (one row).
-3. Phase 7: the owner renames the store through Admin CMS. Claude then verifies header, footer, title/metadata and settings after reload.
+2. ~~Phase 6~~: **done** (permanent admin `d09c4f5f…`).
+3. ~~Phase 7~~: **done** (store name "Tủ Nhựa Bình Nhâm" via CMS). Low follow-ups are listed in the Phases 6–7 section.
 4. Dependency risk expiry 2026-11-10. The Next 16 trial is still BLOCKED_ENVIRONMENT.
 5. Follow-up migration for the sequence default ACL (low).
 6. Codex's checkpoint file is uncommitted in `fix/postcss-security`; Codex should commit or move it when its quota is available.
@@ -151,4 +215,4 @@ Advisory reconciliation (lockfile `next@15.5.27 → postcss@8.4.31`; app PostCSS
 
 ## Gate C2 readiness
 
-**NOT READY.** Real E2E is done (PASS). The permanent admin, brand correction and dependency decision are outstanding. Deployment checks (Render, Cloudflare, DNS) have not started and are not approved.
+**Gate C1: PASS** (Phases 1–9). Not clean: the npm audit is ACCEPTED_RISK until 2026-11-10. **Gate C2: not started and not approved.** The dependency decision is outstanding. Deployment checks (Render, Cloudflare, DNS) have not started and are not approved.

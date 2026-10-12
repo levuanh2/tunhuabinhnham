@@ -16,7 +16,7 @@ The recovery brief authorised exactly one real E2E. That was `e0c14c`. After fix
 - pytest_live PASS; Playwright **9 passed, 1 skipped** (the phone-only test on desktop, by design), desktop + mobile.
 - Cleanup and baseline: CLEAN, checked by the harness and independently read-only.
 
-Gate C1 phases 6 (permanent admin) and 7 (brand correction) remain **BLOCKED on the owner**.
+Gate C1 phases 6 (permanent admin) and 7 (brand correction) were completed afterwards; see `GATE_C1_EXECUTION_REPORT.md`, section "Phases 6–7".
 
 Earlier real runs failed and were each fixed:
 - uppercase run id;
