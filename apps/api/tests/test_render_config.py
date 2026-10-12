@@ -16,6 +16,7 @@ def test_render_blueprint_has_bounded_no_deploy_backend_contract() -> None:
     assert service["region"] == "singapore"
     assert service["plan"] == "free"
     assert service["branch"] == "deploy/c2-preview"
+    assert "maxShutdownDelaySeconds" not in service
     assert service["autoDeployTrigger"] == "off"
     assert service["healthCheckPath"] == "/health/ready"
     assert "--host 0.0.0.0" in service["startCommand"]
