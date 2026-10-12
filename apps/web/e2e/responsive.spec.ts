@@ -217,3 +217,73 @@ test("14. browser title and og:site_name follow the CMS store name", async ({ pa
   await page.goto("/san-pham");
   await expect(page).toHaveTitle(`Sản phẩm | ${name}`);
 });
+
+test("15. saving the store name in Admin → Cài đặt updates public pages and admin chrome at once", async ({ page, request }) => {
+  test.skip(test.info().project.name !== "desktop" || process.env.MOCK_WRITABLE_SETTINGS !== "1", "mutates shared fixture settings; needs MOCK_WRITABLE_SETTINGS=1");
+  const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
+  const renamed = "Cửa Hàng Kiểm Thử";
+  await request.post(`${mock}/__reset`);
+  try {
+    await page.goto("/");
+    const original = await page.title();
+    await login(page);
+    await page.goto("/admin/cai-dat");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Tên cửa hàng").fill(renamed);
+    await page.getByRole("button", { name: /Lưu/ }).click();
+    await expect(page.getByText(/Đã lưu/)).toBeVisible();
+    for (const [path, title] of [["/", renamed], ["/san-pham", `Sản phẩm | ${renamed}`], ["/tin-tuc", `Tin tức | ${renamed}`]]) {
+      await page.goto(path);
+      await expect(page).toHaveTitle(title);
+      await expect(page.locator("header").first()).toContainText(renamed);
+      await expect(page.locator("footer").first()).toContainText(renamed);
+    }
+    await page.goto("/admin");
+    await expect(page.locator("aside").first()).toContainText(renamed);
+    await expect(page).toHaveTitle(`Quản trị · ${renamed}`);
+    expect(original).not.toBe(renamed);
+  } finally {
+    // __reset bypasses the CMS, so invalidate the Data Cache the same way an admin save does.
+    await request.post(`${mock}/__reset`);
+    const token = (await (await request.post(`${mock}/auth/v1/token?grant_type=password`, { data: { email: "qa@example.test", password: "qa-password-123" } })).json()).access_token;
+    expect((await request.post("/api/revalidate", { headers: { Authorization: `Bearer ${token}` } })).ok()).toBe(true);
+  }
+});
+
+test("16. product and article pages expose title, description, canonical and Open Graph with the CMS store name", async ({ page, request }) => {
+  const api = process.env.E2E_API_URL ?? "http://localhost:8100/api/v1";
+  const store = (await (await request.get(`${api}/site-settings`)).json()).store_name as string;
+  for (const [path, apiPath, type] of [["/san-pham/tu-5-tang", "/products/tu-5-tang", "website"], ["/tin-tuc/chon-tu-phong-ngu", "/posts/chon-tu-phong-ngu", "article"]]) {
+    const item = await (await request.get(`${api}${apiPath}`)).json();
+    const name = (item.name ?? item.title) as string;
+    await page.goto(path);
+    await expect(page).toHaveTitle(`${name} | ${store}`);
+    const meta = (sel: string) => page.locator(sel).first();
+    await expect(meta('meta[property="og:site_name"]')).toHaveAttribute("content", store);
+    await expect(meta('meta[property="og:title"]')).toHaveAttribute("content", name);
+    await expect(meta('meta[property="og:type"]')).toHaveAttribute("content", type);
+    await expect(meta('meta[property="og:url"]')).toHaveAttribute("content", new RegExp(`${path}$`));
+    await expect(meta('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`${path}$`));
+    await expect(meta('meta[name="description"]')).toHaveAttribute("content", /\S/);
+  }
+});
+
+test("17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected", async ({ page, browser, baseURL }) => {
+  test.skip(test.info().project.name !== "desktop", "one browser is enough for the fixture; the live spec covers WebKit");
+  await login(page);
+  await page.goto("/admin/san-pham");
+  await page.goto("/admin/bai-viet");
+  const authCookies = (await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+  expect(authCookies.length).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  expect((await page.context().cookies()).filter(c => c.name.startsWith("sb-") && c.name.includes("auth-token") && c.value)).toHaveLength(0);
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/admin\/(san-pham|bai-viet)$/);
+  const replay = await browser.newContext({ baseURL });
+  await replay.addCookies(authCookies);
+  const replayPage = await replay.newPage();
+  await replayPage.goto("/admin/san-pham");
+  await expect(replayPage).toHaveURL(/\/admin\/login/);
+  await replay.close();
+});

@@ -48,6 +48,7 @@ const posts = [
   content_html: `<p>${excerpt}</p><h2>Đo đạc trước khi mua</h2><p>Hãy đo chiều rộng, chiều sâu và chiều cao khoảng trống. Chừa ít nhất 5 cm phía sau để tủ không chạm tường ẩm.</p><ul><li>Phòng dưới 10 m²: tủ 2 cánh hoặc tủ ngăn kéo.</li><li>Phòng lớn hơn: tủ 3 cánh có gương.</li></ul><blockquote>Tủ nhựa nhẹ, dễ di chuyển khi cần sắp xếp lại phòng.</blockquote><h3>Màu sắc</h3><p>Màu sáng giúp phòng trông rộng hơn. Vân gỗ hợp với nội thất ấm.</p><p><a href="/san-pham">Xem các mẫu tủ</a></p>` }));
 const settings = { store_name: process.env.MOCK_STORE ?? "Tủ Nhựa Bình Nhâm", logo_url: null, favicon_url: null, facebook_url: "https://facebook.com/", messenger_url: "https://m.me/",
   hotline: "0900 000 000", address: "Cập nhật địa chỉ trong CMS", about_text: "Tủ nhựa và đồ lưu trữ cho gia đình.", contact_tracking_enabled: true };
+const initialSettings = structuredClone(settings);
 const banners = [{ id: "b1", title: "Nhà gọn, mỗi ngày nhẹ nhàng hơn", subtitle: "Tủ nhựa, tủ ngăn kéo và kệ lưu trữ cho từng góc trong nhà.", image_url: img("scene-1"), cta_label: "Xem sản phẩm", cta_url: "/san-pham", is_active: true, sort_order: 0 }];
 const page = (items, q) => { const size = Number(q.get("page_size") ?? 20), p = Number(q.get("page") ?? 1); return { items: items.slice((p - 1) * size, p * size), page: p, page_size: size, total: items.length, pages: Math.ceil(items.length / size) }; };
 const b64 = o => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -66,7 +67,7 @@ http.createServer((req, res) => {
   if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (u.searchParams.get("grant_type") === "refresh_token") return issued.delete(`r:${b.refresh_token}`) ? send(200, session()) : send(400, { error: "invalid_grant", msg: "Invalid Refresh Token", code: "refresh_token_not_found" }); if (b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
   if (u.pathname === "/auth/v1/user") return issued.has((req.headers.authorization ?? "").replace(/^Bearer /, "")) ? send(200, user) : send(401, { msg: "invalid JWT" });
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
-  if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); return send(200, { reset: true }); }
+  if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); Object.assign(settings, structuredClone(initialSettings)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
     // In-memory writes so UI specs can be dry-run locally (incl. staging-cms.spec.ts with E2E_* pointing here).
     // Settings, posts and banners stay read-only (403) so write-failure feedback remains testable.
