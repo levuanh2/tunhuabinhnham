@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Boxes, ExternalLink, FileText, Image, LayoutDashboard, LogOut, Menu, Settings, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +23,8 @@ export function AdminShell({ children, storeName }: { children: React.ReactNode;
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => setMenuOpen(false), [pathname]);
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) { setShownPath(pathname); setMenuOpen(false); }
 
   async function signOut() {
     setSigningOut(true);

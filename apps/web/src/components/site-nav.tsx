@@ -21,7 +21,9 @@ export function MobileNav({ items }: { items: Item[] }) {
   const [open, setOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const focusSearch = useRef(false);
-  useEffect(() => setOpen(false), [pathname]);
+  // Close on navigation: adjust state during render instead of in an effect (react.dev/learn/you-might-not-need-an-effect).
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) { setShownPath(pathname); setOpen(false); }
   useEffect(() => { if (open && focusSearch.current) { searchRef.current?.focus(); focusSearch.current = false; } }, [open]);
 
   return <div className="flex items-center lg:hidden">

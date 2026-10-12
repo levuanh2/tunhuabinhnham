@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AdminMediaUpload } from "@/components/admin-media-upload";
 import { AdminPageHeader } from "@/components/admin-shell";
@@ -17,12 +17,13 @@ export default function SettingsPage() {
   const [logoBusy, setLogoBusy] = useState(false);
   const [faviconBusy, setFaviconBusy] = useState(false);
 
-  useEffect(() => {
-    if (query.data) {
-      setForm(query.data);
-      setCleanup(new Set());
-    }
-  }, [query.data]);
+  // Reset the form whenever a new settings object arrives (render-time adjustment, not an effect).
+  const [loaded, setLoaded] = useState<SiteSettings>();
+  if (query.data && query.data !== loaded) {
+    setLoaded(query.data);
+    setForm(query.data);
+    setCleanup(new Set());
+  }
 
   const save = useMutation({
     mutationFn: () => adminFetch<SiteSettings>("/site-settings", { method: "PATCH", body: JSON.stringify(form) }),
