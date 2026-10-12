@@ -207,3 +207,13 @@ test("13. login shows a Vietnamese inline error for wrong credentials", async ({
   await expect(page.locator("p[role=alert]")).toHaveText("Email hoặc mật khẩu không đúng.");
   await expect(page).toHaveURL(/\/admin\/login/);
 });
+
+test("14. browser title and og:site_name follow the CMS store name", async ({ page, request }) => {
+  const api = process.env.E2E_API_URL ?? "http://localhost:8100/api/v1";
+  const name = (await (await request.get(`${api}/site-settings`)).json()).store_name as string;
+  await page.goto("/");
+  await expect(page).toHaveTitle(name);
+  await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", name);
+  await page.goto("/san-pham");
+  await expect(page).toHaveTitle(`Sản phẩm | ${name}`);
+});
