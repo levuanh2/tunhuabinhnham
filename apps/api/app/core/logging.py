@@ -1,12 +1,23 @@
 import json
 import logging
 import re
+import sys
 from datetime import UTC, datetime
 
 _SECRET_PATTERNS = (
     (re.compile(r"(?i)bearer\s+[a-z0-9._~-]+"), "Bearer [REDACTED]"),
     (
-        re.compile(r"(?i)(postgres(?:ql)?(?:\+psycopg)?://[^:\s/@]+:)[^@\s]+(@)"),
+        re.compile(
+            r"(?i)(postgres(?:ql)?(?:\+psycopg)?://[^:\s/@]+:)"
+            r"[^\s'\"]+(@(?:\[[^\]\s]+\]|[^/@\s?#]+)(?::\d+)?)(?=[/?#'\"\s]|$)"
+        ),
+        r"\1[REDACTED]\2",
+    ),
+    (
+        re.compile(
+            r"(?i)(?<![a-z0-9._-])([a-z0-9._-]+:)"
+            r"[^\s'\"/]+(@(?:\[[^\]\s]+\]|[a-z0-9.-]+)(?::\d+)?)(?=[/'\"\s]|$)"
+        ),
         r"\1[REDACTED]\2",
     ),
     (re.compile(r"\bsb_(?:secret|service_role)_[A-Za-z0-9_-]+\b"), "[REDACTED_SUPABASE_KEY]"),
@@ -47,3 +58,5 @@ def configure_logging() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(logging.INFO)
+    # Uncaught startup errors bypass logging; route them through the redacting formatter.
+    sys.excepthook = lambda kind, exc, tb: root.critical("Unhandled exception", exc_info=(kind, exc, tb))

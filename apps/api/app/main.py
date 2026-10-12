@@ -13,11 +13,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
-from app.core.logging import configure_logging
 from app.db.session import engine
 
 settings = get_settings()
-configure_logging()
 logger = logging.getLogger("app.request")
 
 
