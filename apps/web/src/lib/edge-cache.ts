@@ -48,8 +48,10 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", EDGE_CACHE_CONTROL);
   headers.set("Cache-Tag", EDGE_CACHE_TAG);
-  // An RSC request for the same URL must never be answered with this HTML variant.
-  if (!/\brsc\b/i.test(headers.get("vary") ?? "")) headers.append("Vary", RSC_HEADERS.join(", "));
+  // Every router header must partition the cache, so no variant answers a request with other router headers.
+  const vary = (headers.get("vary") ?? "").toLowerCase().split(",").map(name => name.trim());
+  const missing = RSC_HEADERS.filter(name => !vary.includes(name));
+  if (missing.length) headers.append("Vary", missing.join(", "));
   return headers;
 }
 

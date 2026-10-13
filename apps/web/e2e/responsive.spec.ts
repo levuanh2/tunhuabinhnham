@@ -360,6 +360,14 @@ test("20. a page rendered while the API is failing is served but never marked ca
 test("21. real router prefetches of public pages are edge-cacheable; forged _rsc is not", async ({ page, request }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
   const prefetches: { path: string; status: number; cc: string | null; type: string | null }[] = [];
+  let signedPrefetch: { url: string; headers: Record<string, string> } | undefined;
+  page.on("request", r => {
+    const url = new URL(r.url());
+    if (!signedPrefetch && url.searchParams.has("_rsc") && url.pathname === "/san-pham") {
+      const h = r.headers();
+      signedPrefetch = { url: url.pathname + url.search, headers: Object.fromEntries(Object.entries(h).filter(([k]) => k === "rsc" || k.startsWith("next-router"))) };
+    }
+  });
   page.on("response", response => {
     const url = new URL(response.url());
     if (url.searchParams.has("_rsc") && !url.pathname.startsWith("/admin")) prefetches.push({ path: url.pathname, status: response.status(), cc: response.headers()["cache-control"] ?? null, type: response.headers()["content-type"] ?? null });
@@ -374,4 +382,12 @@ test("21. real router prefetches of public pages are edge-cacheable; forged _rsc
   }
   const forged = await request.get("/san-pham?_rsc=forged", { headers: { rsc: "1", "next-router-prefetch": "1" }, maxRedirects: 0 });
   expect(isPublic(forged.headers()["cache-control"] ?? null)).toBe(false);
+  // Exact-key replay: the same signed URL with missing or altered router headers must not get a cacheable RSC body.
+  const signed = signedPrefetch!;
+  const variants: Record<string, string>[] = [{}, { rsc: "1" }, { ...signed.headers, "next-router-state-tree": "%5B%22x%22%5D" }];
+  for (const headers of variants) {
+    const replay = await request.get(signed.url, { headers, maxRedirects: 0 });
+    const rscBody = /text\/x-component/.test(replay.headers()["content-type"] ?? "");
+    expect(rscBody && isPublic(replay.headers()["cache-control"] ?? null), JSON.stringify(Object.keys(headers))).toBe(false);
+  }
 });

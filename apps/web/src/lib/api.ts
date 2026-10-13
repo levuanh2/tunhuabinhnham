@@ -7,10 +7,11 @@ export class ApiError extends Error { constructor(public status: number, message
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { ...init, headers: { "Content-Type": "application/json", ...init?.headers }, next: { revalidate: 60, tags: ["catalog"] }, }).catch(error => { markRenderDegraded(); throw error; });
-  // A 404 is real content (unknown slug); anything else means the page falls back and must not be edge-cached.
-  if (!response.ok && response.status !== 404) markRenderDegraded();
-  if (!response.ok) { const payload = await response.json().catch(() => null); throw new ApiError(response.status, payload?.error?.message ?? "Không thể tải dữ liệu"); }
-  return response.json() as Promise<T>;
+  // Any failure (404 included: a detail page then renders 404, which is never cached anyway) means the page
+  // may show fallback content, so it must not be edge-cached.
+  if (!response.ok) {
+    markRenderDegraded(); const payload = await response.json().catch(() => null); throw new ApiError(response.status, payload?.error?.message ?? "Không thể tải dữ liệu"); }
+  return (response.json() as Promise<T>).catch(error => { markRenderDegraded(); throw error; });
 }
 
 export const publicApi = {
