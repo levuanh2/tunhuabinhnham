@@ -41,7 +41,7 @@ Production categories (public API, read-only): `do-dung` "Đồ dùng" and `qua-
      - the sitemap (fed by the same list);
      - the dashboard "visible" count.
 
-     Products keep their own `publish_status` and `is_visible`, and come back unchanged when the category is shown again. Admin lists and edits every product as before.
+     Products keep their own `publish_status` and `is_visible`, and come back unchanged when the category is shown again. Admin lists and edits every product as before. A product still linked to a soft-deleted category (legacy data from before the delete guard) is treated like a hidden one, so a deleted category is never embedded in public output.
 
 ## Product form: before → after
 
@@ -80,7 +80,7 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 | — | Duplicate name or slug is rejected inline (case-insensitive). A slug still reserved by a deleted category is retried as `-2` |
 | — | Rename and description edit inline; **the slug is kept**, so shared filter links keep working |
 | — | Reorder with up/down buttons (`sort_order`); the public tabs follow |
-| — | Ẩn / Hiện (`is_visible`). A hidden type leaves the public filter and homepage; its products stay on sale |
+| — | Ẩn / Hiện (`is_visible`). A hidden type leaves the public filter and homepage, and so do its products (owner decision 3, below) |
 | — | "N sản phẩm" per type |
 | Delete with "Ẩn và xóa…?" confirm | A type with products cannot be deleted: a message says how many products to move first (no dialog, no request), and the API enforces the same with 409. An empty type asks for confirmation |
 
@@ -168,7 +168,7 @@ The admin product list now also uses the new terms: "Đã đăng" / "Chưa đăn
 2. **Changing the URL of a published product** is disabled until there is a redirect.
    - Proposal: a `product_slug_redirects(old_slug, product_id)` table (migration), written by the API when a slug changes, and a 301 in `/san-pham/[slug]` when the slug is unknown but present there.
    - Needs approval: it is a schema change.
-3. **Hidden category, visible products**: products in a hidden type stay listed under "Tất cả sản phẩm". If hiding a type should also hide its products, that is a separate change.
+3. ~~Hidden category, visible products~~: superseded by owner decision 3; hiding a type now hides its products from every public view.
 4. **Deleted category slugs stay reserved** (soft delete + unique constraint). Re-creating a deleted type gets `-2`. A partial unique index (`where deleted_at is null`) would free them, but it needs a migration.
 
 ## Risks

@@ -72,7 +72,7 @@ http.createServer((req, res) => {
   if (req.method === "OPTIONS") return send(204, {});
   // ponytail: publish/visibility filtering applies only to spec-created "e2e-" records so fixture screenshots stay stable.
   const isPublic = p => (!p.slug.startsWith("e2e-") || (p.publish_status === "published" && p.is_visible && !p.deleted_at))
-    && !cats.some(c => c.id === p.category_id && !c.deleted_at && !c.is_visible); // a hidden category hides its products (all records, like the API)
+    && (!p.category_id || cats.some(c => c.id === p.category_id && !c.deleted_at && c.is_visible)); // a hidden or deleted category hides its products (all records, like the API)
   if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (u.searchParams.get("grant_type") === "refresh_token") return issued.delete(`r:${b.refresh_token}`) ? send(200, session()) : send(400, { error: "invalid_grant", msg: "Invalid Refresh Token", code: "refresh_token_not_found" }); if (b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
   if (u.pathname === "/auth/v1/user") return issued.has((req.headers.authorization ?? "").replace(/^Bearer /, "")) ? send(200, user) : send(401, { msg: "invalid JWT" });
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }

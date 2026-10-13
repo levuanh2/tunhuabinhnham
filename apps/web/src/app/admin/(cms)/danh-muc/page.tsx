@@ -31,7 +31,11 @@ export default function CategoriesPage() {
       if (error instanceof CacheRefreshError) { toast.warning(`${success}. Trang web công khai sẽ tự cập nhật trong vòng 5 phút`); return true; }
       toast.error(error instanceof Error ? error.message : "Không thể lưu thay đổi");
       return false;
-    } finally { setBusy(null); await client.invalidateQueries({ queryKey: ["categories"] }); }
+    } finally {
+      setBusy(null);
+      // Product lists embed the category (e.g. the "Loại đang ẩn" badge), so they are stale too.
+      await Promise.all([client.invalidateQueries({ queryKey: ["categories"] }), client.invalidateQueries({ queryKey: ["admin-products"] })]);
+    }
   }
 
   async function create(event: FormEvent) {

@@ -1,4 +1,11 @@
+import uuid
+from datetime import UTC, datetime
+
 from fastapi.testclient import TestClient
+from sqlalchemy import update
+from sqlalchemy.orm import Session
+
+from app.models import Category
 
 
 def test_admin_requires_authentication(client: TestClient) -> None:
@@ -331,3 +338,34 @@ def test_published_date_cannot_be_cleared_to_unlock_the_url(admin_client: TestCl
     current = admin_client.get(f"/api/v1/admin/products/{created['id']}").json()
     assert current["slug"] == "da-dang"
     assert current["published_at"] is not None
+
+
+def test_products_left_in_a_category_deleted_before_the_guard_are_not_public(
+    admin_client: TestClient, db: Session
+) -> None:
+    # Legacy data: categories were soft-deleted without moving their products first.
+    category = admin_client.post(
+        "/api/v1/admin/categories", json={"name": "Cũ", "slug": "cu-legacy"}
+    ).json()
+    admin_client.post(
+        "/api/v1/admin/products",
+        json={
+            "name": "Tủ mồ côi",
+            "slug": "tu-mo-coi",
+            "sku": "TU-MO-COI",
+            "category_id": category["id"],
+            "publish_status": "published",
+        },
+    )
+    db.execute(
+        update(Category)
+        .where(Category.id == uuid.UUID(category["id"]))
+        .values(deleted_at=datetime.now(UTC), is_visible=False)
+    )
+    db.commit()
+
+    assert admin_client.get("/api/v1/products").json()["total"] == 0
+    assert admin_client.get("/api/v1/products?search=m%E1%BB%93").json()["total"] == 0
+    assert admin_client.get("/api/v1/products/tu-mo-coi").status_code == 404
+    assert admin_client.get("/api/v1/admin/dashboard/stats").json()["visible_products"] == 0
+    assert admin_client.get("/api/v1/admin/products").json()["total"] == 1  # admins can still fix it

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import and_, func, not_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.base import ExecutableOption
 from sqlalchemy.sql.elements import ColumnElement
@@ -18,11 +18,12 @@ def public_product_conditions() -> list[ColumnElement[bool]]:
         Product.publish_status == PublishStatus.published,
         Product.is_visible.is_(True),
         or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
-        # Hiding a category hides its products without changing their own publish settings.
-        not_(
-            Product.category.has(
-                and_(Category.deleted_at.is_(None), Category.is_visible.is_(False))
-            )
+        # A product in a hidden category is hidden too, without changing its own publish
+        # settings. A soft-deleted category counts as hidden (legacy rows deleted before the
+        # delete guard may still point at one).
+        or_(
+            Product.category_id.is_(None),
+            Product.category.has(and_(Category.deleted_at.is_(None), Category.is_visible.is_(True))),
         ),
     ]
 

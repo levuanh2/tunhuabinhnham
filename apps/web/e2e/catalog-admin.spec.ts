@@ -295,7 +295,11 @@ test.describe("product categories", () => {
     page.on("dialog", dialog => { dialogs.push(dialog.message()); void dialog.accept(); });
     const publicHas = async (path: string, text: string) => (await (await page.request.get(path)).text()).includes(text);
 
-    await page.goto("/admin/danh-muc");
+    // Client-side navigation keeps the product list query warm: it must still show the change.
+    await page.goto("/admin/san-pham");
+    await expect(page.locator(".badge:visible", { hasText: "Loại đang ẩn" })).toHaveCount(0);
+    const sidebar = page.getByRole("navigation", { name: "Quản trị" });
+    await sidebar.getByRole("link", { name: "Loại sản phẩm" }).click();
     const revalidated = page.waitForResponse(response => response.url().endsWith("/api/revalidate") && response.request().method() === "POST");
     await page.getByRole("button", { name: "Ẩn loại Tủ quần áo" }).click();
     expect(dialogs).toEqual([expect.stringContaining("2 sản phẩm thuộc loại này sẽ bị ẩn khỏi website")]);
@@ -308,7 +312,8 @@ test.describe("product categories", () => {
     expect(await publicHas("/sitemap.xml", "/san-pham/tu-ao-3-canh")).toBe(false);
     expect(await publicHas("/sitemap.xml", "/san-pham/tu-5-tang")).toBe(true);
 
-    await page.goto("/admin/san-pham");
+    await sidebar.getByRole("link", { name: "Sản phẩm", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
     await expect(page.locator(".badge:visible", { hasText: "Loại đang ẩn" }).first()).toBeVisible(); // table on desktop, cards on phones
     await page.goto("/admin/san-pham/p2");
     await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c1");
