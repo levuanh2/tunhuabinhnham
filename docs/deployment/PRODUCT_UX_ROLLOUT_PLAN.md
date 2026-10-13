@@ -1,6 +1,6 @@
 # Product UX production rollout plan
 
-Status: **prepared, awaiting owner approval**. Nothing in this plan has been executed.
+Status: **EXECUTED 2026-10-13 (owner-approved). Verdict: PRODUCTION_PASS_WITH_RISK.** See "Rollout result" at the end; the plan below is kept as executed.
 
 | | |
 |---|---|
@@ -79,3 +79,73 @@ Roll back immediately on any of these:
 ### Before many real products go live
 
 Implement `docs/design/TASK_PRODUCT_SLUG_REDIRECT.md` (301 redirects for changed product URLs; needs a migration and approval).
+
+## Rollout result (2026-10-13)
+
+| | |
+|---|---|
+| Backend | Render `fa76152` (GitHub deployment 7038745377, `success` 12:43:08Z; owner Manual Deploy). Previous: `6f48006` |
+| Worker | `37eef86b-8124-48b6-84ab-eb24508073b6` @100%, deployment created 12:56:19Z, tag `product-ux`. Rollback: `213692b4-06c3-4e26-86bc-681d49b33e64` |
+| Git | `integration/warm-editorial-v2` pushed (`443a937`). `deploy/c2-preview` fast-forwarded `6f48006` → `fa76152`; no force, no merge to main |
+
+### Phase 1: predeploy (PASS)
+
+- `fa76152` contains `6f48006`, `f57cac1`, every reviewed fix, `96884dc` and `7cceb99`. File content checked: `hide_input_in_errors`, `excepthook`, `public_product_conditions` and the three API guards are all present.
+- Backend at `fa76152`: pytest 78/78, both startup logging tests pass, ruff and mypy pass.
+- The 23 pushed commits contain no env files or secrets.
+
+### Phase 2: backend smoke (PASS)
+
+- `/health/live` 200, `/health/ready` 200.
+- CORS apex 200; an unknown origin gets 400.
+- Anonymous admin products, categories and dashboard: 401.
+- `/openapi.json`: `AdminCategoryOut.product_count` is `integer`, and public `CategoryOut` has no `product_count`.
+- Public categories expose only the pre-existing fields.
+- `?category=do-dung` 200; an unknown product slug 404.
+- The old Worker `213692b4` kept serving the apex with the new API.
+- Startup logs: redaction is proven by the startup tests at the deployed commit; the owner checked the Render Logs and found nothing sensitive.
+- Published-URL protection and hidden-category hiding are covered by tests at the deployed commit. A live check would need production writes, so none was done for this.
+
+### Phase 3: Worker (PASS)
+
+- Production build from `integration` with public env only; bindings unchanged (`worker.ts`, cache enabled, ASSETS / WORKER_SELF_REFERENCE / IMAGES).
+- Bundle scan (1,303 files): no service-role key, secret key, DB URL or password, and no fixture URL or key. The only matches are the publishable anon key and the literal JWT audience `authenticated`, both public by design.
+- Preview `productux-…workers.dev`:
+  - every public route MISS → HIT, 404 not cached;
+  - admin BYPASS `private, no-store`, a corrupted cookie returns 307;
+  - signed RSC replay matrix identical to Gate C3.1;
+  - Chromium + WebKit, 6 visits, 0 page errors;
+  - 80 mobile shots, 0 overflow; errors match the C3.1 baseline only (intended 404 page, aborted `/admin/login` prefetch);
+  - the new admin UI chunks are served.
+
+### Phase 4: production smoke on `https://tunhuabinhnham.com` (PASS)
+
+| Check | Result |
+|---|---|
+| `/`, `/san-pham`, `?category=`, `?search=`, `/tin-tuc`, `/lien-he`, `/gioi-thieu` | 200, MISS → HIT (HIT 0.26–0.49 s) |
+| Unknown product | 404 BYPASS |
+| `/admin*` | BYPASS, `private, no-store`; anonymous 307 to login; corrupted cookie 307 |
+| SEO | canonical apex, sitemap and robots OK; `www` → 301 apex |
+| RSC replay | identical to Gate C3.1 (signed HIT; missing or altered router headers BYPASS/307; session-cookie HIT anonymous; admin with cookie 307) |
+| Browsers | Chromium + WebKit, 6 visits, 0 page errors |
+| Mobile | 80 shots, 0 overflow, no non-baseline errors |
+| Owner admin check | login, reload (session kept), product form (URL preview, first-publish note), Loại sản phẩm page, logout + Back, and Render Logs: **no errors** |
+| Tail (cutover → end) | 250 invocations, all on `37eef86b`, all `ok`, 0 exceptions, 0 5xx, no 1102/1027; CPU p50 17 ms, p95 251 ms (same profile as C3.1) |
+
+During the admin check the owner also made **real production writes** from their own session (Claude made none):
+- created category `tu-quan-ao` at 13:06:28Z;
+- uploaded one image;
+- created and published product `tu-nhua-4-canh` at 13:07:46Z.
+
+Both saves triggered `/api/revalidate` 200. The product received the generated code `TN-TU-NHUA-4-CANH` and appears on the detail page (canonical self), in the category filter, in "Tất cả sản phẩm", on the homepage and in the sitemap. This confirms automatic URL and code generation and the cache purge on production.
+
+### Remaining
+
+1. **Content (needs approval):** delete "Đồ dùng" and "Quà tặng" (still 0 products; re-check read-only before deleting), and add the other five types. "Tủ quần áo" now exists.
+2. **Slug redirect 301** (`docs/design/TASK_PRODUCT_SLUG_REDIRECT.md`) before many products go live: published URLs are locked until then.
+3. **Risks carried over:**
+   - cache MISS CPU is above the Free 10 ms limit (no 1102 seen);
+   - assets count toward 100k requests/day with Workers Cache;
+   - scanner 404s run the Worker;
+   - **DB password still brand-based (P0)**;
+   - Render auto-deploy is off (Manual Deploy after every push).
