@@ -55,6 +55,9 @@ describe("mergeAssets", () => {
     expect(mergeAssets({ target: next, sources: releases })).toMatchObject({ copied: 3 });
     expect(() => mergeAssets({ target: next, sources: [build({ "chunks/big.js": "x".repeat(11) })], limits: { maxFiles: 20_000, maxFileBytes: 10 } })).toThrow(/over 10 bytes/);
     expect(() => mergeAssets({ target: next, sources: [build({ "chunks/more.js": "m" })], limits: { maxFiles: 5, maxFileBytes: 1e9 } })).toThrow(/over the 5 limit/);
+    // An oversized file produced by the target build itself is reported too, also in a dry run.
+    const bigTarget = build({ "chunks/huge.js": "y".repeat(11) });
+    expect(() => mergeAssets({ target: bigTarget, sources: [build({ "chunks/ok.js": "o" })], dryRun: true, limits: { maxFiles: 20_000, maxFileBytes: 10 } })).toThrow(/huge\.js/);
     expect(list(next)).not.toContain("_next/static/chunks/more.js");
   });
 

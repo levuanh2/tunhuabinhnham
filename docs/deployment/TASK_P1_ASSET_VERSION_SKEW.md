@@ -51,7 +51,7 @@ node scripts/merge-previous-assets.mjs [--dry-run] <target .open-next/assets> <s
 
 - **Build artifacts only.** The target must be a `.open-next/assets` directory. Target and sources must contain `_next/static`. Only `_next/static/**` is copied (no HTML, no route files), and the build-ID manifests are skipped. Source code and production data are never touched.
 - **Never overwrites.** It uses `COPYFILE_EXCL`. If the same path has different bytes (SHA-256, checked across the target and all sources), it **aborts before writing anything** (exit 1).
-- **Limits.** It aborts if a file exceeds 25 MiB or the merged version exceeds 20,000 files: the Workers Free static asset limits (Paid: 100,000 files), confirmed in the Cloudflare docs on 2026-10-13. Today one version holds 45 files, 52 after a merge.
+- **Limits.** It aborts if any file of the merged version (target build or sources) exceeds 25 MiB, or the merged version exceeds 20,000 files: the Workers Free static asset limits (Paid: 100,000 files), confirmed in the Cloudflare docs on 2026-10-13. Today one version holds 45 files, 52 after a merge.
 - **Idempotent.** A second run copies 0. `--dry-run` reports the plan.
 
 ### 2. Two-step frontend rollout
@@ -62,9 +62,21 @@ Let **P** be the live build and **N** the new build.
 |---|---|---|---|---|
 | A | **P′** | P's code, unchanged | P + N (+ retained) | Same HTML as P, so P↔P′ edges are interchangeable; afterwards every edge can serve N's files |
 | B | **N** | new code | N + P (+ retained) | Forward: edges still on P′ have N's files. Backward: N has P's files |
-| Rollback | **P′** | — | P + N | Both HTML generations keep their assets. The original P is **not** a safe rollback target (scenario 1 below) |
+| Rollback | phase-specific | — | — | See "Rollback by phase" below. Once N has started rolling out, the original P is **not** a safe target (scenario 1 below) |
 
-### 3. Retention policy
+### 3. Propagation gate: `apps/web/scripts/verify-assets-live.mjs`
+
+```
+node scripts/verify-assets-live.mjs <origin> <assets dir>... [--soak 300] [--interval 10] [--timeout 1800]
+```
+
+- Each round requests every hashed `_next/static` file of the given builds from the apex (GET only).
+- The gate passes only after `--soak` seconds of **consecutive** clean rounds: every file 200 with the right MIME type.
+- Any failure resets the soak. No clean soak before `--timeout` means FAIL (exit 1).
+- After step A it is run with **N's** archived assets. A 404 then means some edge still runs the original P, so step B must not start yet.
+- Smoke run against production (read-only): 42 files, 4 rounds, 0 failures, a 32 s clean soak.
+
+### 4. Retention policy
 
 Keep `_next/static` of the **last 3 deployed builds** in `apps/web/.deploy-assets/<git-sha>/_next/static` (git-ignored, on the deploying machine; ≈ 1.8 MB each). Merge all of them into every new version.
 - Covers tabs that stay open across two releases.
@@ -73,14 +85,22 @@ Keep `_next/static` of the **last 3 deployed builds** in `apps/web/.deploy-asset
 
 ## Verification
 
-### Script tests (`scripts/merge-previous-assets.test.mjs`, Vitest, 6/6)
+### Script tests (Vitest; part of `npm --workspace apps/web test`, 33/33 in total)
+
+`scripts/merge-previous-assets.test.mjs` (6 tests):
 
 - Copies only the other build's hashed files; HTML and build-ID manifests are not copied; sources are untouched; a second run is a no-op.
 - **Collision:** same path with different content aborts, and nothing is written, not even other files of the plan.
 - Collisions between two sources are detected as well.
-- Retention: 3 previous builds are merged. The file-size and file-count limits abort the merge.
+- Retention: 3 previous builds are merged. The file-size and file-count limits abort the merge, including an oversized file produced by the target build itself, even in `--dry-run`.
 - A target that is not `.open-next/assets`, or a source without `_next/static`, is refused.
 - `--dry-run` writes nothing. The CLI exits 1 on a collision and leaves files intact.
+
+`scripts/verify-assets-live.test.mjs` (4 tests):
+- lists hashed files only;
+- passes after a contiguous clean soak;
+- resets the soak on 404s during propagation, then passes;
+- fails on a persistent 404 or a wrong MIME type.
 
 On real builds:
 - P′ gets 5 copied and 37 already present; N the same; a rerun copies 0.
@@ -124,9 +144,19 @@ Raw results: `apps/web/e2e/skew/result-{1..5}.json`. Scenarios 1 and 2 ran on th
 - Assets: no change in request billing (already billable with Workers Cache). Merged assets *remove* the 404 fallthrough Worker invocations seen in the incident.
 - Hard-navigation fallbacks during the window are ordinary page loads: they hit the new version's cache.
 
-### Codex independent review
+### Codex independent review (`c21-release-validation/ASSET_SKEW_REVIEW.md`)
 
-_Pending._ The result is recorded below when available.
+First pass on `4adea0c`: **CHANGES_REQUESTED**. Codex verified:
+- merge scope, collision handling, `COPYFILE_EXCL`, idempotence, the tests;
+- the simulation method, with the WebKit classification "justified for these captures: correlation, not a general causal proof";
+- the P′ → N design, retention, the cache analysis, and that no token, experimental feature, DNS or plan change is involved.
+
+| # | Finding | Resolution |
+|---|---|---|
+| WARN-001 | The 25 MiB check skipped files of the target build | The planning step now scans target files too; a new test covers an oversized target in dry run |
+| WARN-002 | The runbook rebuilt P and N without reinstalling their own locked dependencies | `npm ci` after every checkout and before every build |
+| WARN-003 | No hard gate on P → P′ propagation before step B | `verify-assets-live.mjs` with N's assets and a contiguous soak; any 404 resets it; step B is blocked until it passes |
+| WARN-004 | Rollback target not phase-specific | "Rollback by phase" table below |
 
 ## Standard procedure for frontend releases
 
@@ -135,31 +165,52 @@ Run it in `E:\Tunhuabinhnham-integration\apps\web`, which has the production pub
 0. **Record the live state.**
    - `npx wrangler deployments status` gives `P_VERSION`.
    - `P_SHA` is the commit P was built from (recorded in the previous release's report).
-   - Copy the merge script outside the repo, because older commits may not contain it:
-     `cp scripts/merge-previous-assets.mjs "$TMP/merge.mjs"`
+   - Copy both scripts outside the repo, because older commits may not contain them:
+     `cp scripts/merge-previous-assets.mjs scripts/verify-assets-live.mjs "$TMP/"`
 1. **Build N.**
-   - `git checkout <N_SHA>`, then `npx opennextjs-cloudflare build`.
-   - Archive: `mkdir -p .deploy-assets/<N_SHA> && cp -r .open-next/assets/_next .deploy-assets/<N_SHA>/`.
+   1. `git checkout <N_SHA>`.
+   2. `npm ci` (repository root; the lockfile of N).
+   3. `npx opennextjs-cloudflare build`.
+   4. Archive: `mkdir -p .deploy-assets/<N_SHA> && cp -r .open-next/assets/_next .deploy-assets/<N_SHA>/`.
 2. **Step A: P′.**
-   1. `git checkout --detach <P_SHA>`, then `npx opennextjs-cloudflare build`.
-   2. `node "$TMP/merge.mjs" .open-next/assets .deploy-assets/<N_SHA> .deploy-assets/<older retained>...` (must exit 0).
-   3. Scan the bundle for secrets.
-   4. `npx wrangler versions upload --tag p-prime --message "P′: <P_SHA> + assets of <N_SHA>"` gives the preview URL.
-   5. Preview smoke: the old and the new CSS/JS names are both 200 with the right MIME; pages look identical to P.
-   6. `npx wrangler versions deploy <P′>@100%`.
-   7. Tail; on the apex, check that the new and old asset URLs return 200 for ~3 minutes.
-   8. Record `P′_VERSION`; it is now the rollback target.
+   1. `git checkout --detach <P_SHA>`.
+   2. `npm ci`, so that P′ runs P's code **with P's dependencies**.
+   3. `npx opennextjs-cloudflare build`.
+   4. `node "$TMP/merge-previous-assets.mjs" .open-next/assets .deploy-assets/<N_SHA> .deploy-assets/<older retained>...` (must exit 0).
+   5. Scan the bundle for secrets.
+   6. `npx wrangler versions upload --tag p-prime --message "P′: <P_SHA> + assets of <N_SHA>"` gives the preview URL.
+   7. Preview smoke:
+      - `node "$TMP/verify-assets-live.mjs" <preview URL> .deploy-assets/<N_SHA> .deploy-assets/<P_SHA> --soak 30`;
+      - pages identical to P.
+   8. `npx wrangler versions deploy <P′>@100%`, with tail running.
+   9. **Hard gate:** `node "$TMP/verify-assets-live.mjs" https://tunhuabinhnham.com .deploy-assets/<N_SHA> --soak 300 --timeout 1800`.
+      - It must exit 0: five consecutive clean minutes, reset on any 404.
+      - Exit 1 means some edge still serves the original P, or P′ is broken: **stop**, do not start step B.
+   10. Record `P′_VERSION`.
 3. **Step B: N.**
-   1. `git checkout <N_SHA>`, then rebuild.
-   2. `node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/<P_SHA> .deploy-assets/<older retained>`.
-   3. Scan the bundle; upload with `--tag release`.
-   4. Preview smoke: Gate C3.1 cache, admin and RSC checks, plus the release's own checks.
-   5. `npx wrangler versions deploy <N>@100%`, with tail running.
-   6. Pass criterion: **0 `/_next/static` 404s** in the tail during and after the switch. Then run the usual apex smoke.
-   7. Record `N_VERSION` and `P′_VERSION` (the rollback target).
-4. **Rollback:** `npx wrangler versions deploy <P′_VERSION>@100%`.
+   1. `git checkout <N_SHA>`.
+   2. `npm ci`.
+   3. Rebuild.
+   4. `node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/<P_SHA> .deploy-assets/<older retained>`.
+   5. Scan the bundle; upload with `--tag release`.
+   6. Preview smoke: Gate C3.1 cache, admin and RSC checks, plus the release's own checks.
+   7. `npx wrangler versions deploy <N>@100%`, with tail running.
+   8. Pass criteria:
+      - **0 `/_next/static` 404s** in the tail during and after the switch;
+      - `node scripts/verify-assets-live.mjs https://tunhuabinhnham.com .deploy-assets/<N_SHA> .deploy-assets/<P_SHA> --soak 300` exits 0;
+      - then the usual apex smoke.
+   9. Record `N_VERSION`.
+4. **Rollback by phase:**
+
+   | Phase | Safe target | Command |
+   |---|---|---|
+   | Before step A is deployed (build, merge, upload, preview) | stay on **P**, nothing to roll back | — |
+   | Step A deployed, gate failing, or P′ itself broken | **P** (`P_VERSION`): same HTML as P′, so P ↔ P′ cannot skew | `npx wrangler versions deploy <P_VERSION>@100%` |
+   | Step B started (N partly or fully live) | **P′** (`P′_VERSION`): has the assets of both P and N | `npx wrangler versions deploy <P′_VERSION>@100%` |
+   | After a rollback to P′ | stay on P′ until a fixed N goes through step B again | — |
+
 5. **Retention:** keep the 3 most recent `.deploy-assets/<sha>` directories and delete older ones.
-6. `git checkout integration/warm-editorial-v2` (leave the worktree on its branch).
+6. `git checkout integration/warm-editorial-v2`, then `npm ci` (leave the worktree on its branch with its dependencies).
 
 **First use:**
 - Seed `.deploy-assets/70dac36` by rebuilding `70dac36`, the source of the current production `d65ec5a0`.

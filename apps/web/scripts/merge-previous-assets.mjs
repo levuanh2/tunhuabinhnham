@@ -33,6 +33,8 @@ export function mergeAssets({ target, sources, dryRun = false, limits = LIMITS }
 
   const plan = new Map(); // relative path -> source file
   const collisions = [], oversize = [];
+  // The whole merged version must fit, including files the target build produced itself.
+  for (const file of filesUnder(target)) if (fs.statSync(file).size > limits.maxFileBytes) oversize.push(path.relative(target, file).split(path.sep).join("/"));
   let alreadyPresent = 0, skippedBuildIdFiles = 0;
   for (const source of sources) {
     for (const file of filesUnder(path.join(source, "_next", "static"))) {
