@@ -87,3 +87,50 @@ New `e2e/product-gallery.spec.ts` covers:
 Real-browser probe: Chromium and WebKit, single and multiple images, five widths, 0 console errors (`after/report.json`).
 
 SEO and metadata are untouched: page metadata, JSON-LD and canonical live in `san-pham/[slug]/page.tsx`, which is unchanged.
+
+## Production deploy (2026-10-13, owner-approved): PRODUCTION_PASS_WITH_RISK
+
+| | |
+|---|---|
+| Git | `fix/product-gallery` pushed at `70dac36`. Base `5e3b349` = `integration/warm-editorial-v2` HEAD; app code equal to the previous production build source `443a937`; diff limited to the gallery, its tests and docs; no dependency change |
+| Build | OpenNext production build of `70dac36` (public env only). Bundle scan: no secrets; same matches as before (publishable anon key, literal JWT audience) |
+| Preview | Worker version `d65ec5a0-c59c-4ed9-9909-80dd1cd70231` (alias `gallery-…workers.dev`) |
+| Production | `d65ec5a0-c59c-4ed9-9909-80dd1cd70231` @100%, deployment created 2026-10-13T14:13:22Z |
+| Rollback | `npx wrangler versions deploy 37eef86b-8124-48b6-84ab-eb24508073b6@100%` (not needed) |
+| Backend | unchanged (Render `fa76152`); no Supabase, DNS or plan change |
+
+**Preview smoke (PASS).** On the real product `/san-pham/tu-nhua-4-canh`:
+- main image 633 × 792 at 1920/1440, 704 × 880 at 768, 358 × 448 at 390, 343 × 429 at 375, `object-fit: contain`;
+- the lightbox opens; Escape closes it and focus returns to the zoom button;
+- Chromium + WebKit, 0 console errors, 0 5xx, 0 overflow.
+
+Also on the preview:
+- public routes MISS → HIT, 404 not cached;
+- admin BYPASS `no-store`, corrupted cookie 307;
+- canonical and JSON-LD intact;
+- RSC replay matrix identical to Gate C3.1;
+- 6 browser visits, 0 errors;
+- 80 mobile shots, 0 overflow.
+
+Multi-image behaviour cannot be checked on production data (the only product has one image). It is covered by G2 on the fixture.
+
+**Production verification (after cutover, on fresh HTML).** The product page was MISS then HIT. The cache key includes the Worker version, so no HTML from `37eef86b` was served, and the page carries the new markup (`data-slide`, no 72 px rail). Results:
+- same measurements as on the preview, in both engines and at all five widths (`screenshots/product-gallery/production/`);
+- homepage and category pages MISS → HIT;
+- admin BYPASS;
+- RSC matrix as above;
+- 80 mobile shots with no overflow;
+- all homepage assets 200.
+
+Tail 14:13:38–14:21:02Z: 281 invocations, all `ok`, 0 exceptions, 0 5xx, no 1102/1027, CPU p50 16 ms / p95 234 ms (unchanged profile).
+
+**Risk observed: asset version skew during cutover.**
+- From 14:13:51 to 14:15:03Z (~72 s), 11 requests for the new stylesheet `/_next/static/chunks/1r_u2-zj6a_zg.css` were answered **404 by the old version `37eef86b`**, whose asset manifest does not contain it.
+- Meanwhile HTML was already rendered by `d65ec5a0`. A visitor in that window could get an unstyled page; one of the first checks after cutover saw it.
+- The 404s were not cached (`BYPASS`), and none occurred after 14:15:03Z.
+- This is the version-skew risk noted in Gate C3.1, now observed. Mitigations for the next frontend deploy, as a separate task:
+  1. enable OpenNext/Cloudflare skew protection, so that assets and RSC requests are pinned to the deployment that rendered the HTML; or
+  2. keep previous builds' hashed assets available across a deploy;
+  3. at minimum, deploy outside peak hours and re-check assets ~2 minutes after cutover.
+
+**Follow-up needing approval:** merge `fix/product-gallery` into `integration/warm-editorial-v2` (fast-forward from `5e3b349`). Until then, a build from `integration` would bring the 72 × 90 bug back.

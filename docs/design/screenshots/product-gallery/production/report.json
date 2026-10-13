@@ -1,0 +1,292 @@
+[
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   633,
+   792
+  ],
+  "img": [
+   633,
+   792
+  ],
+  "fit": "contain",
+  "natural": [
+   640,
+   853
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   633,
+   792
+  ],
+  "img": [
+   633,
+   792
+  ],
+  "fit": "contain",
+  "natural": [
+   640,
+   853
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   704,
+   880
+  ],
+  "img": [
+   704,
+   880
+  ],
+  "fit": "contain",
+  "natural": [
+   768,
+   1024
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   358,
+   448
+  ],
+  "img": [
+   358,
+   448
+  ],
+  "fit": "contain",
+  "natural": [
+   390,
+   519
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   343,
+   429
+  ],
+  "img": [
+   343,
+   429
+  ],
+  "fit": "contain",
+  "natural": [
+   374,
+   499
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   633,
+   792
+  ],
+  "img": [
+   633,
+   792
+  ],
+  "fit": "contain",
+  "natural": [
+   640,
+   853
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   633,
+   792
+  ],
+  "img": [
+   633,
+   792
+  ],
+  "fit": "contain",
+  "natural": [
+   640,
+   853
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   704,
+   880
+  ],
+  "img": [
+   704,
+   880
+  ],
+  "fit": "contain",
+  "natural": [
+   768,
+   1024
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   358,
+   448
+  ],
+  "img": [
+   358,
+   448
+  ],
+  "fit": "contain",
+  "natural": [
+   390,
+   519
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "status": 200,
+  "cache": "HIT",
+  "region": [
+   343,
+   429
+  ],
+  "img": [
+   343,
+   429
+  ],
+  "fit": "contain",
+  "natural": [
+   374,
+   499
+  ],
+  "newMarkup": true,
+  "overflow": false,
+  "lightbox": {
+   "opened": true,
+   "closeFocused": true,
+   "closedByEscape": true,
+   "focusAfter": "Phóng to ảnh 1"
+  },
+  "errors": [],
+  "bad": []
+ }
+]
