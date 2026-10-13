@@ -6,7 +6,7 @@ Date: 2026-10-13 (UTC+7). Branch `gate-c31/cache` (`4d59c8c`, `e1a4cd7`, `de754e
 
 ## Verdict
 
-**FREE_VIABLE_WITH_RISK — provisional until the CMS purge test (Phase 4) runs.** If the new value appears only after TTL expiry, the result is PURGE_FAIL and this verdict is revisited.
+**FREE_VIABLE_WITH_RISK** (final for this gate). Cache purge PASS, admin/auth PASS, Render commit verified, no rollback condition triggered. Workers Free and Render Free are kept.
 
 - Cached pages and prefetches no longer run the Worker: in a controlled block, 35 public requests needed only 7 Worker invocations (80% fewer). Across 356 production invocations there were 0 CPU-limit exceptions and 0 errors.
 - A cache MISS still costs more than 10 ms CPU (warm p50 28.5 ms). Free has tolerated this so far (no error 1102), but nothing guarantees it will keep doing so.
@@ -204,7 +204,7 @@ Strategy: **a single, monitored 100% cutover**, not a gradual rollout. Skew prot
 | Browsers, Chromium + WebKit, 3 visits each | HTML, 24 assets and ~10 prefetches HIT; 0 page errors; load 1.2–1.5 s |
 | Mobile | 80 screenshots (8 pages × 5 widths × 2 engines): 0 horizontal overflow, 0 real errors (`screenshots-c31/`) |
 | Backend | `/health/live` 200 (0.37 s), `/health/ready` 200 (1.18 s), CORS preflight from the apex 200, anonymous admin endpoint 401 |
-| Admin login, session after reload, logout + Back on the apex | **pending owner** (needs the real admin account) |
+| Admin login, session after reload, logout + Back on the apex | PASS: the owner logged in on the apex and confirmed. Tail: admin pages 200 (each loaded twice, the session held), `POST /api/auth/logout` 200 at 05:28:57, then `/admin` 307 to login at 05:29:00. No admin response was public |
 
 Measurements (production, from `wrangler tail` and `curl` run in Vietnam):
 
@@ -221,13 +221,25 @@ Measurements (production, from `wrangler tail` and `curl` run in Vietnam):
 
 HITs never appear in the tail because the Worker does not run for them. Every tailed invocation is therefore a MISS, a BYPASS or a non-cacheable route, and all CPU figures above are for requests that ran the Worker.
 
-### Cache invalidation (Phase 4): PENDING
+### Cache invalidation (Phase 4): PASS
 
-Authorised: one real CMS settings save by the owner (a real hotline or Messenger link).
-- Before the save, the apex shows the placeholder values `tel:0900000000` and `https://m.me/` on `/` and `/lien-he` (both HIT).
-- A watcher sampled both pages every 3 s for 57 minutes (03:07–04:04Z) and saw no change: no save was made in that window.
-- The production tail records the status of `POST /api/revalidate`.
-- PASS requires the new value on the next apex request, with a low `Age`, well inside the 300 s TTL. A value that changes only once `Age` reaches 300 is PURGE_FAIL.
+Authorised: one real CMS settings save by the owner (a real hotline or Messenger link). The owner changed the hotline at 12:28 ICT (05:28Z). No other write was made.
+
+| Time (UTC) | Event (production tail + `curl`) |
+|---|---|
+| 03:07–04:04 | watcher: `/` and `/lien-he` HIT with placeholder `tel:0900000000` |
+| 05:27:56 | anonymous browser `GET /` (no cookie, no router headers): Worker ran, 200, wall 1.99 s, no API error. This stored a fresh entry with the old value, valid until 05:32:56 |
+| 05:28:21–05:28:23 | signed-in admin pages (`/admin`, `/admin/cai-dat`, …) 200, never cached |
+| 05:28:45 | `POST /api/revalidate` with `Authorization`: **200** (the route returns 502 if the tag purge throws) |
+| 05:29:20 | `curl /`: **MISS**, new hotline `tel:0963542815`, 84 s after the entry was stored and 35 s after the purge, well inside the 300 s TTL |
+| 05:29:23 | `curl /lien-he`: MISS, new hotline |
+| later reads | `/`, `/lien-he`, `www` HIT with the new hotline; old value absent (`0900000000` count 0); `/san-pham` new hotline |
+
+The entry written at 05:27:56 would have been a HIT until 05:32:56 without a purge. It was gone at 05:29:20, so `ctx.cache.purge({ tags: ["public-html"] })` works in production.
+
+Limit: the tail does not record response headers, so the 05:27:56 store is inferred from the cache policy (anonymous, 200, non-degraded render) rather than observed.
+
+The page has no JSON-LD `telephone` field, so there is no metadata to update. The Messenger and Facebook links are still placeholders (`https://m.me/`, `https://facebook.com/`), because only the hotline was changed.
 
 ### Free capacity and static assets (Phase 5)
 
@@ -236,9 +248,17 @@ Authorised: one real CMS settings save by the owner (a real hotline or Messenger
 - Option for a later, separately tested release: enable the cache only on a named render entrypoint (`exports.<Name>.cache.enabled`) and have the default entrypoint forward cacheable page requests to it through `ctx.exports`. Assets would be free again and tag purge would keep working. Not changed in this release, as the brief requires.
 - Bots: scanners requested about 150 non-existent paths in one hour. 404s are never cached, so each one runs the Worker and counts toward the quota. A free WAF custom rule that blocks `*.php`, `/.git`, `/.svn` and `/.hg` would remove most of them. This is an owner decision and needs no DNS change.
 
-### Render (Phase 6): UNVERIFIED
+### Render (Phase 6): VERIFIED
 
-The Render API key available in this session belongs to a different workspace and does not list `tunhuabinhnham-api`, and the public endpoints do not expose the running commit. Owner evidence needed: Render → `tunhuabinhnham-api` → Events must show deployed commit `a99bed4` or later (with the startup/log redaction fixes). Otherwise, Manual Deploy the latest `deploy/c2-preview` commit.
+Render reports each deploy to GitHub as a deployment of `levuanh2/tunhuabinhnham`, environment `deploy/c2-preview - tunhuabinhnham-api`. The latest record shows commit `416cd0201b81`, state `success`, at 2026-10-12T21:05:34Z, with environment URL `https://tunhuabinhnham-api.onrender.com`. `git merge-base --is-ancestor a99bed4 416cd020` succeeds, so the running commit contains the startup/log redaction fixes (`ca7416e`, `96884dc`, `7cceb99`).
+
+Codex found the same commit independently (`C31_ROLLOUT_ACK.md`, verdict **ACK**). Its read-only checks:
+- health 200/200;
+- CORS preflight from the apex 200, exact origin, `no-store`;
+- anonymous admin endpoint 401 `WWW-Authenticate: Bearer`;
+- no private-cache leak path in `edge-cache.ts` / `worker.ts`.
+
+Note: the Render API key in this session belongs to a different workspace and was not used for this service.
 
 ### Rollback conditions (Phase 7)
 
@@ -250,18 +270,14 @@ None triggered: no private-content leakage, no auth regression found, no CPU-lim
    1. Reset it to a long random value in Supabase.
    2. Update `DATABASE_URL` on Render, then Manual Deploy.
    3. Update `apps/api/.env`.
-2. Phase 4: one CMS settings save on the apex. Claude reads the watcher and tail evidence and records PASS or PURGE_FAIL.
-3. Admin on the apex:
-   - log in and reload (the session should persist);
-   - log out, then press Back (no cached admin page);
-   - check that anonymous `/admin` redirects to login.
-4. Phase 6: the Render Events SHA.
+2. Optional: enter the real Messenger/Facebook links in Admin → Cài đặt (they are still placeholders).
+3. Optional: a free WAF custom rule against scanner paths (Phase 5).
 
 ## Remaining risks
 
 - Cache MISS CPU still exceeds 10 ms; on Free each miss risks error 1102 (none seen so far).
 - Request quota consumption roughly triples for fresh visitors because assets become billable.
-- Purge depends on `ctx.cache` in production (Phase 4 pending); the fallback is the 5-minute TTL.
+- Purge works in production (Phase 4). If a purge is ever lost, the 5-minute TTL is the backstop; Free-tier purge rate limits apply to bursts of admin saves.
 - Bot 404 traffic runs the Worker on every request (404s are never cached, by design).
 - The database password is weak (P0 under "Pending") until it is rotated.
 - Render Free cold start (37.65 s) makes the first MISS after idle slow; it is not cached as degraded, because a slow response is still a success.
