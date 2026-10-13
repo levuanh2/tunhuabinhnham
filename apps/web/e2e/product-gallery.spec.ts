@@ -33,7 +33,8 @@ test.describe("product gallery", () => {
       await page.setViewportSize({ width, height });
       await page.goto("/san-pham/tu-giay");
       const region = (await gallery(page).boundingBox())!;
-      const main = await box(page, '[aria-roledescription="thư viện ảnh"] button[aria-label^="Phóng to"]');
+      // Structure-agnostic: the first <img> of the gallery is the main image (old and new markup).
+      const main = await box(page, '[aria-roledescription="thư viện ảnh"] img');
       expect(main.width, `${width}px: main image uses the gallery width`).toBeGreaterThan(region.width * 0.98);
       expect(main.height / main.width, `${width}px: 4:5 frame`).toBeCloseTo(1.25, 1);
       if (width >= 1024) expect(main.width, `${width}px: large on desktop`).toBeGreaterThan(450);

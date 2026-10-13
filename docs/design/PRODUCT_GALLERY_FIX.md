@@ -79,7 +79,7 @@ Not done, deliberately:
 | Playwright on local workerd + fixture (desktop + iPhone 13), `--workers=1` | **59 passed, 0 failed** (Workers Cache, auth, RSC, SEO and the Product UX suites included) |
 
 New `e2e/product-gallery.spec.ts` covers:
-- **G1:** one image fills the column at 1920/1440/768/390/375 (fails on the old code: 72 px); 4:5 frame; no thumbnails; `object-fit: contain`; alt fallback; no overflow.
+- **G1:** one image fills the column at 1920/1440/768/390/375; 4:5 frame; no thumbnails; `object-fit: contain`; alt fallback; no overflow. Negative control run: on the old gallery, G1 fails with `Received: 72`.
 - **G2:** several images: thumbnails below; selection; arrow keys; Enter opens the lightbox with focus on close; arrows and next button with wrap-around; the zoomed image is larger; Escape closes with the selection in sync; phone thumbnails scroll; tap to open and close.
 - **G3:** broken image fallback; empty state; cumulative layout shift < 0.1.
 
