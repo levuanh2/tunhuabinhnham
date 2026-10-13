@@ -33,7 +33,7 @@ Production categories (public API, read-only): `do-dung` "Đồ dùng" and `qua-
 - Backend changes (no schema change):
   1. `GET /admin/categories` adds `product_count` (non-deleted products per category). The public `GET /categories` is unchanged; a test asserts this.
   2. `DELETE /admin/categories/{id}` returns **409 "Category has products"** while non-deleted products use the category, so no product is left pointing at a deleted category.
-  3. `PATCH /admin/products/{id}` returns **409 "Published product URL cannot change"** when the slug changes on a product that was ever published (`published_at` set). The product row is re-read under a row lock, so a form opened before someone else published cannot break the public URL.
+  3. `PATCH /admin/products/{id}` returns **409 "Published product URL cannot change"** when the slug changes on a product that was ever published (`published_at` set, or currently published), and also refuses `published_at: null` on such a product, which would otherwise unlock the slug for a later request. The product row is re-read under a row lock, so a form opened before someone else published cannot break the public URL.
   4. Create/update product with a deleted or unknown `category_id` returns **422 "Category not found"**. Assignment takes `FOR SHARE` on the category row and delete takes `FOR UPDATE`, so on PostgreSQL a concurrent assign and delete serialize: the product is either counted and the delete refused, or the assignment refused.
   5. Public `GET /products?category=<slug>` ignores hidden categories (`is_visible = false`), as it already ignored deleted ones.
 
@@ -102,7 +102,7 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 | OpenNext build (fixture env) | PASS |
 | Playwright on local workerd + fixture API, Chromium desktop + iPhone 13, `--workers=1` | **54 passed, 0 failed, 28 skipped** (skipped = live-staging spec and desktop-only write tests on mobile) |
 | New `e2e/catalog-admin.spec.ts` | see the list below |
-| Backend pytest (`-m "not integration_supabase"`) | 74 passed. New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
+| Backend pytest (`-m "not integration_supabase"`) | 75 passed. New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing, and clearing `published_at`), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
 | ruff, mypy | PASS |
 
 `e2e/catalog-admin.spec.ts` covers:
@@ -129,7 +129,7 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 
 | # | Finding | Resolution |
 |---|---|---|
-| WARN-001 | Slug lock was UI-only; a stale form could change a URL published meanwhile | API refuses the slug change once `published_at` is set (row lock); the form restores the old URL with a field message. pytest + e2e P6 |
+| WARN-001 | Slug lock was UI-only; a stale form could change a URL published meanwhile | API refuses the slug change once `published_at` is set (row lock); the form restores the old URL with a field message. pytest + e2e P6. Re-review blocker (clearing `published_at` first) fixed: the API refuses to clear it; pytest |
 | WARN-002 | A product could be assigned to a category during or after its soft delete | `Category not found` 422 on assignment; `FOR SHARE`/`FOR UPDATE` pairing serializes assign vs delete on PostgreSQL. Sequential pytest + e2e C3. The test DB is single-connection SQLite, so a true two-session race is not reproducible in this suite |
 | WARN-003 | Hidden category URL could still list products (API ignored `is_visible`; the page relied on a non-empty category list) | API filter skips hidden categories; the page treats any category missing from a successfully loaded list as unknown. pytest + e2e C3 (all hidden) |
 | WARN-004 | No coverage for `-3`, mixed conflicts or a failed cache refresh | e2e P5 counts create requests for both cases |

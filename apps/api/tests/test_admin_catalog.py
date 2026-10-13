@@ -289,3 +289,22 @@ def test_public_category_filter_skips_hidden_categories(admin_client: TestClient
     assert admin_client.get("/api/v1/products?category=an").json()["total"] == 0
     # The product itself stays on sale (owner decision: hiding a type does not hide its products).
     assert admin_client.get("/api/v1/products").json()["total"] == 1
+
+
+def test_published_date_cannot_be_cleared_to_unlock_the_url(admin_client: TestClient) -> None:
+    created = admin_client.post(
+        "/api/v1/admin/products",
+        json={"name": "Đã đăng", "slug": "da-dang", "sku": "DA-DANG", "publish_status": "published"},
+    ).json()
+    cleared = admin_client.patch(
+        f"/api/v1/admin/products/{created['id']}", json={"published_at": None}
+    )
+    assert cleared.status_code == 409
+    assert cleared.json()["error"]["message"] == "Published product URL cannot change"
+    both = admin_client.patch(
+        f"/api/v1/admin/products/{created['id']}", json={"published_at": None, "slug": "mo-khoa"}
+    )
+    assert both.status_code == 409
+    current = admin_client.get(f"/api/v1/admin/products/{created['id']}").json()
+    assert current["slug"] == "da-dang"
+    assert current["published_at"] is not None

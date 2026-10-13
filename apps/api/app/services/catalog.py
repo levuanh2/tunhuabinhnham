@@ -131,7 +131,12 @@ class CatalogService:
         changes = data.model_dump(exclude_unset=True, exclude={"images"})
         # Re-read under a row lock: another admin may have published it since this form loaded.
         self.db.refresh(item, with_for_update=True)
-        if "slug" in changes and changes["slug"] != item.slug and item.published_at is not None:
+        was_public = item.published_at is not None or item.publish_status == PublishStatus.published
+        if was_public and (
+            ("slug" in changes and changes["slug"] != item.slug)
+            # Clearing published_at would unlock the slug on a later request.
+            or ("published_at" in changes and changes["published_at"] is None)
+        ):
             # There are no redirects from old product URLs, so a once-public URL stays valid.
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Published product URL cannot change"
