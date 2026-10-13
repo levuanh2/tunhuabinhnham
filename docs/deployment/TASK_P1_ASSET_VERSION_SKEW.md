@@ -74,7 +74,7 @@ node scripts/verify-assets-live.mjs <origin> <assets dir>... [--soak 300] [--int
 - The gate passes only after `--soak` seconds of **consecutive** clean rounds: every file 200 with the right MIME type. MIME is checked for **every** extension (CSS, JS, fonts such as `.woff2`, images, maps); an extension without a known MIME type fails the gate rather than passing unchecked.
 - Any failure resets the soak. No clean soak before `--timeout` means FAIL (exit 1).
 - After step A it is run with **N's** archived assets. A 404 then means some edge still runs the original P, so step B must not start yet.
-- Smoke runs against production (read-only): 42 files (1 CSS, 29 JS, 15 `.woff2`), 0 failures, clean soaks of 32 s and 23 s.
+- Smoke runs against production (read-only): 42 files (1 CSS, 26 JS, 15 `.woff2`; the 3 build-ID manifest JS files are excluded), 0 failures, clean soaks of 32 s and 23 s.
 
 ### 4. Retention policy
 
