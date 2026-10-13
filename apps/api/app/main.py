@@ -48,6 +48,11 @@ async def request_context(request: Request, call_next):  # type: ignore[no-untyp
     started = time.perf_counter()
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if not request.url.path.startswith(("/docs", "/redoc")):  # Swagger/ReDoc load CDN assets
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     logger.info(
         "request_completed",
         extra={
