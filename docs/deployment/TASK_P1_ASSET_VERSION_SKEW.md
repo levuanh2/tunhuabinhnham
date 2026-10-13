@@ -223,4 +223,4 @@ Stop conditions:
 - a secret in the bundle;
 - any security or admin regression.
 
-On any of these, stop and roll back to P′.
+On any of these, stop and roll back to the target for the current phase (table in step 4).
