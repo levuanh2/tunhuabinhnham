@@ -391,3 +391,13 @@ test("21. real router prefetches of public pages are edge-cacheable; forged _rsc
     expect(rscBody && isPublic(replay.headers()["cache-control"] ?? null), JSON.stringify(Object.keys(headers))).toBe(false);
   }
 });
+
+test("22. a corrupted Supabase session cookie redirects to login instead of failing", async ({ request }) => {
+  test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
+  for (const value of ["base64-synthetic", "base64-%%%", "garbage"]) {
+    const response = await request.get("/admin/san-pham", { headers: { cookie: `sb-127-auth-token=${value}` }, maxRedirects: 0 });
+    expect(response.status(), value).toBe(307);
+    expect(response.headers()["location"], value).toMatch(/\/admin\/login$/);
+    expect(isPublic(response.headers()["cache-control"] ?? null), value).toBe(false);
+  }
+});
