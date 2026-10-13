@@ -266,7 +266,11 @@ None triggered: no private-content leakage, no auth regression found, no CPU-lim
 
 ## Pending (needs owner action)
 
-1. **P0 security**: the current PostgreSQL password equals the brand name (case-insensitive) and is guessable, since the pooler user `postgres.<ref>` follows from the public Supabase URL. Steps:
+1. **P0 security (open)**: the PostgreSQL password was based on the brand name, and the pooler user `postgres.<ref>` follows from the public Supabase URL, so it is guessable. The owner rotated it at 12:31 ICT:
+   - Render redeployed `b532ac4` (contains `a99bed4`) at 05:32:51Z, and `/health/ready` (`select 1`) returned 200 afterwards.
+   - The new password is still the brand name plus 4 characters (checked by length and pattern only; the value was never printed). Brand-plus-suffix is a standard guessing pattern.
+
+   Rotate again to a password-manager-generated random value. Steps:
    1. Reset it to a long random value in Supabase.
    2. Update `DATABASE_URL` on Render, then Manual Deploy.
    3. Update `apps/api/.env`.
