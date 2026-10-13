@@ -1,0 +1,322 @@
+[
+ {
+  "set": "single",
+  "engine": "chromium",
+  "w": 1920,
+  "region": [
+   633,
+   792
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "chromium",
+  "w": 1440,
+  "region": [
+   633,
+   792
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "chromium",
+  "w": 768,
+  "region": [
+   704,
+   880
+  ],
+  "main": [
+   704,
+   880
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "chromium",
+  "w": 390,
+  "region": [
+   358,
+   448
+  ],
+  "main": [
+   358,
+   448
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "chromium",
+  "w": 375,
+  "region": [
+   343,
+   429
+  ],
+  "main": [
+   343,
+   429
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "webkit",
+  "w": 1920,
+  "region": [
+   633,
+   792
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "webkit",
+  "w": 1440,
+  "region": [
+   633,
+   792
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "webkit",
+  "w": 768,
+  "region": [
+   704,
+   880
+  ],
+  "main": [
+   704,
+   880
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "webkit",
+  "w": 390,
+  "region": [
+   358,
+   448
+  ],
+  "main": [
+   358,
+   448
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "single",
+  "engine": "webkit",
+  "w": 375,
+  "region": [
+   343,
+   429
+  ],
+  "main": [
+   343,
+   429
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "chromium",
+  "w": 1920,
+  "region": [
+   633,
+   912
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "chromium",
+  "w": 1440,
+  "region": [
+   633,
+   912
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "chromium",
+  "w": 768,
+  "region": [
+   704,
+   1000
+  ],
+  "main": [
+   704,
+   880
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "chromium",
+  "w": 390,
+  "region": [
+   358,
+   548
+  ],
+  "main": [
+   358,
+   448
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "chromium",
+  "w": 375,
+  "region": [
+   343,
+   529
+  ],
+  "main": [
+   343,
+   429
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "webkit",
+  "w": 1920,
+  "region": [
+   633,
+   912
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "webkit",
+  "w": 1440,
+  "region": [
+   633,
+   912
+  ],
+  "main": [
+   633,
+   792
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "webkit",
+  "w": 768,
+  "region": [
+   704,
+   1000
+  ],
+  "main": [
+   704,
+   880
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "webkit",
+  "w": 390,
+  "region": [
+   358,
+   548
+  ],
+  "main": [
+   358,
+   448
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ },
+ {
+  "set": "multi",
+  "engine": "webkit",
+  "w": 375,
+  "region": [
+   343,
+   529
+  ],
+  "main": [
+   343,
+   429
+  ],
+  "overflow": false,
+  "fit": "contain",
+  "errors": []
+ }
+]
