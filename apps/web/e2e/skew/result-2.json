@@ -1,0 +1,289 @@
+{
+ "label": "2-backward-unprepared (P html, N assets): tab opened before deploy",
+ "originA": "http://localhost:8788",
+ "originB": "http://localhost:8787",
+ "mixed": [
+  {
+   "engine": "chromium",
+   "path": "/",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css"
+   ],
+   "pageErrors": []
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham/tu-5-tang",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1c0og39-_nn3q.js",
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "chromium",
+   "path": "/tin-tuc",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "chromium",
+   "path": "/admin/login",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css"
+   ],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham/tu-5-tang",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/1c0og39-_nn3q.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/tin-tuc",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/admin/login",
+   "styled": false,
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css"
+   ],
+   "pageErrors": []
+  }
+ ],
+ "navigate": [
+  {
+   "engine": "chromium",
+   "width": 1440,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": false
+    },
+    {
+     "step": "client nav → product",
+     "ok": false,
+     "clicked": false,
+     "styled": false
+    },
+    {
+     "step": "back",
+     "ok": false,
+     "styled": false
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893",
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "chromium",
+   "width": 390,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": false
+    },
+    {
+     "step": "client nav → product",
+     "ok": false,
+     "clicked": false,
+     "styled": false
+    },
+    {
+     "step": "back",
+     "ok": false,
+     "styled": false
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/1yy7em2ev-v5k.css",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893",
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "webkit",
+   "width": 1440,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "back",
+     "ok": true,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/1c0og39-_nn3q.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "/localhost:8788/lien-he?_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "/localhost:8788/san-pham?category=tu-quan-ao&_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "/localhost:8788/san-pham?category=tu-ngan-keo&_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "/localhost:8788/san-pham?category=tu-giay&_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "/localhost:8788/san-pham?category=ke-bep&_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "/localhost:8788/san-pham?category=do-tre-em&_rsc=5CB68i4pnAekjehf due to access control checks.",
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  },
+  {
+   "engine": "webkit",
+   "width": 390,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": false,
+     "clicked": false,
+     "styled": false
+    },
+    {
+     "step": "back",
+     "ok": false,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js",
+    "404 /_next/static/chunks/3_4gbr_ujsomr.js"
+   ],
+   "pageErrors": [
+    "Failed to load chunk /_next/static/chunks/3_4gbr_ujsomr.js from module 64893"
+   ]
+  }
+ ],
+ "summary": {
+  "mixedPages": 10,
+  "unstyled": 10,
+  "assetProblems": 43,
+  "pageErrors": 16,
+  "navigationRuns": 4,
+  "failedNavigationSteps": 8,
+  "verdict": "SKEW_BREAKS_PAGES"
+ }
+}

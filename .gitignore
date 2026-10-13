@@ -4,6 +4,7 @@
 node_modules/
 .next/
 .open-next/
+.deploy-assets/
 .wrangler/
 .dev.vars
 .npm-cache/

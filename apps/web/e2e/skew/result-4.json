@@ -1,0 +1,221 @@
+{
+ "label": "4-backward-prepared(P'-html,N-assets):tab-opened-before-release",
+ "originA": "http://localhost:8788",
+ "originB": "http://localhost:8787",
+ "mixed": [
+  {
+   "engine": "chromium",
+   "path": "/",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham/tu-5-tang",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "chromium",
+   "path": "/tin-tuc",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "chromium",
+   "path": "/admin/login",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham/tu-5-tang",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/tin-tuc",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  },
+  {
+   "engine": "webkit",
+   "path": "/admin/login",
+   "styled": true,
+   "problems": [],
+   "pageErrors": []
+  }
+ ],
+ "navigate": [
+  {
+   "engine": "chromium",
+   "width": 1440,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "back",
+     "ok": true,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [],
+   "pageErrors": [],
+   "documentLoads": 4,
+   "abortedPrefetches": 0
+  },
+  {
+   "engine": "chromium",
+   "width": 390,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "back",
+     "ok": true,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [],
+   "pageErrors": [],
+   "documentLoads": 4,
+   "abortedPrefetches": 0
+  },
+  {
+   "engine": "webkit",
+   "width": 1440,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "back",
+     "ok": true,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [],
+   "pageErrors": [],
+   "documentLoads": 4,
+   "abortedPrefetches": 2
+  },
+  {
+   "engine": "webkit",
+   "width": 390,
+   "steps": [
+    {
+     "step": "client nav → /san-pham",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "client nav → product",
+     "ok": true,
+     "clicked": true,
+     "styled": true
+    },
+    {
+     "step": "back",
+     "ok": true,
+     "styled": true
+    },
+    {
+     "step": "hard refresh (HTML from B)",
+     "ok": true,
+     "styled": true
+    }
+   ],
+   "problems": [],
+   "pageErrors": [],
+   "documentLoads": 4,
+   "abortedPrefetches": 0
+  }
+ ],
+ "summary": {
+  "mixedPages": 10,
+  "unstyled": 0,
+  "assetProblems": 0,
+  "pageErrors": 0,
+  "navigationRuns": 4,
+  "failedNavigationSteps": 0,
+  "rscStatusFromOtherVersion": {
+   "200": 173
+  },
+  "hardNavigationFallbacks": 12,
+  "abortedPrefetchesDuringHardNavigation": 2,
+  "verdict": "NO_SKEW_FAILURE"
+ }
+}
