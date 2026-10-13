@@ -106,9 +106,9 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 | TypeScript, ESLint | PASS |
 | Vitest | 23/23 (new `slug.test.ts`: Vietnamese slugs, empty/invalid input, length limits, suffixes, product codes, VND prices) |
 | OpenNext build (fixture env) | PASS |
-| Playwright on local workerd + fixture API, Chromium desktop + iPhone 13, `--workers=1` | **55 passed, 0 failed, 29 skipped** (skipped = live-staging spec and desktop-only write tests on mobile) |
+| Playwright on local workerd + fixture API, Chromium desktop + iPhone 13, `--workers=1` | **56 passed, 0 failed, 30 skipped** (skipped = live-staging spec and desktop-only write tests on mobile) |
 | New `e2e/catalog-admin.spec.ts` | see the list below |
-| Backend pytest (`-m "not integration_supabase"`) | 75 passed (+ hidden-category rule). New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing, and clearing `published_at`), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
+| Backend pytest (`-m "not integration_supabase"`) | 76 passed (+ hidden-category and legacy-orphan rules); 78/78 with `6f48006`. New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing, and clearing `published_at`), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
 | ruff, mypy | PASS |
 
 `e2e/catalog-admin.spec.ts` covers:
@@ -170,6 +170,17 @@ The admin product list now also uses the new terms: "Đã đăng" / "Chưa đăn
    - Needs approval: it is a schema change.
 3. ~~Hidden category, visible products~~: superseded by owner decision 3; hiding a type now hides its products from every public view.
 4. **Deleted category slugs stay reserved** (soft delete + unique constraint). Re-creating a deleted type gets `-2`. A partial unique index (`where deleted_at is null`) would free them, but it needs a migration.
+
+## Deployment order (for the owner-approved rollout)
+
+The web depends on the new API (product counts, delete guard, hidden-category rule). Deploy the **backend first**:
+1. Render: `deploy/c2-preview` → security fix `6f48006`, then this branch's API commits.
+2. Smoke: health, CORS, anonymous admin 401, admin categories return `product_count`.
+3. Then the web: a Worker version via `wrangler`, with the usual cache checks.
+
+As a safety net, if the web ever runs against an API without `product_count`, the Loại sản phẩm page shows "Chưa rõ số sản phẩm" and refuses to delete (e2e C5).
+
+Verified combination: this branch + `6f48006` → backend pytest **78/78**.
 
 ## Risks
 

@@ -76,6 +76,11 @@ export default function CategoriesPage() {
   }
 
   function remove(item: AdminCategory) {
+    // An API without product counts (older backend) must not allow a delete it cannot check.
+    if (typeof item.product_count !== "number") {
+      toast.error("Chưa kiểm tra được số sản phẩm của loại này. Hãy thử lại sau khi hệ thống cập nhật.");
+      return;
+    }
     if (item.product_count > 0) {
       toast.error(`“${item.name}” đang có ${item.product_count} sản phẩm. Hãy chuyển các sản phẩm này sang loại khác trước khi xóa, hoặc chọn Ẩn.`);
       return;
@@ -88,7 +93,7 @@ export default function CategoriesPage() {
   }
 
   function toggleVisible(item: AdminCategory) {
-    if (item.is_visible && !confirm(`Ẩn loại “${item.name}”? ${item.product_count} sản phẩm thuộc loại này sẽ bị ẩn khỏi website (danh sách, tìm kiếm, trang chi tiết). Link đã chia sẻ tới các sản phẩm này sẽ báo không tìm thấy cho đến khi bạn hiện lại loại; trạng thái từng sản phẩm được giữ nguyên.
+    if (item.is_visible && !confirm(`Ẩn loại “${item.name}”? ${typeof item.product_count === "number" ? item.product_count : "Các"} sản phẩm thuộc loại này sẽ bị ẩn khỏi website (danh sách, tìm kiếm, trang chi tiết). Link đã chia sẻ tới các sản phẩm này sẽ báo không tìm thấy cho đến khi bạn hiện lại loại; trạng thái từng sản phẩm được giữ nguyên.
 
 Nếu chỉ tạm hết hàng, hãy giữ loại và đặt “Tình trạng hàng: Hết hàng” cho sản phẩm để link vẫn hoạt động.`)) return;
     void run(item.id, () => adminFetch(`/categories/${item.id}`, { method: "PATCH", body: JSON.stringify({ is_visible: !item.is_visible }) }), item.is_visible ? `Đã ẩn “${item.name}”` : `Đã hiện “${item.name}”`);
@@ -126,7 +131,7 @@ Nếu chỉ tạm hết hàng, hãy giữ loại và đặt “Tình trạng hà
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2 font-medium"><span>{item.name}</span>{!item.is_visible && <span className="badge">Đang ẩn</span>}</p>
                     {item.description && <p className="mt-0.5 line-clamp-2 text-sm text-ink-soft">{item.description}</p>}
-                    <p className="mt-0.5 text-sm text-ink-soft">{item.product_count} sản phẩm · <span className="break-all">/san-pham?category={item.slug}</span></p>
+                    <p className="mt-0.5 text-sm text-ink-soft">{typeof item.product_count === "number" ? `${item.product_count} sản phẩm` : "Chưa rõ số sản phẩm"} · <span className="break-all">/san-pham?category={item.slug}</span></p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
                     <button type="button" className={iconButton} disabled={index === 0 || busy !== null} onClick={() => move(index, -1)} aria-label={`Đưa ${item.name} lên trên`}><ArrowUp size={16} aria-hidden="true" /></button>

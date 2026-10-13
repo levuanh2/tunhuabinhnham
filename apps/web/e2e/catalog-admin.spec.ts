@@ -329,6 +329,26 @@ test.describe("product categories", () => {
     expect(await publicHas("/san-pham?category=tu-quan-ao", "Tủ áo 3 cánh có gương")).toBe(true);
   });
 
+  test("C5. without product counts (older API) the page never offers an unchecked delete", async ({ page }) => {
+    writesFixture();
+    await page.route("**/api/v1/admin/categories", async route => {
+      if (route.request().method() !== "GET") return route.continue();
+      const response = await route.fetch();
+      const items = (await response.json()) as Record<string, unknown>[];
+      await route.fulfill({ response, json: items.map(item => { const copy = { ...item }; delete copy.product_count; return copy; }) });
+    });
+    const deletes: string[] = [];
+    page.on("request", request => { if (request.method() === "DELETE") deletes.push(request.url()); });
+    let dialogs = 0;
+    page.on("dialog", dialog => { dialogs++; void dialog.dismiss(); });
+    await page.goto("/admin/danh-muc");
+    await expect(page.locator("li", { hasText: "Tủ quần áo" }).first()).toContainText("Chưa rõ số sản phẩm");
+    await expect(page.getByText("undefined")).toHaveCount(0);
+    await page.getByRole("button", { name: "Xóa loại Tủ quần áo" }).click();
+    await expect(page.getByText("Chưa kiểm tra được số sản phẩm của loại này.")).toBeVisible();
+    expect([dialogs, deletes]).toEqual([0, []]);
+  });
+
   test("C2. the product form links to category management and shows hidden categories as such", async ({ page }) => {
     writesFixture();
     await page.request.patch(`${mock}/api/v1/admin/categories/c5`, { data: { is_visible: false } });
