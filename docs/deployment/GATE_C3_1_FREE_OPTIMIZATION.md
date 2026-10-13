@@ -1,6 +1,6 @@
 # Gate C3.1 — Workers Free optimisation
 
-Date: 2026-10-13 (UTC+7). Branch `gate-c31/cache` (`4d59c8c`, `e1a4cd7`), merged into `integration/warm-editorial-v2`. **Not deployed to production**: production is still Worker version `46243813` (Gate C3). The optimised build is uploaded as preview version `66fa99a1` (alias `https://c31cache-tunhuabinhnham-web.tunhuabinhnham.workers.dev`), which receives no production traffic.
+Date: 2026-10-13 (UTC+7). Branch `gate-c31/cache` (`4d59c8c`, `e1a4cd7`, `de754e8`, `981ccbc`), merged into `integration/warm-editorial-v2` (`03f9a5e`). **Not deployed to production**: production is still Worker version `46243813` (Gate C3). The optimised build is uploaded as preview version `213692b4-06c3-4e26-86bc-681d49b33e64` (alias `https://c31cache-tunhuabinhnham-web.tunhuabinhnham.workers.dev`), which receives no production traffic.
 
 ## Verdict (provisional)
 
@@ -65,11 +65,13 @@ No SPA conversion: HTML is fully server-rendered with metadata, canonical and OG
 |---|---|
 | `apps/web/worker.ts` (new) | wrapper around the OpenNext worker; applies the policy |
 | `apps/web/src/lib/edge-cache.ts` (new) | request/response policy, render-health flag, purge helper |
-| `apps/web/src/lib/edge-cache.test.ts` (new) | 9 unit tests |
-| `apps/web/src/lib/api.ts` | marks the render degraded on network error or non-404 failure |
+| `apps/web/src/lib/edge-cache.test.ts` (new) | policy, Vary, render-state, purge and no-personalisation guard tests |
+| `apps/web/src/lib/api.ts` | marks the render degraded on network error, any non-OK status and unreadable JSON |
+| `apps/web/src/lib/api.test.ts` (new) | degraded-marking unit tests |
+| `apps/web/src/middleware.ts` | corrupted session cookie → login redirect + cookie cleared (was 500) |
 | `apps/web/src/app/api/revalidate/route.ts` | purges the edge cache after the admin check |
 | `apps/web/wrangler.jsonc` | `main: worker.ts`, `cache.enabled: true` |
-| `apps/web/e2e/responsive.spec.ts` | tests 18–21 |
+| `apps/web/e2e/responsive.spec.ts` | tests 18–22 |
 | `apps/web/e2e/fixtures/mock-api.mjs` | `POST /__outage?on=1` switch (test fixture only) |
 
 No backend, schema, DNS or design change.
@@ -87,6 +89,9 @@ No backend, schema, DNS or design change.
 | API outage | 20: pages rendered during a simulated outage are served but never public; **fails when degraded marking is disabled** (negative control) | PASS |
 | Real prefetches | 21: browser prefetches of public pages are public `text/x-component`; forged `_rsc` is not | PASS |
 | Preview on Cloudflare | `/admin`, `/admin/login`, unknown product → `BYPASS` ×3 each | PASS |
+| Exact-key RSC replay (Cloudflare preview) | signed `_rsc` URL with original headers → HIT; same URL without router headers → BYPASS (private HTML); `rsc` only or altered state tree → 307 BYPASS | PASS |
+| Signed-in visitor on a cached public URL | HIT returns the byte-identical anonymous page (same SHA-256); unit guard fails if any public route, root layout, header/footer/nav or API client reads cookies, headers, draft mode or the Supabase session | PASS (accepted, see Codex review #1) |
+| Corrupted session cookie | **bug found on production**: `sb-*-auth-token=base64-<invalid>` → `/admin/*` 500. Fixed (`981ccbc`): 307 to login, cookie cleared; e2e 22; preview verified | FIXED (needs deploy) |
 
 ## Measurements
 
@@ -125,24 +130,34 @@ Worker CPU on the preview could not be read: `wrangler tail` only streams the de
 | Before (no cache; assets free) | ~11 (1 HTML + ~10 prefetches) | ~9,000 |
 | After (cache on; assets billable) | ~35 (1 + 24 assets + 10) | ~2,850 |
 
-Repeat views in the same browser fetch fewer assets (immutable browser cache), so real capacity is higher. Exceeding the quota returns error 1027 until 00:00 UTC.
+Repeat views in the same browser fetch fewer assets (immutable browser cache), so real capacity is higher. Exceeding the quota returns error 1027 for the whole site until 00:00 UTC (07:00 Vietnam time).
 
 ## Regression (Task 7)
 
 | Suite | Result |
 |---|---|
 | TypeScript, ESLint | PASS |
-| Vitest | 13/13 |
+| Vitest | 16/16 |
 | OpenNext build (fixture and production env) | PASS |
-| workerd Playwright, Chromium + WebKit (fixture) | **40 passed, 18 skipped, 0 failed** |
+| workerd Playwright, Chromium + WebKit (fixture) | **41 passed, 19 skipped, 0 failed** |
 | SSR session, logout, protected routes | PASS (tests 17, 19, staging-cms skipped = live-write spec) |
 | SEO (canonical/robots/sitemap) | PASS (public.spec) |
 | Mobile responsive | PASS (tests 1–11) |
 | Visual diff vs Warm Editorial V2 baseline | 85/85 identical |
 
+## Codex review (`C31_REVIEW=CHANGES`) and resolution
+
+| # | Finding | Resolution |
+|---|---|---|
+| 1 | The cookie check runs only on MISS; a HIT serves the cached page to a request with a session cookie | Accepted as designed: cached entries are only anonymous public pages, and public pages are identical for every visitor. A HIT with a synthetic session cookie returned the byte-identical anonymous body on Cloudflare. A unit guard now fails if any public code path starts reading cookies, headers, draft mode or the session. Admin paths are never cached |
+| 2 | Malformed JSON and 404s on collection/settings endpoints could produce a cacheable fallback page | Fixed (`de754e8`): every non-OK status and JSON decode failure marks the render degraded; unit tests |
+| 3 | Vary was only completed when `rsc` was missing; the forged-RSC test changed the cache key instead of replaying it | Fixed: every router header is added to Vary; e2e 21 replays the exact signed URL with missing or altered headers (workerd), plus the Cloudflare preview replay above |
+
+Observation: the Next 16 build still performs a few metadata fetches during "Generating static pages" (seen as `.next/cache/fetch-cache` entries; one truncated file produced a harmless OpenNext warning). Runtime does not use them (dummy incremental cache; CMS changes show on the next request), and Gate C2 verified the build passes with the API down.
+
 ## Pending (needs owner approval or action)
 
-1. **Production deploy** of version `66fa99a1`: `npx wrangler versions deploy 66fa99a1-559b-4135-a89d-21755eaf52dc@100%`. Rollback: `npx wrangler versions deploy 46243813-a2ad-4dca-976c-d960f95f20ca@100%` (instant; the old version's cache is separate).
+1. **Production deploy** of version `213692b4`: `npx wrangler versions deploy 213692b4-06c3-4e26-86bc-681d49b33e64@100%`. This also ships the corrupted-cookie fix. Rollback: `npx wrangler versions deploy 46243813-a2ad-4dca-976c-d960f95f20ca@100%` (instant; the old version's cache is separate).
 2. After deploy, measure on production: MISS CPU per route, HIT rate, invocation count vs request count, prefetch counts, P50/P95, error rate, and behaviour while Render is cold.
 3. **Purge test** (live write): one admin save (for example entering the real hotline in Admin → Cài đặt). Expected: the apex shows the new value on the next request. Verifies `ctx.cache.purge` in production.
 4. Signed-in admin check on the apex after deploy (login, Settings, logout).
