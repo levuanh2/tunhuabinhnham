@@ -154,3 +154,60 @@ def test_product_update_swaps_existing_image_order_and_primary(admin_client: Tes
     assert images[first["storage_key"]]["is_primary"] is False
     assert images[second["storage_key"]]["sort_order"] == 0
     assert images[second["storage_key"]]["is_primary"] is True
+
+
+def test_admin_categories_report_product_count_and_block_deleting_used_ones(
+    admin_client: TestClient,
+) -> None:
+    used = admin_client.post(
+        "/api/v1/admin/categories", json={"name": "Tủ quần áo", "slug": "tu-quan-ao"}
+    ).json()
+    empty = admin_client.post(
+        "/api/v1/admin/categories", json={"name": "Kệ nhựa", "slug": "ke-nhua"}
+    ).json()
+    for slug, publish_status in (("tu-a", "published"), ("tu-b", "draft")):
+        created = admin_client.post(
+            "/api/v1/admin/products",
+            json={
+                "name": slug,
+                "slug": slug,
+                "sku": slug.upper(),
+                "category_id": used["id"],
+                "publish_status": publish_status,
+                "images": [],
+            },
+        )
+        assert created.status_code == 201, created.text
+
+    counts = {c["slug"]: c["product_count"] for c in admin_client.get("/api/v1/admin/categories").json()}
+    assert counts == {"tu-quan-ao": 2, "ke-nhua": 0}
+    # The public contract is unchanged: no admin-only field.
+    assert "product_count" not in admin_client.get("/api/v1/categories").json()[0]
+
+    blocked = admin_client.delete(f"/api/v1/admin/categories/{used['id']}")
+    assert blocked.status_code == 409
+    assert blocked.json()["error"]["message"] == "Category has products"
+    assert used["id"] in {c["id"] for c in admin_client.get("/api/v1/admin/categories").json()}
+
+    assert admin_client.delete(f"/api/v1/admin/categories/{empty['id']}").status_code == 204
+    assert empty["id"] not in {c["id"] for c in admin_client.get("/api/v1/admin/categories").json()}
+
+
+def test_deleted_products_do_not_block_category_delete(admin_client: TestClient) -> None:
+    category = admin_client.post(
+        "/api/v1/admin/categories", json={"name": "Tủ giày dép", "slug": "tu-giay-dep"}
+    ).json()
+    product = admin_client.post(
+        "/api/v1/admin/products",
+        json={"name": "A", "slug": "a-giay", "sku": "A-GIAY", "category_id": category["id"], "images": []},
+    ).json()
+    assert admin_client.delete(f"/api/v1/admin/products/{product['id']}").status_code == 204
+    assert admin_client.delete(f"/api/v1/admin/categories/{category['id']}").status_code == 204
+
+
+def test_duplicate_category_slug_returns_conflict(admin_client: TestClient) -> None:
+    payload = {"name": "Tủ đa năng", "slug": "tu-da-nang"}
+    assert admin_client.post("/api/v1/admin/categories", json=payload).status_code == 201
+    conflict = admin_client.post("/api/v1/admin/categories", json={**payload, "name": "Tủ đa năng 2"})
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["message"] == "Slug already exists"

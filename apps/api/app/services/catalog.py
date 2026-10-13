@@ -1,6 +1,8 @@
 import uuid
 from datetime import UTC, datetime
 
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -60,6 +62,15 @@ class CatalogService:
         return item
 
     def delete_category(self, item: Category, admin_id: uuid.UUID) -> None:
+        # Products keep category_id after a soft delete, so a deleted category would stay
+        # attached to them. Admins move or delete the products first.
+        in_use = self.db.scalar(
+            select(func.count())
+            .select_from(Product)
+            .where(Product.category_id == item.id, Product.deleted_at.is_(None))
+        )
+        if in_use:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Category has products")
         item.deleted_at = datetime.now(UTC)
         item.is_visible = False
         self.db.add(

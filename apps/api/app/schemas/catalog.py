@@ -37,6 +37,10 @@ class CategoryOut(CategoryBase):
     updated_at: datetime
 
 
+class AdminCategoryOut(CategoryOut):
+    product_count: int = 0
+
+
 class ProductImageInput(BaseModel):
     storage_key: str = Field(min_length=1, max_length=600)
     url: str = Field(min_length=1, max_length=2000)
