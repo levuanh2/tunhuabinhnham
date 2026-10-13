@@ -99,6 +99,17 @@ test("6. Messenger CTA opens an allowed Facebook/Messenger URL; sticky CTA appea
   }
 });
 
+test("6b. Messenger opens at once even when contact tracking is slow or rate limited", async ({ page }) => {
+  let tracked = 0;
+  await page.route("**/contact-clicks", async route => { tracked++; await new Promise(r => setTimeout(r, 5000)); await route.fulfill({ status: 429, headers: { "Retry-After": "60" }, body: "{}" }); });
+  await page.goto("/san-pham/tu-5-tang");
+  await page.evaluate(() => { window.open = ((url?: string | URL) => { sessionStorage.setItem("opened", String(url)); return null; }) as typeof window.open; });
+  await page.getByRole("button", { name: "Nhắn tin để mua" }).first().click();
+  // Well under the 5 s the tracking call takes: opening does not wait for it.
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("opened")), { timeout: 1500 }).toMatch(/^https:\/\/(m\.me|(www\.)?facebook\.com)/);
+  await expect.poll(() => tracked).toBe(1);
+});
+
 test("7. article body stays within a readable measure without overflow", async ({ page }) => {
   await page.goto("/tin-tuc/chon-tu-phong-ngu");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

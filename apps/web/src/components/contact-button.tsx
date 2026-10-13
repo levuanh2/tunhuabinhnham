@@ -5,9 +5,11 @@ import { toast } from "sonner";
 import { safeMessengerUrl } from "@/lib/messenger";
 
 export function ContactButton({ productId, href }: { productId: string; href: string }) {
-  async function contact() {
-    try { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contact-clicks`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, source: "product_detail" }) }); } catch { /* tracking must not block contact */ }
+  function contact() {
+    // Open first, synchronously: popup blockers drop window.open after an await, and a cold or
+    // rate-limited API must never delay the customer. Tracking is best effort (keepalive).
     window.open(safeMessengerUrl(href), "_blank", "noopener,noreferrer");
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/contact-clicks`, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ product_id: productId, source: "product_detail" }) }).catch(() => { /* tracking must not block contact */ });
   }
   return <button type="button" className="button w-full min-h-12 text-base" onClick={contact}><MessageCircle size={19} aria-hidden="true" /> Nhắn tin để mua</button>;
 }

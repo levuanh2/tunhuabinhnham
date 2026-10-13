@@ -1,14 +1,21 @@
-import hashlib
+import ipaddress
 from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import Settings, get_settings
+from app.core.rate_limit import contact_client_rate_limiter, contact_global_rate_limiter
 from app.db.session import get_db
-from app.models import Banner, ContactClick, Post, PublishStatus, SiteSettings
-from app.repositories.catalog import CategoryRepository, ProductRepository
+from app.models import Banner, ContactClick, Post, Product, PublishStatus, SiteSettings
+from app.repositories.catalog import (
+    CategoryRepository,
+    ProductRepository,
+    public_product_conditions,
+)
 from app.schemas.catalog import CategoryOut, ContactClickCreate, ContactClickOut, ProductOut
 from app.schemas.common import Page
 from app.schemas.content import BannerOut, PostOut, SiteSettingsOut
@@ -127,23 +134,65 @@ def site_settings(db: Session = Depends(get_db)) -> SiteSettingsOut:
     return SiteSettingsOut.model_validate(item)
 
 
+def _client_key(request: Request, header: str) -> str:
+    """Rate-limit key for the visitor. Only a single, valid IP from the configured edge header
+    is trusted; anything else falls back to the socket peer. IPv6 is grouped by /64, which one
+    subscriber usually owns."""
+    peer = request.client.host if request.client else "unknown"
+    raw = request.headers.get(header, "").strip() if header else ""
+    try:
+        address = ipaddress.ip_address(raw or peer)
+    except ValueError:
+        try:
+            address = ipaddress.ip_address(peer)
+        except ValueError:
+            return peer
+    if address.version == 6:
+        return str(ipaddress.ip_network(f"{address}/64", strict=False))
+    return str(address)
+
+
 @router.post(
     "/contact-clicks", response_model=ContactClickOut, status_code=status.HTTP_202_ACCEPTED
 )
 def track_contact(
-    payload: ContactClickCreate, request: Request, db: Session = Depends(get_db)
+    payload: ContactClickCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    config: Settings = Depends(get_settings),
 ) -> ContactClickOut:
+    # ponytail: in-process limits; correct for the single Render worker, reset on restart.
+    # A shared store (Redis/DB) is needed before running more than one worker.
+    retry_after = contact_client_rate_limiter.retry_after(
+        _client_key(request, config.client_ip_header), config.contact_click_limit_per_minute
+    ) or contact_global_rate_limiter.retry_after(
+        "global", config.contact_click_global_limit_per_hour, window_seconds=3600
+    )
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many contact clicks",
+            headers={"Retry-After": str(retry_after)},
+        )
     settings = db.scalar(select(SiteSettings).limit(1))
     if settings is not None and not settings.contact_tracking_enabled:
         return ContactClickOut(accepted=False)
-    ip = request.client.host if request.client else ""
+    if payload.product_id is not None and db.scalar(
+        select(Product.id).where(Product.id == payload.product_id, *public_product_conditions())
+    ) is None:
+        raise HTTPException(status_code=422, detail="Unknown product")
+    # No IP or IP hash is stored: the count is all the dashboard needs.
     db.add(
         ContactClick(
             product_id=payload.product_id,
             source=payload.source,
-            ip_hash=hashlib.sha256(ip.encode()).hexdigest() if ip else None,
             user_agent=(request.headers.get("user-agent") or "")[:500],
         )
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # The product was deleted between the check and the insert.
+        db.rollback()
+        raise HTTPException(status_code=422, detail="Unknown product") from None
     return ContactClickOut()

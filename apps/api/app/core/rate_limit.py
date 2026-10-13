@@ -34,3 +34,7 @@ class FixedWindowRateLimiter:
 
 
 admin_rate_limiter = FixedWindowRateLimiter()
+# Separate instances: pruning uses the caller's window, so keys with different windows
+# must not share one.
+contact_client_rate_limiter = FixedWindowRateLimiter()
+contact_global_rate_limiter = FixedWindowRateLimiter()

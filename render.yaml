@@ -33,6 +33,13 @@ services:
         value: "false"
       - key: ADMIN_RATE_LIMIT_PER_MINUTE
         value: "120"
+      # onrender.com is served through Cloudflare, which sets and overwrites this header.
+      - key: CLIENT_IP_HEADER
+        value: CF-Connecting-IP
+      - key: CONTACT_CLICK_LIMIT_PER_MINUTE
+        value: "10"
+      - key: CONTACT_CLICK_GLOBAL_LIMIT_PER_HOUR
+        value: "300"
       - key: PUBLIC_CACHE_SECONDS
         value: "60"
       - key: DATABASE_URL

@@ -53,6 +53,10 @@ def test_render_blueprint_has_bounded_no_deploy_backend_contract() -> None:
     assert env["DB_POOL_SIZE"]["value"] == "3"
     assert env["DB_MAX_OVERFLOW"]["value"] == "1"
     assert env["PUBLIC_CACHE_SECONDS"]["value"] == "60"
+    # The contact-click limiter is in-process: correct only with a single worker.
+    assert env["CLIENT_IP_HEADER"]["value"] == "CF-Connecting-IP"
+    assert env["CONTACT_CLICK_LIMIT_PER_MINUTE"]["value"] == "10"
+    assert env["CONTACT_CLICK_GLOBAL_LIMIT_PER_HOUR"]["value"] == "300"
     dashboard_prompt_names = {
         "DATABASE_URL",
         "SUPABASE_URL",

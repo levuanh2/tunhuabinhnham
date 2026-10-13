@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     db_disable_prepared_statements: bool = False
     public_cache_seconds: int = Field(default=60, ge=0, le=3600)
     admin_rate_limit_per_minute: int = Field(default=120, ge=10, le=10_000)
+    contact_click_limit_per_minute: int = Field(default=10, ge=1, le=1000)
+    contact_click_global_limit_per_hour: int = Field(default=300, ge=1, le=100_000)
+    # A header the edge in front of the API sets and overwrites, e.g. CF-Connecting-IP.
+    # Empty means the socket peer, which behind a proxy is the proxy itself.
+    client_ip_header: str = ""
 
     @field_validator("database_url")
     @classmethod
