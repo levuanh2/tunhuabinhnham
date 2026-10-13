@@ -1,14 +1,17 @@
 # Gate C3.1 — Workers Free optimisation
 
-Date: 2026-10-13 (UTC+7). Branch `gate-c31/cache` (`4d59c8c`, `e1a4cd7`, `de754e8`, `981ccbc`), merged into `integration/warm-editorial-v2` (`03f9a5e`). **Not deployed to production**: production is still Worker version `46243813` (Gate C3). The optimised build is uploaded as preview version `213692b4-06c3-4e26-86bc-681d49b33e64` (alias `https://c31cache-tunhuabinhnham-web.tunhuabinhnham.workers.dev`), which receives no production traffic.
+Date: 2026-10-13 (UTC+7). Branch `gate-c31/cache` (`4d59c8c`, `e1a4cd7`, `de754e8`, `981ccbc`), merged into `integration/warm-editorial-v2` (`03f9a5e`).
 
-## Verdict (provisional)
+**Deployed to production** (owner-approved controlled rollout, see "Production rollout"): Worker `tunhuabinhnham-web` runs version `213692b4-06c3-4e26-86bc-681d49b33e64` at 100% since 2026-10-13T03:00:21Z. Rollback target: `46243813-a2ad-4dca-976c-d960f95f20ca` (Gate C3).
 
-**FREE_VIABLE_WITH_RISK — pending production measurement.**
+## Verdict
 
-- CPU: cached pages and prefetches no longer run the Worker. Only cache misses do, and a miss still costs about the same as before (SSR median 18 ms > 10 ms). Misses happen once per URL per 5 minutes per Cloudflare location, or right after an admin save.
-- New risk, specific to this design: with Workers Cache enabled, **static asset requests count toward the Free quota of 100,000 requests/day**. A fresh visitor's first page view now costs about 35 Worker requests (1 HTML + 24 assets + 10 prefetches) instead of about 11.
-- The verdict becomes final only after the production measurements in "Pending" are taken. It must not be read as FREE_VIABLE: cache misses still regularly exceed 10 ms.
+**FREE_VIABLE_WITH_RISK — provisional until the CMS purge test (Phase 4) runs.** If the new value appears only after TTL expiry, the result is PURGE_FAIL and this verdict is revisited.
+
+- Cached pages and prefetches no longer run the Worker: in a controlled block, 35 public requests needed only 7 Worker invocations (80% fewer). Across 356 production invocations there were 0 CPU-limit exceptions and 0 errors.
+- A cache MISS still costs more than 10 ms CPU (warm p50 28.5 ms). Free has tolerated this so far (no error 1102), but nothing guarantees it will keep doing so.
+- With Workers Cache on, **static asset requests count toward the Free quota of 100,000 requests/day**. A fresh visitor's first page view costs about 35 requests (1 HTML + 24 assets + 10 prefetches) instead of about 11.
+- Not FREE_VIABLE: misses regularly exceed 10 ms, and the request quota now also covers assets.
 
 ## Cache architecture
 
@@ -155,19 +158,112 @@ Repeat views in the same browser fetch fewer assets (immutable browser cache), s
 
 Observation: the Next 16 build still performs a few metadata fetches during "Generating static pages" (seen as `.next/cache/fetch-cache` entries; one truncated file produced a harmless OpenNext warning). Runtime does not use them (dummy incremental cache; CMS changes show on the next request), and Gate C2 verified the build passes with the API down.
 
-## Pending (needs owner approval or action)
+## Production rollout (controlled rollout gate)
 
-1. **Production deploy** of version `213692b4`: `npx wrangler versions deploy 213692b4-06c3-4e26-86bc-681d49b33e64@100%`. This also ships the corrupted-cookie fix. Rollback: `npx wrangler versions deploy 46243813-a2ad-4dca-976c-d960f95f20ca@100%` (instant; the old version's cache is separate).
-2. After deploy, measure on production: MISS CPU per route, HIT rate, invocation count vs request count, prefetch counts, P50/P95, error rate, and behaviour while Render is cold.
-3. **Purge test** (live write): one admin save (for example entering the real hotline in Admin → Cài đặt). Expected: the apex shows the new value on the next request. Verifies `ctx.cache.purge` in production.
-4. Signed-in admin check on the apex after deploy (login, Settings, logout).
-5. Task 1: Render deployed commit (owner reads Render → Events; must be `a99bed4` or later, otherwise Manual Deploy).
+### Predeploy (Phase 1): PASS
+
+| Check | Result |
+|---|---|
+| Account / Worker | the logged-in account owns `tunhuabinhnham-web`; custom domains `tunhuabinhnham.com` and `www` unchanged |
+| Versions | `213692b4` (tag `c31-cookie-fix`) and `46243813` both exist; production was `46243813` @100%, no drift |
+| Code identity | app source of `981ccbc` equals `03f9a5e`; `.open-next` is the build uploaded as `213692b4` |
+| Cache safety tests | Vitest 16/16; workerd Playwright 41 passed / 0 failed (tests 18–22); Cloudflare preview replay matrix |
+| Secrets | bundle scan: no service-role key, DB URL, JWT secret or password (the only matches on the password string were build-machine file paths) |
+| Rollback | `npx wrangler versions deploy 46243813-a2ad-4dca-976c-d960f95f20ca@100%`: instant, and the per-version cache key keeps stale entries from crossing versions |
+
+Private-content safety rests on the design, not on one byte-identical response:
+- The wrapper stores only GET/HEAD requests for allowlisted public paths, with no `Authorization` and no Supabase session cookie.
+- The response must be a 200 `text/html` (or a signed `text/x-component`) without `Set-Cookie`, from a render that did not degrade.
+- `/admin*` and `/api/*` never pass the allowlist.
+- A unit guard fails if any public route, the root layout, the header/footer/nav or the API client reads cookies, headers, draft mode or the session.
+
+The last point is what makes a cookie-bearing HIT safe: the cached page cannot depend on who asks.
+
+### Deploy (Phase 2)
+
+Strategy: **a single, monitored 100% cutover**, not a gradual rollout. Skew protection is not configured, so a split would serve HTML from one version while its chunks and `_rsc` requests land on the other. The per-version cache key makes rollback clean.
+
+| | |
+|---|---|
+| Command | `npx wrangler versions deploy 213692b4-06c3-4e26-86bc-681d49b33e64@100%` |
+| Deployment created | 2026-10-13T03:00:21.350Z, message "Gate C3.1 Workers Cache rollout" |
+| Version | `213692b4-06c3-4e26-86bc-681d49b33e64` @100% (re-confirmed after 04:05Z) |
+
+### Live verification on `https://tunhuabinhnham.com` (Phase 3)
+
+| Check | Result |
+|---|---|
+| `/`, `/san-pham`, `?category=`, `?search=`, product detail, `/tin-tuc`, news detail, `/lien-he`, `/gioi-thieu` | 200; 1 MISS, then HIT |
+| `/admin`, `/admin/login`, `/admin/san-pham`, unknown product (404) | BYPASS, `private, no-store` |
+| `sitemap.xml`, `robots.txt` | 200, not stored (Next's own `public, max-age=0, must-revalidate`) |
+| SEO | public.spec 6/6 on the apex (canonical = apex, robots, sitemap origin) |
+| Signed RSC replay | original headers → HIT; no router headers → BYPASS (private HTML); `rsc` only or altered state tree → 307 BYPASS |
+| Session cookie on a cached public URL | HIT, anonymous page (safe because of the guard above) |
+| Session cookie on `/admin/san-pham` | 307 BYPASS |
+| Corrupted `sb-*-auth-token` | 307 to `/admin/login` (was 500 on `46243813`) |
+| Browsers, Chromium + WebKit, 3 visits each | HTML, 24 assets and ~10 prefetches HIT; 0 page errors; load 1.2–1.5 s |
+| Mobile | 80 screenshots (8 pages × 5 widths × 2 engines): 0 horizontal overflow, 0 real errors (`screenshots-c31/`) |
+| Backend | `/health/live` 200 (0.37 s), `/health/ready` 200 (1.18 s), CORS preflight from the apex 200, anonymous admin endpoint 401 |
+| Admin login, session after reload, logout + Back on the apex | **pending owner** (needs the real admin account) |
+
+Measurements (production, from `wrangler tail` and `curl` run in Vietnam):
+
+| Metric | Value |
+|---|---|
+| Response time, HIT | p50 0.179 s, p95 0.213 s |
+| Response time, MISS | p50 1.414 s, p95 2.387 s |
+| Requests vs Worker invocations (controlled block) | 35 public requests → 7 invocations (80% answered by the cache without running the Worker) |
+| MISS CPU, cold isolate right after the deploy | 24, 29, 192, 197, 204, 388, 402 ms |
+| MISS CPU, warm isolate, deliberate misses (n=20) | p50 28.5 ms, p95 88 ms, 20/20 > 10 ms; wall-clock p50 794 ms. Baseline SSR without the wrapper was 18 ms; buffering the body adds about 10 ms |
+| Production invocations 03:00–04:05Z | 356, all `ok`; 0 exceptions; 0 CPU-limit (1102) errors; status 200: 182, 404: 162, 307: 11, 308: 1 |
+| Source of the 404s | vulnerability scanners (`/.git/config`, `/.svn/*`, `/.hg/*`, `wp-*.php`, `*.php`), plus 12 deliberate test 404s; not caused by the release |
+| 5xx | 0 |
+
+HITs never appear in the tail because the Worker does not run for them. Every tailed invocation is therefore a MISS, a BYPASS or a non-cacheable route, and all CPU figures above are for requests that ran the Worker.
+
+### Cache invalidation (Phase 4): PENDING
+
+Authorised: one real CMS settings save by the owner (a real hotline or Messenger link).
+- Before the save, the apex shows the placeholder values `tel:0900000000` and `https://m.me/` on `/` and `/lien-he` (both HIT).
+- A watcher sampled both pages every 3 s for 57 minutes (03:07–04:04Z) and saw no change: no save was made in that window.
+- The production tail records the status of `POST /api/revalidate`.
+- PASS requires the new value on the next apex request, with a low `Age`, well inside the 300 s TTL. A value that changes only once `Age` reaches 300 is PURGE_FAIL.
+
+### Free capacity and static assets (Phase 5)
+
+- `run_worker_first` is not set (default `false`), so it is not why assets count: with `false`, assets are matched before the Worker runs.
+- Assets count because **Workers Cache is enabled for the whole Worker**: with caching on, static asset requests are billed as requests (Cloudflare `workers/cache` billing notes). There is no documented per-path exclusion.
+- Option for a later, separately tested release: enable the cache only on a named render entrypoint (`exports.<Name>.cache.enabled`) and have the default entrypoint forward cacheable page requests to it through `ctx.exports`. Assets would be free again and tag purge would keep working. Not changed in this release, as the brief requires.
+- Bots: scanners requested about 150 non-existent paths in one hour. 404s are never cached, so each one runs the Worker and counts toward the quota. A free WAF custom rule that blocks `*.php`, `/.git`, `/.svn` and `/.hg` would remove most of them. This is an owner decision and needs no DNS change.
+
+### Render (Phase 6): UNVERIFIED
+
+The Render API key available in this session belongs to a different workspace and does not list `tunhuabinhnham-api`, and the public endpoints do not expose the running commit. Owner evidence needed: Render → `tunhuabinhnham-api` → Events must show deployed commit `a99bed4` or later (with the startup/log redaction fixes). Otherwise, Manual Deploy the latest `deploy/c2-preview` commit.
+
+### Rollback conditions (Phase 7)
+
+None triggered: no private-content leakage, no auth regression found, no CPU-limit errors, no 5xx, all public routes 200, HTML/RSC variants correct, SEO checks pass.
+
+## Pending (needs owner action)
+
+1. **P0 security**: the current PostgreSQL password equals the brand name (case-insensitive) and is guessable, since the pooler user `postgres.<ref>` follows from the public Supabase URL. Steps:
+   1. Reset it to a long random value in Supabase.
+   2. Update `DATABASE_URL` on Render, then Manual Deploy.
+   3. Update `apps/api/.env`.
+2. Phase 4: one CMS settings save on the apex. Claude reads the watcher and tail evidence and records PASS or PURGE_FAIL.
+3. Admin on the apex:
+   - log in and reload (the session should persist);
+   - log out, then press Back (no cached admin page);
+   - check that anonymous `/admin` redirects to login.
+4. Phase 6: the Render Events SHA.
 
 ## Remaining risks
 
 - Cache MISS CPU still exceeds 10 ms; on Free each miss risks error 1102 (none seen so far).
 - Request quota consumption roughly triples for fresh visitors because assets become billable.
-- Purge depends on `ctx.cache` in production (verified only after deploy); the fallback is the 5-minute TTL.
+- Purge depends on `ctx.cache` in production (Phase 4 pending); the fallback is the 5-minute TTL.
+- Bot 404 traffic runs the Worker on every request (404s are never cached, by design).
+- The database password is weak (P0 under "Pending") until it is rotated.
 - Render Free cold start (37.65 s) makes the first MISS after idle slow; it is not cached as degraded, because a slow response is still a success.
 
 Alternative if the request quota becomes the constraint: drop `cache.enabled` and cache HTML with the Cache API (`caches.default`) inside `worker.ts`. Assets stay free and HIT CPU is about 1–3 ms, but purge only clears the local data centre, so invalidation would rely on a short TTL. Workers Paid ($5/month) removes both limits.
