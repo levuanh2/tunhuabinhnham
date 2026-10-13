@@ -120,6 +120,48 @@ test.describe("product form", () => {
     expect((await savedProducts(page)).find(p => p.slug === "tu-thu-trung")?.sku).toBe("TN-THU-001");
   });
 
+  test("P5. generated values retry to -3 across slug and code conflicts; a failed cache refresh never saves twice", async ({ page }) => {
+    writesFixture();
+    const seed = (data: Record<string, string>) => page.request.post(`${mock}/api/v1/admin/products`, { data: { publish_status: "draft", images: [], ...data } });
+    await seed({ name: "Tủ ba A", slug: "tu-ba", sku: "SEED-A" });
+    await seed({ name: "Tủ ba B", slug: "tu-ba-2", sku: "SEED-B" });
+    await seed({ name: "Khác", slug: "khac", sku: "TN-TU-BA-3" }); // the code generated for tu-ba-3 is taken too
+    const creates: string[] = [];
+    page.on("request", request => { if (request.method() === "POST" && /\/admin\/products$/.test(request.url())) creates.push(JSON.parse(request.postData() ?? "{}").slug); });
+
+    await newProductPage(page);
+    await page.getByLabel("Tên sản phẩm").fill("Tủ ba");
+    await page.getByRole("button", { name: "Lưu bản nháp" }).click();
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    expect(creates).toEqual(["tu-ba", "tu-ba-2", "tu-ba-3", "tu-ba-3"]);
+    const saved = (await savedProducts(page)).filter(p => p.name === "Tủ ba");
+    expect(saved.map(p => [p.slug, p.sku])).toEqual([["tu-ba-3", "TN-TU-BA-3-4"]]);
+
+    // The product is saved but the cache refresh fails: report it as saved, send the create once.
+    creates.length = 0;
+    await page.route("**/api/revalidate", route => route.fulfill({ status: 502, body: "Edge cache purge failed" }));
+    await newProductPage(page);
+    await page.getByLabel("Tên sản phẩm").fill("Tủ cache lỗi");
+    await page.getByRole("button", { name: "Lưu bản nháp" }).click();
+    await expect(page.getByText("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 5 phút")).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    expect(creates).toEqual(["tu-cache-loi"]);
+    expect((await savedProducts(page)).filter(p => p.name === "Tủ cache lỗi")).toHaveLength(1);
+  });
+
+  test("P6. a draft published by someone else meanwhile keeps its URL when a stale form changes it", async ({ page }) => {
+    writesFixture();
+    const draft = await (await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: "Tủ nháp", slug: "tu-nhap", sku: "TU-NHAP", publish_status: "draft", images: [] } })).json();
+    await page.goto(`/admin/san-pham/${draft.id}`);
+    await page.getByRole("button", { name: "Chỉnh sửa đường dẫn" }).click();
+    await page.request.patch(`${mock}/api/v1/admin/products/${draft.id}`, { data: { publish_status: "published" } }); // another admin
+    await page.getByLabel("Đường dẫn sản phẩm").fill("tu-nhap-moi");
+    await page.getByRole("button", { name: "Lưu bản nháp" }).click();
+    await expect(page.getByText("Sản phẩm này đã được đăng nên giữ đường dẫn cũ.")).toBeVisible();
+    await expect(page.locator("output")).toHaveText("/san-pham/tu-nhap");
+    expect((await savedProducts(page)).find(p => p.id === draft.id)?.slug).toBe("tu-nhap");
+  });
+
   test("P4. editing a published product keeps its URL and category; hiding removes it from the site", async ({ page }) => {
     writesFixture();
     await page.goto("/admin/san-pham/p1");
@@ -218,6 +260,26 @@ test.describe("product categories", () => {
     await page.getByLabel("Tên loại").fill("Tủ đa năng");
     await page.getByRole("button", { name: "Thêm loại" }).click();
     await expect(row("Tủ đa năng")).toContainText("/san-pham?category=tu-da-nang-2");
+  });
+
+  test("C3. hidden categories never filter public products, even when every category is hidden", async ({ page }) => {
+    writesFixture();
+    for (const id of ["c1", "c2", "c3", "c4", "c5"]) await page.request.patch(`${mock}/api/v1/admin/categories/${id}`, { data: { is_visible: false } });
+    expect((await (await page.request.get(`${mock}/api/v1/products?category=tu-quan-ao`)).json()).total).toBe(0);
+    await page.goto("/san-pham?category=tu-quan-ao");
+    await expect(page.getByRole("heading", { name: "Loại sản phẩm này hiện không còn hiển thị" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Loại sản phẩm" })).toHaveCount(0);
+    await expect(page.getByText("0 sản phẩm")).toBeVisible();
+
+    // A product cannot be moved into a category deleted in another tab.
+    const gone = await (await page.request.post(`${mock}/api/v1/admin/categories`, { data: { name: "Sắp xóa", slug: "sap-xoa" } })).json();
+    await newProductPage(page);
+    await page.getByLabel("Tên sản phẩm").fill("Tủ chọn loại cũ");
+    await page.getByLabel("Loại sản phẩm").selectOption({ label: "Sắp xóa" });
+    await page.request.delete(`${mock}/api/v1/admin/categories/${gone.id}`);
+    await page.getByRole("button", { name: "Lưu bản nháp" }).click();
+    await expect(page.getByText("Loại sản phẩm này vừa bị xóa. Hãy chọn loại khác.")).toBeVisible();
+    await expect(page.getByLabel("Tên sản phẩm")).toHaveValue("Tủ chọn loại cũ");
   });
 
   test("C2. the product form links to category management and shows hidden categories as such", async ({ page }) => {

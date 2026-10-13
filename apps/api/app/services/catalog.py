@@ -61,9 +61,31 @@ class CatalogService:
         self.db.refresh(item)
         return item
 
+    def _require_live_category(self, category_id: uuid.UUID | None) -> None:
+        """Products may only point at a category that is not deleted.
+
+        FOR SHARE (PostgreSQL) makes a concurrent delete_category wait for this transaction,
+        and makes this one wait for a delete that already holds the row, so neither side can
+        slip between the other's check and commit.
+        """
+        if category_id is None:
+            return
+        live = self.db.scalar(
+            select(Category.id)
+            .where(Category.id == category_id, Category.deleted_at.is_(None))
+            .with_for_update(read=True)
+        )
+        if live is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Category not found"
+            )
+
     def delete_category(self, item: Category, admin_id: uuid.UUID) -> None:
         # Products keep category_id after a soft delete, so a deleted category would stay
-        # attached to them. Admins move or delete the products first.
+        # attached to them. Admins move or delete the products first. The row lock pairs
+        # with _require_live_category, so a product assigned concurrently is either counted
+        # here or refused there.
+        self.db.refresh(item, with_for_update=True)
         in_use = self.db.scalar(
             select(func.count())
             .select_from(Product)
@@ -82,6 +104,7 @@ class CatalogService:
 
     def create_product(self, data: ProductCreate, admin_id: uuid.UUID) -> Product:
         values = data.model_dump(exclude={"images"})
+        self._require_live_category(data.category_id)
         item = Product(**values)
         if item.publish_status == PublishStatus.published and item.published_at is None:
             item.published_at = datetime.now(UTC)
@@ -106,6 +129,15 @@ class CatalogService:
 
     def update_product(self, item: Product, data: ProductUpdate, admin_id: uuid.UUID) -> Product:
         changes = data.model_dump(exclude_unset=True, exclude={"images"})
+        # Re-read under a row lock: another admin may have published it since this form loaded.
+        self.db.refresh(item, with_for_update=True)
+        if "slug" in changes and changes["slug"] != item.slug and item.published_at is not None:
+            # There are no redirects from old product URLs, so a once-public URL stays valid.
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Published product URL cannot change"
+            )
+        if "category_id" in changes:
+            self._require_live_category(changes["category_id"])
         for key, value in changes.items():
             setattr(item, key, value)
         if (

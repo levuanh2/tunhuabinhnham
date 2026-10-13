@@ -75,11 +75,11 @@ class ProductRepository:
         if search:
             conditions.append(Product.name.ilike(f"%{search.strip()}%"))
         if category:
-            conditions.append(
-                Product.category.has(
-                    and_(Category.slug == category, Category.deleted_at.is_(None))
-                )
-            )
+            category_rules = [Category.slug == category, Category.deleted_at.is_(None)]
+            if public:
+                # Hidden categories are not offered as a public filter.
+                category_rules.append(Category.is_visible.is_(True))
+            conditions.append(Product.category.has(and_(*category_rules)))
         if min_price is not None:
             conditions.append(Product.price >= min_price)
         if max_price is not None:

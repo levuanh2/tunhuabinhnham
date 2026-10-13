@@ -16,7 +16,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
   for (const key of FILTER_KEYS) { const value = raw[key]; if (typeof value === "string" && value) params[key] = value; }
   const [result, categories] = await Promise.all([
     publicApi.products(new URLSearchParams(params).toString()).catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 })),
-    publicApi.categories().catch(() => []),
+    publicApi.categories().catch(() => null),
   ]);
   const href = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams({ ...params, ...patch } as Record<string, string>);
@@ -24,9 +24,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
     const query = next.toString();
     return query ? `/san-pham?${query}` : "/san-pham";
   };
-  const active = categories.find(c => c.slug === params.category);
-  // A hidden or deleted category is not offered as a filter, so its link shows nothing rather than a mislabelled list.
-  const unknownCategory = Boolean(params.category && categories.length && !active);
+  const active = categories?.find(c => c.slug === params.category);
+  // A hidden or deleted category is not a public filter (the API returns no products for it either):
+  // say so instead of showing an empty list titled "Tất cả sản phẩm". Unknown only if the list loaded.
+  const unknownCategory = Boolean(params.category && categories && !active);
   const items = unknownCategory ? [] : result.items;
   const total = unknownCategory ? 0 : result.total;
   const pages = unknownCategory ? 0 : result.pages;
@@ -38,7 +39,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
       <p className="lede mt-3">{active?.description ?? "Tủ quần áo, tủ ngăn kéo, tủ giày và kệ nhựa. Chọn một sản phẩm để xem ảnh, kích thước và giá."}</p>
     </header>
 
-    {categories.length > 0 && <nav aria-label="Loại sản phẩm" className="mt-8 border-b border-line">
+    {categories && categories.length > 0 && <nav aria-label="Loại sản phẩm" className="mt-8 border-b border-line">
       <ul className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:px-0">
         {[{ id: "all", name: "Tất cả sản phẩm", slug: undefined as string | undefined }, ...categories].map(c => {
           const current = (c.slug ?? undefined) === params.category;

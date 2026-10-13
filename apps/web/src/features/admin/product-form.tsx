@@ -111,8 +111,15 @@ export function ProductForm({ product }: { product?: Product }) {
     if (error instanceof AdminApiError && error.message === "Slug already exists") {
       setSlugMode("edit");
       setError("slug", { message: "Đường dẫn này đã có sản phẩm khác dùng. Hãy thêm số hoặc chữ ở cuối, ví dụ …-2" }, { shouldFocus: true });
+    } else if (error instanceof AdminApiError && error.message === "Published product URL cannot change" && product) {
+      // Someone published it after this form was opened: keep the public URL.
+      setSlugMode("fixed"); setValue("slug", product.slug);
+      setError("slug", { message: "Sản phẩm này đã được đăng nên giữ đường dẫn cũ. Bấm lưu lại để lưu các thay đổi khác." });
     } else if (error instanceof AdminApiError && error.message === "SKU already exists") {
       setError("sku", { message: "Mã sản phẩm này đã dùng cho sản phẩm khác" }, { shouldFocus: true });
+    } else if (error instanceof AdminApiError && error.message === "Category not found") {
+      void categories.refetch();
+      setError("category_id", { message: "Loại sản phẩm này vừa bị xóa. Hãy chọn loại khác." }, { shouldFocus: true });
     } else toast.error(error instanceof Error ? error.message : "Không thể lưu");
   }
 
@@ -154,8 +161,8 @@ export function ProductForm({ product }: { product?: Product }) {
         </div>
         <div className="grid gap-1.5">
           {/* key: remount once options load so react-hook-form re-applies the saved category instead of submitting "" */}
-          <label className="label">Loại sản phẩm<select key={categories.data ? "ready" : "loading"} className="field" {...register("category_id")}><option value="">Chọn loại tủ</option>{categories.data?.map(category => <option value={category.id} key={category.id}>{category.is_visible ? category.name : `${category.name} (đang ẩn)`}</option>)}</select></label>
-          {categories.isError ? <span className="error">Không thể tải loại sản phẩm</span> : categories.data?.length === 0 && <span className="hint">Chưa có loại sản phẩm nào. Có thể lưu trước rồi chọn loại sau.</span>}
+          <label className="label">Loại sản phẩm<select key={categories.data ? "ready" : "loading"} className="field" aria-invalid={errors.category_id ? true : undefined} {...register("category_id")}><option value="">Chọn loại tủ</option>{categories.data?.map(category => <option value={category.id} key={category.id}>{category.is_visible ? category.name : `${category.name} (đang ẩn)`}</option>)}</select></label>
+          {errors.category_id ? fieldError(errors.category_id.message) : categories.isError ? <span className="error">Không thể tải loại sản phẩm</span> : categories.data?.length === 0 && <span className="hint">Chưa có loại sản phẩm nào. Có thể lưu trước rồi chọn loại sau.</span>}
           <Link href="/admin/danh-muc" target="_blank" className="link w-fit text-sm font-medium">Quản lý loại sản phẩm<span className="sr-only"> (mở tab mới)</span></Link>
         </div>
         <label className="label">Mô tả<textarea className="field min-h-36 leading-relaxed" {...register("description")} /></label>
