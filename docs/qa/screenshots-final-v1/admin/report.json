@@ -1,0 +1,2360 @@
+[
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 341,
+    "h": 142,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 375,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 356,
+    "h": 148,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 390,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 226,
+    "h": 94,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 768,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Tủ nhựa 5 tầng nắp trắng",
+   "Tủ áo 3 cánh có gương",
+   "Tủ giày 4 tầng cửa lật",
+   "Kệ bếp 3 tầng có bánh xe",
+   "Tủ ngăn kéo trẻ em họa tiết gấ",
+   "Hộp đựng đồ 4 ô",
+   "Tủ áo 2 cánh vân gỗ",
+   "Tủ 6 ngăn kéo mini"
+  ],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 558,
+    "h": 233,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1440,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Tủ nhựa 5 tầng nắp trắng",
+   "Tủ áo 3 cánh có gương",
+   "Tủ giày 4 tầng cửa lật",
+   "Kệ bếp 3 tầng có bánh xe",
+   "Tủ ngăn kéo trẻ em họa tiết gấ",
+   "Hộp đựng đồ 4 ô",
+   "Tủ áo 2 cánh vân gỗ",
+   "Tủ 6 ngăn kéo mini"
+  ],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 558,
+    "h": 233,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "chromium",
+  "w": 1920,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": [
+   "/localhost:8787/admin/san-pham/moi?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/san-pham?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/danh-muc?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/bai-viet?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8100/api/v1/admin/dashboard/stats due to access control checks."
+  ]
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 299,
+    "h": 224,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 341,
+    "h": 142,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 375,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": [
+   "/localhost:8100/api/v1/admin/dashboard/stats due to access control checks."
+  ]
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 56,
+    "h": 56,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 314,
+    "h": 236,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 356,
+    "h": 148,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 390,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": [
+   "/localhost:8787/admin/san-pham?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/danh-muc?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/bai-viet?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/banner?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8100/api/v1/admin/dashboard/stats due to access control checks.",
+   "/localhost:8787/admin/cai-dat?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/san-pham/moi?_rsc=xFVjKFL12UrVWmwy due to access control checks."
+  ]
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 201,
+    "h": 151,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 226,
+    "h": 94,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 768,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": [
+   "/localhost:8787/admin/san-pham?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/danh-muc?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/bai-viet?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/banner?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8100/api/v1/admin/dashboard/stats due to access control checks.",
+   "/localhost:8787/admin/cai-dat?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/san-pham/moi?_rsc=xFVjKFL12UrVWmwy due to access control checks."
+  ]
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Tủ nhựa 5 tầng nắp trắng",
+   "Tủ áo 3 cánh có gương",
+   "Tủ giày 4 tầng cửa lật",
+   "Kệ bếp 3 tầng có bánh xe",
+   "Tủ ngăn kéo trẻ em họa tiết gấ",
+   "Hộp đựng đồ 4 ô",
+   "Tủ áo 2 cánh vân gỗ",
+   "Tủ 6 ngăn kéo mini"
+  ],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 558,
+    "h": 233,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1440,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "dashboard",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": [
+   "/localhost:8787/admin/san-pham?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/danh-muc?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/bai-viet?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/banner?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8100/api/v1/admin/dashboard/stats due to access control checks.",
+   "/localhost:8787/admin/cai-dat?_rsc=xFVjKFL12UrVWmwy due to access control checks.",
+   "/localhost:8787/admin/san-pham/moi?_rsc=xFVjKFL12UrVWmwy due to access control checks."
+  ]
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "products",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Tủ nhựa 5 tầng nắp trắng",
+   "Tủ áo 3 cánh có gương",
+   "Tủ giày 4 tầng cửa lật",
+   "Kệ bếp 3 tầng có bánh xe",
+   "Tủ ngăn kéo trẻ em họa tiết gấ",
+   "Hộp đựng đồ 4 ô",
+   "Tủ áo 2 cánh vân gỗ",
+   "Tủ 6 ngăn kéo mini"
+  ],
+  "images": [
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "",
+    "w": 40,
+    "h": 40,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "product-new",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "product-edit",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "Quản lý loại sản phẩm (mở tab ",
+   "Ảnh sản phẩm",
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 2",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   },
+   {
+    "alt": "Tủ nhựa 5 tầng nắp trắng — góc 3",
+    "w": 241,
+    "h": 181,
+    "natural": 900,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "categories",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "news",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "banners",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [
+   {
+    "alt": "Nhà gọn, mỗi ngày nhẹ nhàng hơn",
+    "w": 558,
+    "h": 233,
+    "natural": 1600,
+    "broken": false
+   }
+  ],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ },
+ {
+  "engine": "webkit",
+  "w": 1920,
+  "name": "settings",
+  "status": 200,
+  "overflow": false,
+  "smallTargets": [
+   "INPUT"
+  ],
+  "images": [],
+  "h1Count": 1,
+  "headingSkip": false,
+  "unlabeledFields": [],
+  "unnamedControls": 0,
+  "lang": "vi",
+  "skipLink": false,
+  "errors": []
+ }
+]
