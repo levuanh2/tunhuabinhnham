@@ -27,9 +27,12 @@ export async function middleware(request: NextRequest) {
       },
     },
   });
-  const { data: { user } } = await supabase.auth.getUser();
+  // A corrupted sb-* cookie makes @supabase/ssr throw while decoding it: treat that as signed out, not a 500.
+  const user = await supabase.auth.getUser().then(({ data }) => data.user, () => null);
   if (!user) {
-    return privateResponse(NextResponse.redirect(new URL("/admin/login", request.url)));
+    const redirect = privateResponse(NextResponse.redirect(new URL("/admin/login", request.url)));
+    for (const { name } of request.cookies.getAll()) if (/^sb-.*-auth-token/.test(name)) redirect.cookies.delete(name);
+    return redirect;
   }
   return response;
 }
