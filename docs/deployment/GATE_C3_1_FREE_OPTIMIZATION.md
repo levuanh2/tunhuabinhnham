@@ -248,7 +248,15 @@ The page has no JSON-LD `telephone` field, so there is no metadata to update. Th
 - Option for a later, separately tested release: enable the cache only on a named render entrypoint (`exports.<Name>.cache.enabled`) and have the default entrypoint forward cacheable page requests to it through `ctx.exports`. Assets would be free again and tag purge would keep working. Not changed in this release, as the brief requires.
 - Bots: scanners requested about 150 non-existent paths in one hour. 404s are never cached, so each one runs the Worker and counts toward the quota. A free WAF custom rule that blocks `*.php`, `/.git`, `/.svn` and `/.hg` would remove most of them. This is an owner decision and needs no DNS change.
 
-### Render (Phase 6): VERIFIED
+### Render (Phase 6): VERIFIED (deployed commit) — **CORRECTED 2026-10-13: the redaction fix was not in the code**
+
+> **Correction:** the check below established the deployed commit and its ancestry, not file content.
+> - `5248e27`, a test-only commit, reverted the two fix lines of `96884dc` (`hide_input_in_errors=True` in `core/config.py`; `sys.excepthook` through the redacting formatter in `core/logging.py`).
+> - So `416cd02` and `b532ac4` ran **without** the startup-redaction fix, and both startup tests in `test_logging.py` failed on them.
+> - Hotfix `6f48006` (parent `b532ac4`, same lines as `96884dc`) passed pytest 70/70, ruff and mypy, and was fast-forwarded to `deploy/c2-preview`.
+> - The owner ran Manual Deploy (auto-deploy is off): GitHub deployment 7034527688 `success` at 2026-10-13T09:11:24Z.
+> - Smoke: `/health/live` 200, `/health/ready` 200, CORS apex 200 (unknown origin 400), anonymous admin 401.
+
 
 Render reports each deploy to GitHub as a deployment of `levuanh2/tunhuabinhnham`, environment `deploy/c2-preview - tunhuabinhnham-api`. The latest record shows commit `416cd0201b81`, state `success`, at 2026-10-12T21:05:34Z, with environment URL `https://tunhuabinhnham-api.onrender.com`. `git merge-base --is-ancestor a99bed4 416cd020` succeeds, so the running commit contains the startup/log redaction fixes (`ca7416e`, `96884dc`, `7cceb99`).
 
