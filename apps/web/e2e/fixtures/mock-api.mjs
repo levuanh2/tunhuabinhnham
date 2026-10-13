@@ -22,7 +22,12 @@ const cats = [
   { id: "c3", name: "Tủ giày", slug: "tu-giay", description: "Gọn lối vào nhà." },
   { id: "c4", name: "Kệ bếp", slug: "ke-bep", description: "Kệ để đồ khô và gia vị." },
   { id: "c5", name: "Đồ trẻ em", slug: "do-tre-em", description: "Tủ nhỏ, màu nhẹ cho bé." },
-];
+].map((c, i) => ({ ...c, is_visible: true, sort_order: i }));
+const initialCats = structuredClone(cats);
+// Mirrors the API: categories are soft-deleted (slug stays reserved), public lists skip hidden/deleted ones.
+const liveCats = () => cats.filter(c => !c.deleted_at).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+// Mirrors the products_slug_key / products_sku_key unique constraints.
+const productClash = (b, id) => products.some(x => x.id !== id && b.slug && x.slug === b.slug) ? "Slug already exists" : products.some(x => x.id !== id && b.sku && x.sku === b.sku) ? "SKU already exists" : null;
 const raw = [
   ["Tủ nhựa 5 tầng nắp trắng", "tu-5-tang", "TN-5T-01", "1250000", "in_stock", "c2", { "Kích thước": "48 × 42 × 108 cm", "Chất liệu": "Nhựa PP", "Số ngăn": "5" }],
   ["Tủ áo 3 cánh có gương", "tu-ao-3-canh", "TA-3C-02", "3450000", "in_stock", "c1", { "Kích thước": "120 × 48 × 180 cm" }],
@@ -70,19 +75,21 @@ http.createServer((req, res) => {
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
   if (u.pathname === "/__outage" && req.method === "POST") { outage = q.get("on") === "1"; return send(200, { outage }); }
   if (outage && !u.pathname.startsWith("/__") && !path.startsWith("/admin")) return send(503, { error: { message: "Simulated outage" } });
-  if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); Object.assign(settings, structuredClone(initialSettings)); return send(200, { reset: true }); }
+  if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); cats.splice(0, cats.length, ...structuredClone(initialCats)); Object.assign(settings, structuredClone(initialSettings)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
     // In-memory writes so UI specs can be dry-run locally (incl. staging-cms.spec.ts with E2E_* pointing here).
     // Settings, posts and banners stay read-only (403) so write-failure feedback remains testable.
     const pw = path.match(/^\/admin\/products\/(.+)$/);
     const readBody = fn => { const chunks = []; req.on("data", c => chunks.push(c)); req.on("end", () => fn(Buffer.concat(chunks))); };
     const withImages = (p, imgs) => imgs.map((im, i) => ({ id: `${p.slug}-${im.storage_key}`, ...im, sort_order: im.sort_order ?? i }));
-    if (pw && req.method === "PATCH") return readBody(raw => { const p = products.find(x => x.id === pw[1]); if (!p) return send(404, { error: { message: "Không tìm thấy" } }); const b = JSON.parse(raw.toString() || "{}"); const category_id = "category_id" in b ? b.category_id : p.category_id; Object.assign(p, b, { category_id, category: cats.find(c => c.id === category_id) ?? null, images: withImages(p, b.images ?? p.images) }); send(200, p); });
+    if (pw && req.method === "PATCH") return readBody(raw => { const p = products.find(x => x.id === pw[1]); if (!p) return send(404, { error: { message: "Không tìm thấy" } }); const b = JSON.parse(raw.toString() || "{}"); const clash = productClash(b, p.id); if (clash) return send(409, { error: { message: clash } }); if (b.publish_status === "published" && !p.published_at) b.published_at = new Date().toISOString(); const category_id = "category_id" in b ? b.category_id : p.category_id; Object.assign(p, b, { category_id, category: cats.find(c => c.id === category_id) ?? null, images: withImages(p, b.images ?? p.images) }); send(200, p); });
     if (pw && req.method === "DELETE") { const i = products.findIndex(x => x.id === pw[1]); if (i >= 0) products.splice(i, 1); return send(204, {}); }
-    if (path === "/admin/products" && req.method === "POST") return readBody(raw => { const b = JSON.parse(raw.toString() || "{}"); const p = { id: crypto.randomUUID(), is_featured: false, published_at: new Date().toISOString(), attributes: {}, ...b, category: cats.find(c => c.id === b.category_id) ?? null }; p.images = withImages(p, b.images ?? []); products.push(p); send(201, p); });
-    if (path === "/admin/categories" && req.method === "POST") return readBody(raw => { const c = { id: crypto.randomUUID(), description: null, ...JSON.parse(raw.toString() || "{}") }; cats.push(c); send(201, c); });
-    const cd = path.match(/^\/admin\/categories\/(.+)$/);
-    if (cd && req.method === "DELETE") { const i = cats.findIndex(c => c.id === cd[1]); if (i >= 0) cats.splice(i, 1); return send(204, {}); }
+    if (path === "/admin/products" && req.method === "POST") return readBody(raw => { const b = JSON.parse(raw.toString() || "{}"); const clash = productClash(b); if (clash) return send(409, { error: { message: clash } }); const p = { id: crypto.randomUUID(), is_featured: false, published_at: b.publish_status === "published" ? new Date().toISOString() : null, attributes: {}, ...b, category: cats.find(c => c.id === b.category_id) ?? null }; p.images = withImages(p, b.images ?? []); products.push(p); send(201, p); });
+    if (path === "/admin/categories" && req.method === "POST") return readBody(raw => { const c = { id: crypto.randomUUID(), description: null, is_visible: true, sort_order: 0, ...JSON.parse(raw.toString() || "{}") }; if (cats.some(x => x.slug === c.slug)) return send(409, { error: { message: "Slug already exists" } }); cats.push(c); send(201, c); });
+    const cd = path.match(/^\/admin\/categories\/(.+)$/); const cat = cd && liveCats().find(c => c.id === cd[1]);
+    if (cd && !cat && req.method !== "GET") return send(404, { error: { message: "Category not found" } });
+    if (cd && req.method === "PATCH") return readBody(raw => { const b = JSON.parse(raw.toString() || "{}"); if (b.slug && cats.some(x => x !== cat && x.slug === b.slug)) return send(409, { error: { message: "Slug already exists" } }); Object.assign(cat, b); send(200, cat); });
+    if (cd && req.method === "DELETE") { if (products.some(p => p.category_id === cat.id)) return send(409, { error: { message: "Category has products" } }); Object.assign(cat, { deleted_at: new Date().toISOString(), is_visible: false }); return send(204, {}); }
     if (path === "/admin/media" && req.method === "POST") return readBody(() => { const key = `${new Date().toISOString().slice(0, 7).replace("-", "/")}/${crypto.randomUUID()}.png`; send(201, { id: crypto.randomUUID(), bucket: q.get("bucket"), storage_key: key, url: svg(10, 10, `<!-- ${key} --><rect width="10" height="10" fill="#d8c9b6"/>`) }); });
     if (path.startsWith("/admin/media") && req.method === "DELETE") return send(204, {});
     const collection = path.match(/^\/admin\/(posts|banners)(?:\/([^/]+))?$/);
@@ -99,7 +106,7 @@ http.createServer((req, res) => {
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
     if (a === "/products") { /* mirrors repositories/catalog.py: admin search matches name only */ const t = q.get("search")?.toLowerCase(); return send(200, page(t ? products.filter(p => p.name.toLowerCase().includes(t)) : products, q)); }
     const pm = a.match(/^\/products\/(.+)$/); if (pm) { const p = products.find(x => x.id === pm[1]); return p ? send(200, p) : send(404, { error: { message: "Không tìm thấy" } }); }
-    if (a === "/categories") return send(200, cats);
+    if (a === "/categories") return send(200, liveCats().map(c => ({ ...c, product_count: products.filter(p => p.category_id === c.id).length })));
     if (a === "/posts") return send(200, adminPosts);
     if (a === "/banners") return send(200, banners);
     if (a === "/site-settings") return send(200, settings);
@@ -107,10 +114,10 @@ http.createServer((req, res) => {
   }
   if (req.method === "POST" && path === "/contact-clicks") return send(201, {});
   if (process.env.MOCK_EMPTY) { if (path === "/site-settings") return send(200, settings); return send(200, path.startsWith("/products/") || path.startsWith("/posts/") ? null : (path === "/categories" || path === "/banners" ? [] : { items: [], page: 1, page_size: 20, total: 0, pages: 0 })); }
-  if (path === "/products") { let list = products.filter(isPublic); const s = q.get("search")?.toLowerCase(); if (s) list = list.filter(p => p.name.toLowerCase().includes(s)); const c = q.get("category"); if (c) list = list.filter(p => p.category?.slug === c);
+  if (path === "/products") { let list = products.filter(isPublic); const s = q.get("search")?.toLowerCase(); if (s) list = list.filter(p => p.name.toLowerCase().includes(s)); const c = q.get("category"); if (c) list = list.filter(p => p.category?.slug === c && !p.category.deleted_at);
     const sort = q.get("sort"); if (sort === "price") list = [...list].sort((a, b) => Number(a.price ?? 1e12) - Number(b.price ?? 1e12)); if (sort === "-price") list = [...list].sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0)); return send(200, page(list, q)); }
   const m = path.match(/^\/(products|posts)\/(.+)$/); if (m) { const item = (m[1] === "products" ? products.filter(isPublic) : posts).find(x => x.slug === m[2]); return item ? send(200, item) : send(404, { error: { message: "Không tìm thấy" } }); }
-  if (path === "/categories") return send(200, cats);
+  if (path === "/categories") return send(200, liveCats().filter(c => c.is_visible));
   if (path === "/posts") return send(200, page(posts, q));
   if (path === "/banners") return send(200, banners.filter(b => b.is_active).sort((x, y) => x.sort_order - y.sort_order));
   if (path === "/site-settings") return send(200, settings);

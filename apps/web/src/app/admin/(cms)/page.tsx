@@ -8,7 +8,7 @@ import { adminFetch } from "@/lib/admin-api";
 const cards = [
   { key: "products", label: "Sản phẩm", href: "/admin/san-pham" },
   { key: "visible_products", label: "Đang hiển thị", href: "/admin/san-pham" },
-  { key: "categories", label: "Danh mục", href: "/admin/danh-muc" },
+  { key: "categories", label: "Loại sản phẩm", href: "/admin/danh-muc" },
   { key: "posts", label: "Bài viết", href: "/admin/bai-viet" },
   { key: "contact_clicks", label: "Lượt nhấn liên hệ" },
 ];

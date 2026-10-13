@@ -6,6 +6,8 @@ export type Product = {
 };
 export type ProductImage = { id: string; storage_key: string; url: string; alt_text?: string | null; sort_order: number; is_primary: boolean };
 export type Category = { id: string; name: string; slug: string; description?: string | null; image_url?: string | null };
+/** Admin list only: includes hidden categories and the number of (non-deleted) products using each one. */
+export type AdminCategory = Category & { is_visible: boolean; sort_order: number; product_count: number };
 export type PostImage = { id?: string; storage_key: string; url: string; alt_text?: string | null; sort_order: number };
 export type Post = {
   id: string; title: string; slug: string; excerpt?: string | null;

@@ -112,11 +112,11 @@ test("8. admin navigation: drawer on phones, sidebar on desktop", async ({ page 
   if (isPhone(page)) {
     await page.getByRole("button", { name: "Mở menu quản trị" }).click();
     const drawer = page.getByRole("dialog", { name: "Menu quản trị" });
-    await expect(drawer.getByRole("link", { name: "Sản phẩm" })).toBeVisible();
+    await expect(drawer.getByRole("link", { name: "Sản phẩm", exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(drawer).toBeHidden();
   } else {
-    await expect(page.getByRole("navigation", { name: "Quản trị" }).getByRole("link", { name: "Sản phẩm" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Quản trị" }).getByRole("link", { name: "Sản phẩm", exact: true })).toBeVisible();
   }
   await page.goto("/admin/san-pham");
   await noOverflow(page);
@@ -125,7 +125,7 @@ test("8. admin navigation: drawer on phones, sidebar on desktop", async ({ page 
 test("9. admin product form shows validation next to the field", async ({ page }) => {
   await login(page);
   await page.goto("/admin/san-pham/moi");
-  await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+  await page.getByRole("button", { name: "Lưu bản nháp" }).click();
   await expect(page.getByText("Nhập tên sản phẩm")).toBeVisible();
   await expect(page.getByLabel("Tên sản phẩm")).toHaveAttribute("aria-invalid", "true");
   await noOverflow(page);
@@ -134,7 +134,7 @@ test("9. admin product form shows validation next to the field", async ({ page }
 test("10. media upload controls are reachable and touch sized", async ({ page }) => {
   await login(page);
   await page.goto("/admin/san-pham/p1");
-  await expect(page.getByLabel("Danh mục")).toHaveValue("c2");
+  await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c2");
   await expect(page.getByLabel("Ảnh sản phẩm")).toHaveAttribute("type", "file");
   await page.goto("/admin/cai-dat");
   const picker = page.getByText("Chọn ảnh").first();
@@ -182,17 +182,17 @@ test("12. saving one field keeps category and persists image order after reload 
   try {
     await login(page);
     await page.goto("/admin/san-pham/p1");
-    await expect(page.getByLabel("Danh mục")).toHaveValue("c2");
+    await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c2");
     await page.getByLabel("Mô tả", { exact: true }).fill("Mô tả cập nhật bởi kiểm thử giao diện.");
     await page.getByRole("button", { name: "Đưa ảnh 1 ra sau" }).click();
-    await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+    await page.getByRole("button", { name: "Lưu thay đổi" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     const saved = await (await request.get(`${mock}/api/v1/admin/products/p1`)).json();
     expect(saved.category_id).toBe("c2");
     expect(saved.images.map((i: { storage_key: string; sort_order: number }) => [i.storage_key, i.sort_order])).toEqual([["tu-ngan-keo", 0], ["tu-5-tang", 1], ["hop-dung-do", 2]]);
     expect(saved.images.find((i: { is_primary: boolean }) => i.is_primary).storage_key).toBe("tu-5-tang");
     await page.goto("/admin/san-pham/p1");
-    await expect(page.getByLabel("Danh mục")).toHaveValue("c2");
+    await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c2");
     await expect(page.getByLabel("Mô tả", { exact: true })).toHaveValue("Mô tả cập nhật bởi kiểm thử giao diện.");
   } finally {
     await request.post(`${mock}/__reset`);
