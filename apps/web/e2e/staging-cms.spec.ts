@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { toSlug } from "../src/lib/slug";
 
 const canWrite = process.env.E2E_ALLOW_STAGING_WRITES === "true";
 const email = process.env.E2E_ADMIN_EMAIL;
@@ -52,7 +53,7 @@ test.describe("real Supabase CMS workflow", () => {
   test("admin can publish and hide catalogue content", async ({ page, request }) => {
     const suffix = `${runId}-${Date.now()}`;
     const category = `${recordPrefix}category_${suffix}`;
-    const categorySlug = `e2e-${suffix}-category`;
+    const categorySlug = toSlug(category); // the admin form derives it from the name
     const product = `${recordPrefix}product_${suffix}`;
     const productSlug = `e2e-${suffix}-product`;
     const sku = `E2E-${suffix}`;
@@ -65,20 +66,20 @@ test.describe("real Supabase CMS workflow", () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     await gotoReady(page, "/admin/danh-muc");
-    await page.getByLabel("Tên").fill(category);
-    await page.getByLabel("Slug").fill(categorySlug);
-    await page.getByRole("button", { name: "Thêm", exact: true }).click();
+    await page.getByLabel("Tên loại").fill(category);
+    await page.getByRole("button", { name: "Thêm loại", exact: true }).click();
     await expect(page.getByText(category, { exact: true })).toBeVisible({ timeout: 15_000 });
 
     await gotoReady(page, "/admin/san-pham/moi");
     await page.getByLabel("Tên sản phẩm").fill(product);
-    await page.getByLabel("Slug").fill(productSlug);
-    await page.getByLabel("SKU").fill(sku);
-    await page.getByLabel("Danh mục").selectOption({ label: category });
+    await page.getByRole("button", { name: "Chỉnh sửa đường dẫn" }).click();
+    await page.getByLabel("Đường dẫn sản phẩm").fill(productSlug);
+    await page.getByLabel("Mã sản phẩm").fill(sku);
+    await page.getByLabel("Loại sản phẩm").selectOption({ label: category });
     await page.getByLabel("Ảnh sản phẩm").setInputFiles(image);
     await expect(page.getByText("Ảnh chính")).toBeVisible();
-    await page.getByLabel("Xuất bản").selectOption("published");
-    await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+    await page.getByLabel("Trạng thái đăng bán").selectOption("published");
+    await page.getByRole("button", { name: "Đăng sản phẩm" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
 
     await page.goto(`/san-pham/${productSlug}`);
@@ -98,8 +99,8 @@ test.describe("real Supabase CMS workflow", () => {
     await gotoReady(page, "/admin/san-pham");
     // Desktop shows a table, phones a card list: the product-name link exists in both layouts.
     await page.getByRole("link", { name: product }).first().click();
-    await page.getByLabel("Hiển thị sản phẩm").uncheck();
-    await page.getByRole("button", { name: "Lưu sản phẩm" }).click();
+    await page.getByLabel("Hiển thị trên website").uncheck();
+    await page.getByRole("button", { name: "Lưu thay đổi" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     await expect.poll(async () => (await request.get(`${apiUrl}/products/${productSlug}`)).status()).toBe(404);
     const hiddenResponse = await page.goto(`/san-pham/${productSlug}?e2e=${encodeURIComponent(runId)}`);

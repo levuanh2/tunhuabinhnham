@@ -11,7 +11,7 @@ import { Sheet } from "./sheet";
 const links = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/san-pham", label: "Sản phẩm", icon: Boxes },
-  { href: "/admin/danh-muc", label: "Danh mục", icon: Tags },
+  { href: "/admin/danh-muc", label: "Loại sản phẩm", icon: Tags },
   { href: "/admin/bai-viet", label: "Bài viết", icon: FileText },
   { href: "/admin/banner", label: "Banner", icon: Image },
   { href: "/admin/cai-dat", label: "Cài đặt", icon: Settings },

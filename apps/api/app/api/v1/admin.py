@@ -26,8 +26,13 @@ from app.models import (
     PublishStatus,
     SiteSettings,
 )
-from app.repositories.catalog import CategoryRepository, ProductRepository
+from app.repositories.catalog import (
+    CategoryRepository,
+    ProductRepository,
+    public_product_conditions,
+)
 from app.schemas.catalog import (
+    AdminCategoryOut,
     CategoryCreate,
     CategoryOut,
     CategoryUpdate,
@@ -109,9 +114,21 @@ def delete_product(
     CatalogService(db).delete_product(item, admin.id)
 
 
-@router.get("/categories", response_model=list[CategoryOut])
-def list_categories(db: Session = Depends(get_db)) -> list[CategoryOut]:
-    return [CategoryOut.model_validate(item) for item in CategoryRepository(db).admin_list()]
+@router.get("/categories", response_model=list[AdminCategoryOut])
+def list_categories(db: Session = Depends(get_db)) -> list[AdminCategoryOut]:
+    counts = dict(
+        db.execute(
+            select(Product.category_id, func.count())
+            .where(Product.deleted_at.is_(None), Product.category_id.is_not(None))
+            .group_by(Product.category_id)
+        ).all()
+    )
+    return [
+        AdminCategoryOut.model_validate(item).model_copy(
+            update={"product_count": counts.get(item.id, 0)}
+        )
+        for item in CategoryRepository(db).admin_list()
+    ]
 
 
 @router.post("/categories", response_model=CategoryOut, status_code=201)
@@ -459,13 +476,7 @@ def dashboard(db: Session = Depends(get_db)) -> dict[str, int]:
         "posts": db.scalar(select(func.count()).select_from(Post).where(Post.deleted_at.is_(None)))
         or 0,
         "visible_products": db.scalar(
-            select(func.count())
-            .select_from(Product)
-            .where(
-                Product.deleted_at.is_(None),
-                Product.is_visible.is_(True),
-                Product.publish_status == PublishStatus.published,
-            )
+            select(func.count()).select_from(Product).where(*public_product_conditions())
         )
         or 0,
         "contact_clicks": db.scalar(select(func.count()).select_from(ContactClick)) or 0,

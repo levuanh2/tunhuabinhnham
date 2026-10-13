@@ -11,16 +11,17 @@ import type { Page, Product } from "@/types/api";
 
 const statusFilters = [
   { value: "all", label: "Tất cả trạng thái" },
-  { value: "published", label: "Đã xuất bản" },
-  { value: "draft", label: "Bản nháp" },
+  { value: "published", label: "Đã đăng" },
+  { value: "draft", label: "Chưa đăng" },
   { value: "hidden", label: "Đang ẩn" },
 ] as const;
 type StatusFilter = (typeof statusFilters)[number]["value"];
 
 function Status({ product }: { product: Product }) {
   return <span className="flex flex-wrap gap-1.5">
-    <span className={`badge ${product.publish_status === "published" ? "success" : ""}`}><span className="dot" aria-hidden="true" />{product.publish_status === "published" ? "Đã xuất bản" : "Bản nháp"}</span>
+    <span className={`badge ${product.publish_status === "published" ? "success" : ""}`}><span className="dot" aria-hidden="true" />{product.publish_status === "published" ? "Đã đăng" : "Chưa đăng"}</span>
     {!product.is_visible && <span className="badge">Đang ẩn</span>}
+    {product.category?.is_visible === false && <span className="badge">Loại đang ẩn</span>}
   </span>;
 }
 
@@ -38,7 +39,7 @@ export default function AdminProductsPage() {
   const addButton = <Link href="/admin/san-pham/moi" className="button"><Plus size={17} aria-hidden="true" />Thêm sản phẩm</Link>;
 
   return <>
-    <AdminPageHeader title="Sản phẩm" description="Tạo, xuất bản hoặc ẩn sản phẩm." action={addButton} />
+    <AdminPageHeader title="Sản phẩm" description="Tạo, đăng bán hoặc ẩn sản phẩm." action={addButton} />
     {error ? <QueryError label="sản phẩm" onRetry={() => void refetch()} />
       : !isLoading && !term && data?.items.length === 0
         ? <div className="panel px-6 py-14 text-center"><p className="font-medium">Chưa có sản phẩm nào.</p><p className="mt-1 text-sm text-ink-soft">Thêm sản phẩm đầu tiên để hiển thị trên website.</p><div className="mt-5">{addButton}</div></div>

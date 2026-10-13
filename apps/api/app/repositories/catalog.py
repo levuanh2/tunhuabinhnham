@@ -11,6 +11,23 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.models import Category, Product, PublishStatus
 
 
+def public_product_conditions() -> list[ColumnElement[bool]]:
+    """What makes a product visible on the public site (lists, search, filters, detail, sitemap)."""
+    return [
+        Product.deleted_at.is_(None),
+        Product.publish_status == PublishStatus.published,
+        Product.is_visible.is_(True),
+        or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
+        # A product in a hidden category is hidden too, without changing its own publish
+        # settings. A soft-deleted category counts as hidden (legacy rows deleted before the
+        # delete guard may still point at one).
+        or_(
+            Product.category_id.is_(None),
+            Product.category.has(and_(Category.deleted_at.is_(None), Category.is_visible.is_(True))),
+        ),
+    ]
+
+
 class CategoryRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -65,21 +82,17 @@ class ProductRepository:
         max_price: Decimal | None = None,
         sort: str = "-published_at",
     ) -> tuple[list[Product], int]:
-        conditions: list[ColumnElement[bool]] = [Product.deleted_at.is_(None)]
-        if public:
-            conditions += [
-                Product.publish_status == PublishStatus.published,
-                Product.is_visible.is_(True),
-                or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
-            ]
+        conditions: list[ColumnElement[bool]] = (
+            public_product_conditions() if public else [Product.deleted_at.is_(None)]
+        )
         if search:
             conditions.append(Product.name.ilike(f"%{search.strip()}%"))
         if category:
-            conditions.append(
-                Product.category.has(
-                    and_(Category.slug == category, Category.deleted_at.is_(None))
-                )
-            )
+            category_rules = [Category.slug == category, Category.deleted_at.is_(None)]
+            if public:
+                # Hidden categories are not offered as a public filter.
+                category_rules.append(Category.is_visible.is_(True))
+            conditions.append(Product.category.has(and_(*category_rules)))
         if min_price is not None:
             conditions.append(Product.price >= min_price)
         if max_price is not None:
@@ -110,14 +123,8 @@ class ProductRepository:
         )
 
     def by_slug(self, slug: str, public: bool = True) -> Product | None:
-        conditions: list[ColumnElement[bool]] = [
-            Product.slug == slug,
-            Product.deleted_at.is_(None),
-        ]
-        if public:
-            conditions += [
-                Product.publish_status == PublishStatus.published,
-                Product.is_visible.is_(True),
-                or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
-            ]
+        conditions: list[ColumnElement[bool]] = (
+            public_product_conditions() if public else [Product.deleted_at.is_(None)]
+        )
+        conditions.append(Product.slug == slug)
         return self.db.scalar(select(Product).options(*self.eager()).where(*conditions))
