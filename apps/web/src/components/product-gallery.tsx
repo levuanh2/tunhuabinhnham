@@ -63,7 +63,7 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
         onPointerDown={() => { target.current = null; }} onWheel={() => { target.current = null; }} // a swipe or wheel takes over
         onKeyDown={event => arrows(event, true)}
         className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl bg-muted" tabIndex={many ? 0 : undefined} aria-label={many ? "Vuốt hoặc dùng phím mũi tên để xem ảnh" : undefined}>
-        {ordered.map((image, i) => <div key={image.id} className="relative aspect-[4/5] w-full shrink-0 snap-center" aria-hidden={i !== index}>
+        {ordered.map((image, i) => <div key={image.id} data-slide={i} className="relative aspect-[4/5] w-full shrink-0 snap-center" aria-hidden={i !== index}>
           {broken.has(image.id) ? fallback
             : <button type="button" tabIndex={i === index ? 0 : -1} onClick={() => setZoomed(true)} className="relative block size-full cursor-zoom-in" aria-label={`Phóng to ảnh ${i + 1}${many ? ` trên ${ordered.length}` : ""}`}>
                 <Image src={image.url} alt={alt(image)} fill priority={i === 0} loading={i === 0 ? undefined : "lazy"} sizes="(min-width: 1280px) 640px, (min-width: 1024px) 50vw, 100vw" className="object-contain p-3 md:p-5" onError={() => markBroken(image.id)} />
@@ -83,7 +83,12 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
       </li>)}
     </ul>}
 
-    <dialog ref={dialog} aria-label={`Ảnh phóng to: ${name}`} onClose={() => setZoomed(false)} onKeyDown={event => arrows(event, false)}
+    <dialog ref={dialog} aria-label={`Ảnh phóng to: ${name}`} onKeyDown={event => arrows(event, false)}
+      onClose={() => {
+        setZoomed(false);
+        // The dialog restores focus to the button that opened it, which may now be a hidden slide: use the shown one.
+        requestAnimationFrame(() => track.current?.querySelector<HTMLElement>(`[data-slide="${index}"] button`)?.focus());
+      }}
       className="m-0 h-dvh max-h-none w-full max-w-none bg-ink/95 p-0 text-white backdrop:bg-ink/60">
       {zoomed && <div className="grid size-full grid-rows-[auto_minmax(0,1fr)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between gap-3 px-4 py-2">

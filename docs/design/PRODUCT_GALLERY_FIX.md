@@ -45,7 +45,8 @@ Secondary issues:
 - Performance:
   - the first image keeps `priority`; the others are lazy;
   - `sizes` is capped at 640 px on large screens, so no larger downloads;
-  - no server-side change, so Worker CPU and HTML caching are unchanged.
+  - Workers Cache policy (eligibility, key, headers, TTL) and server code are unchanged.
+  - Worker CPU on a cache MISS was **not benchmarked**. The client component is still server-rendered, so a MISS serialises slightly more markup; no material impact is expected, but none is claimed.
 
 Not done, deliberately:
 - No CSS `transform: scale`.
@@ -80,8 +81,8 @@ Not done, deliberately:
 
 New `e2e/product-gallery.spec.ts` covers:
 - **G1:** one image fills the column at 1920/1440/768/390/375; 4:5 frame; no thumbnails; `object-fit: contain`; alt fallback; no overflow. Negative control run: on the old gallery, G1 fails with `Received: 72`.
-- **G2:** several images: thumbnails below; selection; arrow keys; Enter opens the lightbox with focus on close; arrows and next button with wrap-around; the zoomed image is larger; Escape closes with the selection in sync; phone thumbnails scroll; tap to open and close.
-- **G3:** broken image fallback; empty state; cumulative layout shift < 0.1.
+- **G2:** several images: thumbnails below; selection; arrow keys; Enter opens the lightbox with focus on close; arrows and next button with wrap-around; the zoomed image is larger; Escape closes with the selection in sync **and focus on the visible slide**; phone thumbnails scroll; tap to open and close.
+- **G3:** broken image fallback; empty state; the 4:5 frame is measured while `/_next/image` is held back and keeps its size after release; cumulative layout shift < 0.1.
 
 Real-browser probe: Chromium and WebKit, single and multiple images, five widths, 0 console errors (`after/report.json`).
 

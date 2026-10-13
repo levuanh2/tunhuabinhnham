@@ -9,6 +9,7 @@ test.skip(process.env.E2E_MOCK_API !== "1", "Requires the local QA fixture API (
 
 const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
 const SVG = (fill: string, w = 900, h = 1125) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/></svg>`).toString("base64")}`;
+const PNG_1PX = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==", "base64");
 const image = (key: string, url: string, i: number) => ({ storage_key: key, url, alt_text: "", sort_order: i, is_primary: i === 0 });
 
 async function setImages(page: Page, images: ReturnType<typeof image>[]) {
@@ -77,6 +78,8 @@ test.describe("product gallery", () => {
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("button", { name: "Xem ảnh 2 trên 3" })).toHaveAttribute("aria-pressed", "true"); // in sync after closing
+    // Opened from image 3, closed on image 2: focus goes to the visible slide, not the now-hidden opener.
+    await expect(page.getByRole("button", { name: "Phóng to ảnh 2 trên 3" })).toBeFocused();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/san-pham/tu-giay");
@@ -100,15 +103,25 @@ test.describe("product gallery", () => {
     await page.goto("/san-pham/tu-giay");
     await expect(page.getByText("Chưa có ảnh sản phẩm")).toBeVisible();
 
-    // No layout shift: the 4:5 frame exists before any image bytes arrive.
-    await setImages(page, [image("slow", SVG("#d8c9b6"), 0)]);
-    await page.goto("/san-pham/tu-5-tang", { waitUntil: "commit" });
-    await page.waitForSelector('[aria-roledescription="thư viện ảnh"]');
+    // No layout shift: the 4:5 frame exists while the image bytes are still held back, and keeps its size after.
+    await setImages(page, [image("slow", "https://fixture.supabase.co/storage/v1/object/public/product-images/slow.jpg", 0)]);
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    await page.route("**/_next/image?**", async route => { await held; await route.fulfill({ contentType: "image/png", body: PNG_1PX }); });
+    await page.goto("/san-pham/tu-giay", { waitUntil: "domcontentloaded" }); // "load" would wait for the held image
+    const frame = page.locator('[aria-roledescription="thư viện ảnh"] [data-slide="0"]');
+    const before = (await frame.boundingBox())!;
+    expect(await page.evaluate(() => [...document.querySelectorAll<HTMLImageElement>('[aria-roledescription="thư viện ảnh"] img')].every(img => !img.complete || img.naturalWidth === 0)), "image still pending").toBe(true);
+    expect(before.height / before.width, "4:5 frame reserved before the image arrives").toBeCloseTo(1.25, 1);
+    release();
+    await expect.poll(() => page.evaluate(() => document.querySelector<HTMLImageElement>('[aria-roledescription="thư viện ảnh"] img')?.naturalWidth ?? 0)).toBeGreaterThan(0);
+    const after = (await frame.boundingBox())!;
+    expect([after.width, after.height]).toEqual([before.width, before.height]);
     const shift = await page.evaluate(() => new Promise<number>(resolve => {
       let total = 0;
       new PerformanceObserver(list => { for (const entry of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) if (!entry.hadRecentInput) total += entry.value; })
         .observe({ type: "layout-shift", buffered: true });
-      setTimeout(() => resolve(total), 2500);
+      setTimeout(() => resolve(total), 1000);
     }));
     expect(shift, "cumulative layout shift").toBeLessThan(0.1);
   });
