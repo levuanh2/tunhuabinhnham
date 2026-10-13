@@ -19,7 +19,8 @@ function assetsDir(files) {
 async function server(available) {
   const s = http.createServer((req, res) => {
     const ok = available().has(req.url);
-    res.writeHead(ok ? 200 : 404, { "content-type": ok ? (req.url.endsWith(".css") ? "text/css" : "application/javascript") : "text/html" });
+    const type = req.url.endsWith(".css") ? "text/css" : req.url.endsWith(".woff2") ? "font/woff2" : "application/javascript";
+    res.writeHead(ok ? 200 : 404, { "content-type": ok ? type : "text/html" });
     res.end(ok ? "x" : "<h1>404</h1>");
   });
   await new Promise(resolve => s.listen(0, "127.0.0.1", resolve));
@@ -48,6 +49,24 @@ describe("verifyAssetsLive", () => {
     const result = await verifyAssetsLive({ origin, dirs: [dir], soakSeconds: 0.3, intervalSeconds: 0.1, timeoutSeconds: 5, log: quiet });
     expect(result.ok).toBe(true);
     expect(result.failedRounds).toBe(2);
+  });
+
+  it("checks the MIME type of every extension (fonts too) and fails unknown extensions", async () => {
+    const font = assetsDir(["_next/static/media/a.woff2"]);
+    const fine = await server(() => new Set(["/_next/static/media/a.woff2"]));
+    expect(await verifyAssetsLive({ origin: fine, dirs: [font], soakSeconds: 0.2, intervalSeconds: 0.1, timeoutSeconds: 3, log: quiet })).toMatchObject({ ok: true });
+    const htmlForEverything = http.createServer((req, res) => { res.writeHead(200, { "content-type": "text/html" }); res.end("<h1>fallback</h1>"); });
+    await new Promise(resolve => htmlForEverything.listen(0, "127.0.0.1", resolve));
+    cleanup.push(() => new Promise(resolve => htmlForEverything.close(resolve)));
+    const htmlOrigin = `http://127.0.0.1:${htmlForEverything.address().port}`;
+    const logs = [];
+    expect(await verifyAssetsLive({ origin: htmlOrigin, dirs: [font], soakSeconds: 0.2, intervalSeconds: 0.1, timeoutSeconds: 0.5, log: line => logs.push(line) })).toMatchObject({ ok: false });
+    expect(logs.join(" ")).toMatch(/MIME text\/html \/_next\/static\/media\/a\.woff2/); // 200 text/html is not a font
+    const odd = assetsDir(["_next/static/media/x.unknownext"]);
+    const oddOrigin = await server(() => new Set(["/_next/static/media/x.unknownext"]));
+    const oddLogs = [];
+    expect(await verifyAssetsLive({ origin: oddOrigin, dirs: [odd], soakSeconds: 0.2, intervalSeconds: 0.1, timeoutSeconds: 0.5, log: line => oddLogs.push(line) })).toMatchObject({ ok: false });
+    expect(oddLogs.join(" ")).toMatch(/unknown extension/);
   });
 
   it("fails when an asset keeps failing or has the wrong MIME type", async () => {

@@ -10,7 +10,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const BUILD_ID_DIR = /^_next\/static\/[A-Za-z0-9_-]{16,}\//;
-const EXPECTED_TYPE = { ".css": /^text\/css/, ".js": /javascript/ };
+// Every extension Next may emit under _next/static, with the MIME type Cloudflare serves it with.
+// An extension missing here fails the gate, so a new asset type cannot slip through unchecked.
+const EXPECTED_TYPE = {
+  ".css": /^text\/css/, ".js": /javascript/, ".mjs": /javascript/, ".map": /^application\/json/, ".json": /^application\/json/,
+  ".woff2": /^font\/woff2/, ".woff": /^font\/woff/, ".ttf": /^font\/ttf/, ".otf": /^font\/otf/,
+  ".svg": /^image\/svg\+xml/, ".png": /^image\/png/, ".jpg": /^image\/jpeg/, ".jpeg": /^image\/jpeg/, ".webp": /^image\/webp/,
+  ".avif": /^image\/avif/, ".gif": /^image\/gif/, ".ico": /^image\/(x-icon|vnd\.microsoft\.icon)/, ".txt": /^text\/plain/, ".wasm": /^application\/wasm/,
+};
 
 export function hashedAssets(dirs) {
   const files = new Set();
@@ -32,10 +39,11 @@ async function checkRound(origin, files) {
     try {
       const response = await fetch(origin + file, { cache: "no-store", redirect: "manual" });
       await response.arrayBuffer();
-      const expected = EXPECTED_TYPE[path.extname(file)];
+      const expected = EXPECTED_TYPE[path.extname(file).toLowerCase()];
       const type = response.headers.get("content-type") ?? "";
       if (response.status !== 200) failures.push(`${response.status} ${file}`);
-      else if (expected && !expected.test(type)) failures.push(`MIME ${type} ${file}`);
+      else if (!expected) failures.push(`unknown extension, add its MIME type: ${file}`);
+      else if (!expected.test(type)) failures.push(`MIME ${type} ${file}`);
     } catch (error) { failures.push(`${error.name} ${file}`); }
   }));
   return failures;

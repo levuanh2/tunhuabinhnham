@@ -71,10 +71,10 @@ node scripts/verify-assets-live.mjs <origin> <assets dir>... [--soak 300] [--int
 ```
 
 - Each round requests every hashed `_next/static` file of the given builds from the apex (GET only).
-- The gate passes only after `--soak` seconds of **consecutive** clean rounds: every file 200 with the right MIME type.
+- The gate passes only after `--soak` seconds of **consecutive** clean rounds: every file 200 with the right MIME type. MIME is checked for **every** extension (CSS, JS, fonts such as `.woff2`, images, maps); an extension without a known MIME type fails the gate rather than passing unchecked.
 - Any failure resets the soak. No clean soak before `--timeout` means FAIL (exit 1).
 - After step A it is run with **N's** archived assets. A 404 then means some edge still runs the original P, so step B must not start yet.
-- Smoke run against production (read-only): 42 files, 4 rounds, 0 failures, a 32 s clean soak.
+- Smoke runs against production (read-only): 42 files (1 CSS, 29 JS, 15 `.woff2`), 0 failures, clean soaks of 32 s and 23 s.
 
 ### 4. Retention policy
 
@@ -85,7 +85,7 @@ Keep `_next/static` of the **last 3 deployed builds** in `apps/web/.deploy-asset
 
 ## Verification
 
-### Script tests (Vitest; part of `npm --workspace apps/web test`, 33/33 in total)
+### Script tests (Vitest; part of `npm --workspace apps/web test`, 34/34 in total)
 
 `scripts/merge-previous-assets.test.mjs` (6 tests):
 
@@ -96,8 +96,9 @@ Keep `_next/static` of the **last 3 deployed builds** in `apps/web/.deploy-asset
 - A target that is not `.open-next/assets`, or a source without `_next/static`, is refused.
 - `--dry-run` writes nothing. The CLI exits 1 on a collision and leaves files intact.
 
-`scripts/verify-assets-live.test.mjs` (4 tests):
+`scripts/verify-assets-live.test.mjs` (5 tests):
 - lists hashed files only;
+- checks the MIME type of fonts too (`200 text/html` for a `.woff2` fails) and fails unknown extensions;
 - passes after a contiguous clean soak;
 - resets the soak on 404s during propagation, then passes;
 - fails on a persistent 404 or a wrong MIME type.
@@ -157,6 +158,8 @@ First pass on `4adea0c`: **CHANGES_REQUESTED**. Codex verified:
 | WARN-002 | The runbook rebuilt P and N without reinstalling their own locked dependencies | `npm ci` after every checkout and before every build |
 | WARN-003 | No hard gate on P → P′ propagation before step B | `verify-assets-live.mjs` with N's assets and a contiguous soak; any 404 resets it; step B is blocked until it passes |
 | WARN-004 | Rollback target not phase-specific | "Rollback by phase" table below |
+
+Re-review on `32f463f`: WARN-001, 002 and 004 were resolved. WARN-003 remained, because MIME was checked only for `.css`/`.js`, while the artifact has 15 `.woff2` files. Fix: a MIME type is now expected for every extension, unknown extensions fail, and a font/unknown-extension test was added.
 
 ## Standard procedure for frontend releases
 
