@@ -57,6 +57,10 @@ describe("edgeCacheHeaders", () => {
     expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
     expect(headers.get("vary")).toMatch(/rsc/);
     expect(edgeCacheHeaders(html({ headers: { vary: "accept-encoding" } }), false)!.get("vary")).toMatch(/rsc/);
+    for (const vary of ["accept-encoding", "rsc", "RSC, Next-Router-State-Tree"]) {
+      const got = edgeCacheHeaders(html({ headers: { vary } }), false)!.get("vary")!.toLowerCase();
+      for (const name of ["rsc", "next-router-state-tree", "next-router-prefetch", "next-router-segment-prefetch"]) expect(got, `${vary} -> ${name}`).toContain(name);
+    }
   });
 
   it("never caches degraded renders, errors, redirects, Set-Cookie or non-HTML", () => {
@@ -86,5 +90,18 @@ describe("purgeEdgeCache", () => {
     expect(purge).toHaveBeenCalledWith({ tags: [EDGE_CACHE_TAG] });
     expect(await purgeEdgeCache({})).toBe(false);
     await expect(purgeEdgeCache({ cache: { purge: vi.fn().mockRejectedValue(new Error("rate limited")) } })).rejects.toThrow();
+  });
+});
+
+describe("public pages are identical for every visitor", () => {
+  // A cache HIT is served without running the Worker, cookie or not, so no public page may personalise.
+  it("no public route or root layout reads cookies, headers, draft mode or the Supabase session", async () => {
+    const { readFileSync, readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const files: string[] = [];
+    const walk = (dir: string) => { for (const name of readdirSync(dir)) { const path = join(dir, name); if (statSync(path).isDirectory()) walk(path); else if (/\.tsx?$/.test(name)) files.push(path); } };
+    walk("src/app/(public)");
+    files.push("src/app/layout.tsx", "src/lib/api.ts", "src/lib/brand.ts", "src/components/site-header.tsx", "src/components/site-footer.tsx", "src/components/site-nav.tsx");
+    for (const file of files) expect(readFileSync(file, "utf8"), file).not.toMatch(/next\/headers|cookies\(|draftMode|@\/lib\/supabase/);
   });
 });
