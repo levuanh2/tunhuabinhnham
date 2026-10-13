@@ -84,7 +84,9 @@ export default function CategoriesPage() {
   }
 
   function toggleVisible(item: AdminCategory) {
-    if (item.is_visible && !confirm(`Ẩn loại “${item.name}”? ${item.product_count} sản phẩm thuộc loại này sẽ bị ẩn khỏi website (danh sách, tìm kiếm, trang chi tiết). Trạng thái của từng sản phẩm được giữ nguyên và chúng hiện lại khi bạn hiện loại này.`)) return;
+    if (item.is_visible && !confirm(`Ẩn loại “${item.name}”? ${item.product_count} sản phẩm thuộc loại này sẽ bị ẩn khỏi website (danh sách, tìm kiếm, trang chi tiết). Link đã chia sẻ tới các sản phẩm này sẽ báo không tìm thấy cho đến khi bạn hiện lại loại; trạng thái từng sản phẩm được giữ nguyên.
+
+Nếu chỉ tạm hết hàng, hãy giữ loại và đặt “Tình trạng hàng: Hết hàng” cho sản phẩm để link vẫn hoạt động.`)) return;
     void run(item.id, () => adminFetch(`/categories/${item.id}`, { method: "PATCH", body: JSON.stringify({ is_visible: !item.is_visible }) }), item.is_visible ? `Đã ẩn “${item.name}”` : `Đã hiện “${item.name}”`);
   }
 
@@ -131,7 +133,7 @@ export default function CategoriesPage() {
                   </div>
                 </>}
           </li>)}</ul>}
-      <p className="hint mt-3">Ẩn: loại và các sản phẩm thuộc loại đó không còn hiện trên website; trạng thái của từng sản phẩm được giữ nguyên. Chỉ xóa được loại không còn sản phẩm nào.</p>
+      <p className="hint mt-3">Ẩn: loại và các sản phẩm thuộc loại đó không còn hiện trên website (link cũ báo không tìm thấy); trạng thái từng sản phẩm được giữ nguyên. Chỉ ẩn khi ngừng bán; tạm hết hàng thì đặt “Tình trạng hàng: Hết hàng”. Chỉ xóa được loại không còn sản phẩm nào.</p>
     </div>
   </>;
 }

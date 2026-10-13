@@ -155,6 +155,7 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 2. **Categories**: the six types are the suggestions on the Loại sản phẩm page. "Đồ dùng" and "Quà tặng" are **not deleted**. Before deletion, a read-only production check must confirm that no product (including drafts and hidden ones) references them. The admin page's "N sản phẩm" counts all non-deleted products, and the API refuses the delete otherwise.
 3. **Hiding a category hides its products** everywhere public (API rule above).
    - The admin asks first, with the count: "Ẩn loại “X”? N sản phẩm thuộc loại này sẽ bị ẩn khỏi website…". Showing it again needs no confirmation.
+   - Consequence: the products' detail URLs return 404 while the category is hidden, so shared links break and Google may drop the pages. The confirmation and the page hint say so, and recommend "Tình trạng hàng: Hết hàng" for products that are only temporarily out of stock.
    - The product list shows a "Loại đang ẩn" badge, and the product form says "Loại “X” đang ẩn: khách chưa thấy sản phẩm này."
    - Every change goes through `/api/revalidate`, which purges the Workers Cache tag (e2e C4 checks the 200).
 4. **Deleted category slugs** stay reserved and a clash gets `-2` (no migration).
