@@ -9,7 +9,9 @@ test.skip(process.env.E2E_MOCK_API !== "1", "Requires the local QA fixture API (
 
 const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
 const SVG = (fill: string, w = 900, h = 1125) => `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/></svg>`).toString("base64")}`;
-const PNG_1PX = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==", "base64");
+// A realistic size: with srcset the browser divides by the density it requested (e.g. w=1920 at DPR 2), so a
+// 1x1 body would end up with naturalWidth 0 in WebKit even though it loaded.
+const SLOW_IMAGE = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="2400"><rect width="1920" height="2400" fill="#d8c9b6"/></svg>');
 const image = (key: string, url: string, i: number) => ({ storage_key: key, url, alt_text: "", sort_order: i, is_primary: i === 0 });
 
 async function setImages(page: Page, images: ReturnType<typeof image>[]) {
@@ -107,7 +109,7 @@ test.describe("product gallery", () => {
     await setImages(page, [image("slow", "https://fixture.supabase.co/storage/v1/object/public/product-images/slow.jpg", 0)]);
     let release!: () => void;
     const held = new Promise<void>(resolve => { release = resolve; });
-    await page.route("**/_next/image?**", async route => { await held; await route.fulfill({ contentType: "image/png", body: PNG_1PX }); });
+    await page.route("**/_next/image?**", async route => { await held; await route.fulfill({ contentType: "image/svg+xml", body: SLOW_IMAGE }); });
     await page.goto("/san-pham/tu-giay", { waitUntil: "domcontentloaded" }); // "load" would wait for the held image
     const frame = page.locator('[aria-roledescription="thư viện ảnh"] [data-slide="0"]');
     const before = (await frame.boundingBox())!;
