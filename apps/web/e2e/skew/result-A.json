@@ -1,0 +1,101 @@
+{
+ "label": "A-forward-baseline",
+ "htmlOrigin": "http://localhost:8787",
+ "assetOrigin": "http://localhost:8788",
+ "pages": [
+  {
+   "engine": "chromium",
+   "path": "/",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 1
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 1
+  },
+  {
+   "engine": "chromium",
+   "path": "/san-pham/tu-5-tang",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3c2sb5674iitr.js",
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/3c2sb5674iitr.js"
+   ],
+   "pageErrors": 1
+  },
+  {
+   "engine": "chromium",
+   "path": "/tin-tuc",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css"
+   ],
+   "pageErrors": 0
+  },
+  {
+   "engine": "webkit",
+   "path": "/",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 0
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 1
+  },
+  {
+   "engine": "webkit",
+   "path": "/san-pham/tu-5-tang",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/3c2sb5674iitr.js",
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 0
+  },
+  {
+   "engine": "webkit",
+   "path": "/tin-tuc",
+   "styled": false,
+   "failedAssets": [
+    "404 /_next/static/chunks/3shirji_wxixs.js",
+    "404 /_next/static/chunks/1r_u2-zj6a_zg.css",
+    "404 /_next/static/chunks/3shirji_wxixs.js"
+   ],
+   "pageErrors": 1
+  }
+ ],
+ "summary": {
+  "checked": 8,
+  "unstyled": 8,
+  "failedAssetRequests": 24,
+  "verdict": "SKEW_BREAKS_PAGES"
+ }
+}
