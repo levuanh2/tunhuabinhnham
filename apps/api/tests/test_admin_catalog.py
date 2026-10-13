@@ -271,24 +271,47 @@ def test_products_cannot_be_assigned_to_a_deleted_category(admin_client: TestCli
     assert cleared.status_code == 200
 
 
-def test_public_category_filter_skips_hidden_categories(admin_client: TestClient) -> None:
-    hidden = admin_client.post(
-        "/api/v1/admin/categories", json={"name": "Ẩn", "slug": "an", "is_visible": False}
+def test_hidden_category_hides_its_products_from_every_public_view(
+    admin_client: TestClient,
+) -> None:
+    category = admin_client.post(
+        "/api/v1/admin/categories", json={"name": "Ẩn", "slug": "an", "is_visible": True}
     ).json()
-    admin_client.post(
+    product = admin_client.post(
         "/api/v1/admin/products",
         json={
             "name": "Tủ trong loại ẩn",
             "slug": "tu-loai-an",
             "sku": "TU-LOAI-AN",
-            "category_id": hidden["id"],
+            "category_id": category["id"],
             "publish_status": "published",
         },
+    ).json()
+    admin_client.post(
+        "/api/v1/admin/products",
+        json={"name": "Tủ không loại", "slug": "tu-khong-loai", "sku": "TU-KHONG-LOAI", "publish_status": "published"},
     )
+
+    def public_slugs(query: str = "") -> list[str]:
+        return [p["slug"] for p in admin_client.get(f"/api/v1/products{query}").json()["items"]]
+
+    assert sorted(public_slugs()) == ["tu-khong-loai", "tu-loai-an"]
+    admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": False})
+
     assert admin_client.get("/api/v1/categories").json() == []
-    assert admin_client.get("/api/v1/products?category=an").json()["total"] == 0
-    # The product itself stays on sale (owner decision: hiding a type does not hide its products).
-    assert admin_client.get("/api/v1/products").json()["total"] == 1
+    assert admin_client.get("/api/v1/categories/an").status_code == 404
+    assert public_slugs() == ["tu-khong-loai"]  # "Tất cả sản phẩm" and the sitemap source
+    assert public_slugs("?search=trong") == []
+    assert public_slugs("?category=an") == []
+    assert admin_client.get("/api/v1/products/tu-loai-an").status_code == 404
+    # The product's own settings are untouched and admins still see and edit it.
+    stored = admin_client.get(f"/api/v1/admin/products/{product['id']}").json()
+    assert (stored["publish_status"], stored["is_visible"]) == ("published", True)
+    assert admin_client.get("/api/v1/admin/dashboard/stats").json()["visible_products"] == 1
+
+    admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": True})
+    assert admin_client.get("/api/v1/products/tu-loai-an").status_code == 200
+    assert sorted(public_slugs()) == ["tu-khong-loai", "tu-loai-an"]
 
 
 def test_published_date_cannot_be_cleared_to_unlock_the_url(admin_client: TestClient) -> None:

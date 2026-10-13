@@ -83,6 +83,11 @@ export default function CategoriesPage() {
     }), `Đã xóa loại “${item.name}”`);
   }
 
+  function toggleVisible(item: AdminCategory) {
+    if (item.is_visible && !confirm(`Ẩn loại “${item.name}”? ${item.product_count} sản phẩm thuộc loại này sẽ bị ẩn khỏi website (danh sách, tìm kiếm, trang chi tiết). Trạng thái của từng sản phẩm được giữ nguyên và chúng hiện lại khi bạn hiện loại này.`)) return;
+    void run(item.id, () => adminFetch(`/categories/${item.id}`, { method: "PATCH", body: JSON.stringify({ is_visible: !item.is_visible }) }), item.is_visible ? `Đã ẩn “${item.name}”` : `Đã hiện “${item.name}”`);
+  }
+
   const suggestions = SUGGESTIONS.filter(suggestion => !items.some(item => sameName(item.name, suggestion) || item.slug === toSlug(suggestion)));
   const preview = toSlug(name, CATEGORY_SLUG_MAX);
   const iconButton = "grid size-11 place-items-center rounded-full text-ink-soft hover:bg-muted disabled:opacity-35";
@@ -121,12 +126,12 @@ export default function CategoriesPage() {
                     <button type="button" className={iconButton} disabled={index === 0 || busy !== null} onClick={() => move(index, -1)} aria-label={`Đưa ${item.name} lên trên`}><ArrowUp size={16} aria-hidden="true" /></button>
                     <button type="button" className={iconButton} disabled={index === items.length - 1 || busy !== null} onClick={() => move(index, 1)} aria-label={`Đưa ${item.name} xuống dưới`}><ArrowDown size={16} aria-hidden="true" /></button>
                     <button type="button" className="button ghost sm" onClick={() => setEditing({ id: item.id, name: item.name, description: item.description ?? "" })} aria-label={`Sửa loại ${item.name}`}>Sửa</button>
-                    <button type="button" className="button ghost sm" disabled={busy !== null} onClick={() => void run(item.id, () => adminFetch(`/categories/${item.id}`, { method: "PATCH", body: JSON.stringify({ is_visible: !item.is_visible }) }), item.is_visible ? `Đã ẩn “${item.name}”` : `Đã hiện “${item.name}”`)} aria-label={`${item.is_visible ? "Ẩn" : "Hiện"} loại ${item.name}`}>{item.is_visible ? "Ẩn" : "Hiện"}</button>
+                    <button type="button" className="button ghost sm" disabled={busy !== null} onClick={() => toggleVisible(item)} aria-label={`${item.is_visible ? "Ẩn" : "Hiện"} loại ${item.name}`}>{item.is_visible ? "Ẩn" : "Hiện"}</button>
                     <button type="button" className="button ghost sm !text-danger hover:!bg-danger-soft" disabled={busy !== null} onClick={() => remove(item)} aria-label={`Xóa loại ${item.name}`}>Xóa</button>
                   </div>
                 </>}
           </li>)}</ul>}
-      <p className="hint mt-3">Ẩn: loại không còn hiện ở bộ lọc và trang chủ, còn sản phẩm thuộc loại đó vẫn bán bình thường. Chỉ xóa được loại không còn sản phẩm nào.</p>
+      <p className="hint mt-3">Ẩn: loại và các sản phẩm thuộc loại đó không còn hiện trên website; trạng thái của từng sản phẩm được giữ nguyên. Chỉ xóa được loại không còn sản phẩm nào.</p>
     </div>
   </>;
 }

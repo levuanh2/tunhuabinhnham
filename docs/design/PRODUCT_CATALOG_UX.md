@@ -35,7 +35,13 @@ Production categories (public API, read-only): `do-dung` "Đồ dùng" and `qua-
   2. `DELETE /admin/categories/{id}` returns **409 "Category has products"** while non-deleted products use the category, so no product is left pointing at a deleted category.
   3. `PATCH /admin/products/{id}` returns **409 "Published product URL cannot change"** when the slug changes on a product that was ever published (`published_at` set, or currently published), and also refuses `published_at: null` on such a product, which would otherwise unlock the slug for a later request. The product row is re-read under a row lock, so a form opened before someone else published cannot break the public URL.
   4. Create/update product with a deleted or unknown `category_id` returns **422 "Category not found"**. Assignment takes `FOR SHARE` on the category row and delete takes `FOR UPDATE`, so on PostgreSQL a concurrent assign and delete serialize: the product is either counted and the delete refused, or the assignment refused.
-  5. Public `GET /products?category=<slug>` ignores hidden categories (`is_visible = false`), as it already ignored deleted ones.
+  5. **A hidden category hides its products from every public view.** One shared rule, `public_product_conditions()` (`repositories/catalog.py`), covers:
+     - "Tất cả sản phẩm", search, the category filter and pagination;
+     - the product detail page (404);
+     - the sitemap (fed by the same list);
+     - the dashboard "visible" count.
+
+     Products keep their own `publish_status` and `is_visible`, and come back unchanged when the category is shown again. Admin lists and edits every product as before.
 
 ## Product form: before → after
 
@@ -100,9 +106,9 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 | TypeScript, ESLint | PASS |
 | Vitest | 23/23 (new `slug.test.ts`: Vietnamese slugs, empty/invalid input, length limits, suffixes, product codes, VND prices) |
 | OpenNext build (fixture env) | PASS |
-| Playwright on local workerd + fixture API, Chromium desktop + iPhone 13, `--workers=1` | **54 passed, 0 failed, 28 skipped** (skipped = live-staging spec and desktop-only write tests on mobile) |
+| Playwright on local workerd + fixture API, Chromium desktop + iPhone 13, `--workers=1` | **55 passed, 0 failed, 29 skipped** (skipped = live-staging spec and desktop-only write tests on mobile) |
 | New `e2e/catalog-admin.spec.ts` | see the list below |
-| Backend pytest (`-m "not integration_supabase"`) | 75 passed. New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing, and clearing `published_at`), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
+| Backend pytest (`-m "not integration_supabase"`) | 75 passed (+ hidden-category rule). New tests cover product counts, the delete guard, deleted products not blocking delete, duplicate category slug, public contract unchanged, published slug kept (incl. a stale save after publishing, and clearing `published_at`), assignment to a deleted category refused, and hidden category filter. **2 pre-existing failures** in `test_logging.py` (see Risks) |
 | ruff, mypy | PASS |
 
 `e2e/catalog-admin.spec.ts` covers:
@@ -114,6 +120,12 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 - a stale form after another admin published keeps the URL;
 - a category deleted in another tab is reported at the field;
 - every category hidden → the public filter shows the empty state, and the API returns 0;
+- hiding a category with products:
+  - the confirmation states the count, and `/api/revalidate` returns 200;
+  - its products leave "Tất cả sản phẩm", search, detail (404) and the sitemap;
+  - admin shows the "Loại đang ẩn" badge and status, and the stored publish settings are unchanged;
+  - showing the category again restores the products;
+- first-publish URL note shown with the preview, and absent for published products;
 - category and price saved;
 - draft vs publish;
 - `/api/revalidate` 200 on save;
@@ -134,7 +146,22 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 | WARN-003 | Hidden category URL could still list products (API ignored `is_visible`; the page relied on a non-empty category list) | API filter skips hidden categories; the page treats any category missing from a successfully loaded list as unknown. pytest + e2e C3 (all hidden) |
 | WARN-004 | No coverage for `-3`, mixed conflicts or a failed cache refresh | e2e P5 counts create requests for both cases |
 
-## Decisions for the owner
+## Owner decisions applied (2026-10-13)
+
+1. **First publish fixes the URL**:
+   - The form shows a "Kiểm tra đường dẫn trước khi đăng" note with the full `/san-pham/<slug>` preview next to the "Đăng sản phẩm" button, and the URL hint changes to "sau khi đăng, đường dẫn này sẽ không đổi được".
+   - Already-published products show no note (their URL is locked).
+   - The redirect itself is a separate task: `docs/design/TASK_PRODUCT_SLUG_REDIRECT.md` (history table, one-hop redirects, no loops, SEO). It needs a migration and was not started.
+2. **Categories**: the six types are the suggestions on the Loại sản phẩm page. "Đồ dùng" and "Quà tặng" are **not deleted**. Before deletion, a read-only production check must confirm that no product (including drafts and hidden ones) references them. The admin page's "N sản phẩm" counts all non-deleted products, and the API refuses the delete otherwise.
+3. **Hiding a category hides its products** everywhere public (API rule above).
+   - The admin asks first, with the count: "Ẩn loại “X”? N sản phẩm thuộc loại này sẽ bị ẩn khỏi website…". Showing it again needs no confirmation.
+   - The product list shows a "Loại đang ẩn" badge, and the product form says "Loại “X” đang ẩn: khách chưa thấy sản phẩm này."
+   - Every change goes through `/api/revalidate`, which purges the Workers Cache tag (e2e C4 checks the 200).
+4. **Deleted category slugs** stay reserved and a clash gets `-2` (no migration).
+
+The admin product list now also uses the new terms: "Đã đăng" / "Chưa đăng".
+
+## Decisions for the owner (original list, now answered above)
 
 1. **Production categories "Đồ dùng" and "Quà tặng"** are seed samples. Suggestion: in Admin → Loại sản phẩm, delete both (they have 0 public products) and add the six types with the suggestion buttons, or rename them if they are real. Nothing was changed on production.
 2. **Changing the URL of a published product** is disabled until there is a redirect.
@@ -145,9 +172,13 @@ A save whose cache refresh fails is treated as saved: the admin sees "Trang web 
 
 ## Risks
 
-- **Backend redaction fix not committed (pre-existing, outside this change)**:
-  - `apps/api/tests/test_logging.py` has 2 tests (startup validation error redacted; uvicorn startup failure as redacted JSON) that fail on the committed code of this branch, of `integration/warm-editorial-v2` and of `deploy/c2-preview`.
-  - They pass only in Codex's worktree `E:\Tunhuabinhnham-c3-api`, which has **uncommitted** changes to `core/config.py` and `core/logging.py`.
-  - Render runs `b532ac4`, so production lacks those uncommitted startup-redaction fixes. Codex should commit them.
+- **Security checkpoint: startup redaction** (separate from this branch; evidence in `c21-release-validation/SECURITY_STARTUP_REDACTION.md`):
+  - Render runs `b532ac4` (GitHub deployment 7030889746, success 05:32:51Z). It contains `a99bed4`, `416cd02`, `96884dc` and `5248e27` by ancestry.
+  - But `5248e27`, a test-only commit, reverted the two fix lines of `96884dc` (`hide_input_in_errors=True`; `sys.excepthook` through the redacting formatter). So the **deployed code lacks the fix**, and the Gate C3.1 "VERIFIED" note was based on ancestry, not file content.
+  - On `b532ac4`, both startup tests in `test_logging.py` fail: the output is a raw traceback with no JSON, and the synthetic test key's tail appears in `input_value`.
+  - Exposure: only when the backend fails settings validation at startup (Render logs).
+  - Fix: Codex commit `6f48006` on `fix/api-startup-redaction` (parent `b532ac4`, 2 files, identical to `96884dc`'s lines). Independently re-run: 70 passed, 0 failed.
+  - **Not pushed or deployed**; the backend deploy plan awaits owner approval.
+  - This branch still shows the 2 logging failures until that fix is merged.
 - Category reorder sends one PATCH (and one cache purge) per moved item; fine for a handful of types, but bursts can hit Free-tier purge rate limits (the 5-minute TTL is the backstop).
 - A product added to a category between the page check and the delete request is caught by the API 409; the check itself has a tiny race between count and commit.

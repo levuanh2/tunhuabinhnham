@@ -75,6 +75,11 @@ test.describe("product form", () => {
       if (round === 2) {
         await page.getByLabel("Trạng thái đăng bán").selectOption("published");
         await expect(page.getByText("Khách xem được sản phẩm này trên website.")).toBeVisible();
+        // First publish: the URL is fixed from now on, so it is shown for a last check.
+        const note = page.getByRole("note");
+        await expect(note).toContainText("Kiểm tra đường dẫn trước khi đăng");
+        await expect(note).toContainText("/san-pham/tu-da-nang-4-tang");
+        await expect(page.getByText("Kiểm tra kỹ: sau khi đăng, đường dẫn này sẽ không đổi được.")).toBeVisible();
       }
       const revalidated = page.waitForResponse(response => response.url().endsWith("/api/revalidate") && response.request().method() === "POST");
       await page.getByRole("button", { name: round === 1 ? "Lưu bản nháp" : "Đăng sản phẩm" }).click();
@@ -170,6 +175,7 @@ test.describe("product form", () => {
     await expect(page.locator("output")).toHaveText("/san-pham/tu-5-tang");
     await expect(page.getByRole("button", { name: "Chỉnh sửa đường dẫn" })).toHaveCount(0);
     await expect(page.getByText("Sản phẩm đã đăng nên giữ nguyên đường dẫn")).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0); // already published: no first-publish warning
     await page.getByRole("button", { name: "Lưu thay đổi" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     const saved = (await savedProducts(page)).find(p => p.id === "p1")!;
@@ -199,6 +205,8 @@ test.describe("product categories", () => {
 
   test("C1. create from a suggestion, reject duplicates, rename, reorder, hide and delete safely", async ({ page }) => {
     writesFixture();
+    const dialogs: string[] = [];
+    page.on("dialog", dialog => { dialogs.push(dialog.message()); void dialog.accept(); });
     await page.goto("/admin/danh-muc");
     await expect(page.getByRole("heading", { level: 1, name: "Loại sản phẩm" })).toBeVisible();
     const row = (name: string) => page.locator("li").filter({ has: page.getByText(name, { exact: true }) });
@@ -235,6 +243,7 @@ test.describe("product categories", () => {
 
     await page.goto("/admin/danh-muc");
     await page.getByRole("button", { name: "Ẩn loại Tủ đa năng nhiều ngăn" }).click();
+    expect(dialogs.at(-1)).toContain("0 sản phẩm thuộc loại này sẽ bị ẩn khỏi website");
     await expect(row("Tủ đa năng nhiều ngăn")).toContainText("Đang ẩn");
     await page.goto("/san-pham?category=tu-da-nang");
     await expect(page.getByRole("heading", { name: "Loại sản phẩm này hiện không còn hiển thị" })).toBeVisible();
@@ -242,18 +251,16 @@ test.describe("product categories", () => {
 
     // A category with products cannot be deleted: no confirm dialog, no request, a clear message.
     await page.goto("/admin/danh-muc");
-    let dialogs = 0;
-    page.on("dialog", dialog => { dialogs++; void dialog.accept(); });
     await page.getByRole("button", { name: "Xóa loại Tủ quần áo" }).click();
     await expect(page.getByText("“Tủ quần áo” đang có 2 sản phẩm.", { exact: false })).toBeVisible();
-    expect(dialogs).toBe(0);
+    expect(dialogs).toHaveLength(1); // only the hide confirmation so far
     await expect(row("Tủ quần áo")).toBeVisible();
     const guard = await page.request.delete(`${mock}/api/v1/admin/categories/c1`);
     expect([guard.status(), (await guard.json()).error.message]).toEqual([409, "Category has products"]);
 
     await page.getByRole("button", { name: "Xóa loại Tủ đa năng nhiều ngăn" }).click();
     await expect(page.getByText("Đã xóa loại “Tủ đa năng nhiều ngăn”")).toBeVisible();
-    expect(dialogs).toBe(1);
+    expect(dialogs).toHaveLength(2);
     await expect(row("Tủ đa năng nhiều ngăn")).toHaveCount(0);
 
     // The deleted category keeps its slug reserved in the database, so re-creating it gets the next free one.
@@ -280,6 +287,41 @@ test.describe("product categories", () => {
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
     await expect(page.getByText("Loại sản phẩm này vừa bị xóa. Hãy chọn loại khác.")).toBeVisible();
     await expect(page.getByLabel("Tên sản phẩm")).toHaveValue("Tủ chọn loại cũ");
+  });
+
+  test("C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them", async ({ page }) => {
+    writesFixture();
+    const dialogs: string[] = [];
+    page.on("dialog", dialog => { dialogs.push(dialog.message()); void dialog.accept(); });
+    const publicHas = async (path: string, text: string) => (await (await page.request.get(path)).text()).includes(text);
+
+    await page.goto("/admin/danh-muc");
+    const revalidated = page.waitForResponse(response => response.url().endsWith("/api/revalidate") && response.request().method() === "POST");
+    await page.getByRole("button", { name: "Ẩn loại Tủ quần áo" }).click();
+    expect(dialogs).toEqual([expect.stringContaining("2 sản phẩm thuộc loại này sẽ bị ẩn khỏi website")]);
+    expect((await revalidated).status()).toBe(200); // purges the Workers Cache tag as for any admin change
+    await expect(page.getByText("Đã ẩn “Tủ quần áo”")).toBeVisible();
+
+    expect(await publicHas("/san-pham", "Tủ áo 3 cánh có gương")).toBe(false);
+    expect(await publicHas("/san-pham?search=t%E1%BB%A7+%C3%A1o", "Tủ áo 3 cánh có gương")).toBe(false);
+    expect((await page.request.get("/san-pham/tu-ao-3-canh")).status()).toBe(404);
+    expect(await publicHas("/sitemap.xml", "/san-pham/tu-ao-3-canh")).toBe(false);
+    expect(await publicHas("/sitemap.xml", "/san-pham/tu-5-tang")).toBe(true);
+
+    await page.goto("/admin/san-pham");
+    await expect(page.locator(".badge:visible", { hasText: "Loại đang ẩn" }).first()).toBeVisible(); // table on desktop, cards on phones
+    await page.goto("/admin/san-pham/p2");
+    await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c1");
+    await expect(page.getByText("Loại “Tủ quần áo” đang ẩn: khách chưa thấy sản phẩm này.")).toBeVisible();
+    const stored = (await savedProducts(page)).find(p => p.id === "p2")!;
+    expect([stored.publish_status, stored.is_visible]).toEqual(["published", true]);
+
+    await page.goto("/admin/danh-muc");
+    await page.getByRole("button", { name: "Hiện loại Tủ quần áo" }).click();
+    await expect(page.getByText("Đã hiện “Tủ quần áo”")).toBeVisible();
+    expect(dialogs).toHaveLength(1); // showing again needs no confirmation
+    expect((await page.request.get("/san-pham/tu-ao-3-canh")).status()).toBe(200);
+    expect(await publicHas("/san-pham?category=tu-quan-ao", "Tủ áo 3 cánh có gương")).toBe(true);
   });
 
   test("C2. the product form links to category management and shows hidden categories as such", async ({ page }) => {

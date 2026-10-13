@@ -3,12 +3,28 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, not_, or_, select
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.base import ExecutableOption
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.models import Category, Product, PublishStatus
+
+
+def public_product_conditions() -> list[ColumnElement[bool]]:
+    """What makes a product visible on the public site (lists, search, filters, detail, sitemap)."""
+    return [
+        Product.deleted_at.is_(None),
+        Product.publish_status == PublishStatus.published,
+        Product.is_visible.is_(True),
+        or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
+        # Hiding a category hides its products without changing their own publish settings.
+        not_(
+            Product.category.has(
+                and_(Category.deleted_at.is_(None), Category.is_visible.is_(False))
+            )
+        ),
+    ]
 
 
 class CategoryRepository:
@@ -65,13 +81,9 @@ class ProductRepository:
         max_price: Decimal | None = None,
         sort: str = "-published_at",
     ) -> tuple[list[Product], int]:
-        conditions: list[ColumnElement[bool]] = [Product.deleted_at.is_(None)]
-        if public:
-            conditions += [
-                Product.publish_status == PublishStatus.published,
-                Product.is_visible.is_(True),
-                or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
-            ]
+        conditions: list[ColumnElement[bool]] = (
+            public_product_conditions() if public else [Product.deleted_at.is_(None)]
+        )
         if search:
             conditions.append(Product.name.ilike(f"%{search.strip()}%"))
         if category:
@@ -110,14 +122,8 @@ class ProductRepository:
         )
 
     def by_slug(self, slug: str, public: bool = True) -> Product | None:
-        conditions: list[ColumnElement[bool]] = [
-            Product.slug == slug,
-            Product.deleted_at.is_(None),
-        ]
-        if public:
-            conditions += [
-                Product.publish_status == PublishStatus.published,
-                Product.is_visible.is_(True),
-                or_(Product.published_at.is_(None), Product.published_at <= datetime.now(UTC)),
-            ]
+        conditions: list[ColumnElement[bool]] = (
+            public_product_conditions() if public else [Product.deleted_at.is_(None)]
+        )
+        conditions.append(Product.slug == slug)
         return self.db.scalar(select(Product).options(*self.eager()).where(*conditions))

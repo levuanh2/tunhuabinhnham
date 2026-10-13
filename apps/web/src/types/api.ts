@@ -5,7 +5,7 @@ export type Product = {
   images: ProductImage[]; attributes: Record<string, string>; published_at?: string | null;
 };
 export type ProductImage = { id: string; storage_key: string; url: string; alt_text?: string | null; sort_order: number; is_primary: boolean };
-export type Category = { id: string; name: string; slug: string; description?: string | null; image_url?: string | null };
+export type Category = { id: string; name: string; slug: string; description?: string | null; image_url?: string | null; is_visible?: boolean };
 /** Admin list only: includes hidden categories and the number of (non-deleted) products using each one. */
 export type AdminCategory = Category & { is_visible: boolean; sort_order: number; product_count: number };
 export type PostImage = { id?: string; storage_key: string; url: string; alt_text?: string | null; sort_order: number };

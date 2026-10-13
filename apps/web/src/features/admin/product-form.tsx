@@ -40,7 +40,10 @@ export function ProductForm({ product }: { product?: Product }) {
   const [slugMode, setSlugMode] = useState<SlugMode>(product ? "fixed" : "auto");
   // There is no redirect from old product URLs yet, so a product that was ever public keeps its URL.
   const slugLocked = Boolean(product && (product.published_at || product.publish_status === "published"));
-  const [slug, name, publishStatus, isVisible] = useWatch({ control, name: ["slug", "name", "publish_status", "is_visible"] });
+  const [slug, name, publishStatus, isVisible, categoryId] = useWatch({ control, name: ["slug", "name", "publish_status", "is_visible", "category_id"] });
+  const hiddenCategory = categories.data?.find(category => category.id === categoryId && !category.is_visible);
+  // Publishing for the first time fixes the URL for good (no redirects yet), so it must be checked first.
+  const firstPublish = publishStatus === "published" && !slugLocked;
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -147,7 +150,8 @@ export function ProductForm({ product }: { product?: Product }) {
                 <p className="flex flex-wrap items-center gap-x-3 text-sm"><output aria-labelledby="duong-dan-nhan" aria-describedby="duong-dan-goi-y" className="min-w-0 break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{slug || "…"}</output>{!slugLocked && <button type="button" className="link min-h-11 font-medium" onClick={editSlug}>Chỉnh sửa đường dẫn</button>}</p></>}
           {fieldError(errors.slug?.message)}
           <span id="duong-dan-goi-y" className="hint">{
-            slugMode === "auto" ? "Tự tạo từ tên sản phẩm."
+            firstPublish ? "Kiểm tra kỹ: sau khi đăng, đường dẫn này sẽ không đổi được."
+            : slugMode === "auto" ? "Tự tạo từ tên sản phẩm."
             : slugLocked ? "Sản phẩm đã đăng nên giữ nguyên đường dẫn, để các link khách đã lưu hoặc chia sẻ không bị hỏng."
             : slugMode === "fixed" ? "Đổi tên sản phẩm không làm thay đổi đường dẫn."
             : product ? "Lưu ý: đổi đường dẫn sẽ đổi địa chỉ trang của sản phẩm này."
@@ -196,7 +200,8 @@ export function ProductForm({ product }: { product?: Product }) {
       <label className="label">Trạng thái đăng bán<select className="field" {...register("publish_status")}><option value="draft">Chưa đăng</option><option value="published">Đăng bán</option></select></label>
       <label className="label">Tình trạng hàng<select className="field" {...register("stock_status")}><option value="in_stock">Còn hàng</option><option value="out_of_stock">Hết hàng</option><option value="contact">Liên hệ</option></select></label>
       <div className="grid gap-1"><label className="flex min-h-11 items-center gap-3 text-sm font-medium"><input type="checkbox" className="size-5" {...register("is_visible")} />Hiển thị trên website</label><span className="hint">Bỏ chọn để tạm ẩn sản phẩm mà không cần gỡ đăng.</span></div>
-      <p className="rounded-lg bg-muted px-3 py-2.5 text-sm" aria-live="polite">{publishStatus === "draft" ? "Chưa đăng: khách chưa thấy sản phẩm này." : isVisible ? "Khách xem được sản phẩm này trên website." : "Đã đăng nhưng đang ẩn: khách chưa thấy sản phẩm này."}</p>
+      <p className="rounded-lg bg-muted px-3 py-2.5 text-sm" aria-live="polite">{publishStatus === "draft" ? "Chưa đăng: khách chưa thấy sản phẩm này." : !isVisible ? "Đã đăng nhưng đang ẩn: khách chưa thấy sản phẩm này." : hiddenCategory ? `Loại “${hiddenCategory.name}” đang ẩn: khách chưa thấy sản phẩm này.` : "Khách xem được sản phẩm này trên website."}</p>
+      {firstPublish && <div role="note" className="grid gap-1 rounded-lg border border-line-strong px-3 py-2.5 text-sm"><span className="font-semibold">Kiểm tra đường dẫn trước khi đăng</span><span className="break-all font-medium text-primary">/san-pham/{slug || "…"}</span><span className="text-ink-soft">Sau khi đăng, đường dẫn này được giữ cố định để link khách đã lưu hoặc chia sẻ không bị hỏng.</span></div>}
       <button className="button w-full" aria-busy={isSubmitting || undefined} disabled={isSubmitting || isUploading}>{isSubmitting ? "Đang lưu…" : publishStatus === "draft" ? "Lưu bản nháp" : product?.publish_status === "published" ? "Lưu thay đổi" : "Đăng sản phẩm"}</button>
     </aside>
   </form>;

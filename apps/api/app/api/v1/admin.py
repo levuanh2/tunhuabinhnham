@@ -26,7 +26,11 @@ from app.models import (
     PublishStatus,
     SiteSettings,
 )
-from app.repositories.catalog import CategoryRepository, ProductRepository
+from app.repositories.catalog import (
+    CategoryRepository,
+    ProductRepository,
+    public_product_conditions,
+)
 from app.schemas.catalog import (
     AdminCategoryOut,
     CategoryCreate,
@@ -472,13 +476,7 @@ def dashboard(db: Session = Depends(get_db)) -> dict[str, int]:
         "posts": db.scalar(select(func.count()).select_from(Post).where(Post.deleted_at.is_(None)))
         or 0,
         "visible_products": db.scalar(
-            select(func.count())
-            .select_from(Product)
-            .where(
-                Product.deleted_at.is_(None),
-                Product.is_visible.is_(True),
-                Product.publish_status == PublishStatus.published,
-            )
+            select(func.count()).select_from(Product).where(*public_product_conditions())
         )
         or 0,
         "contact_clicks": db.scalar(select(func.count()).select_from(ContactClick)) or 0,

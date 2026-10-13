@@ -25,6 +25,8 @@ const cats = [
 ].map((c, i) => ({ ...c, is_visible: true, sort_order: i }));
 const initialCats = structuredClone(cats);
 // Mirrors the API: categories are soft-deleted (slug stays reserved), public lists skip hidden/deleted ones.
+// Admin responses embed the current category row (like the API's eager load), so hide/rename show at once.
+const withCategory = p => ({ ...p, category: cats.find(c => c.id === p.category_id) ?? null });
 const liveCats = () => cats.filter(c => !c.deleted_at).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 // Mirrors the products_slug_key / products_sku_key unique constraints.
 const productClash = (b, id) => products.some(x => x.id !== id && b.slug && x.slug === b.slug) ? "Slug already exists" : products.some(x => x.id !== id && b.sku && x.sku === b.sku) ? "SKU already exists" : null;
@@ -69,7 +71,8 @@ http.createServer((req, res) => {
   const send = (code, body) => { res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*" }); res.end(code === 204 ? "" : JSON.stringify(body)); };
   if (req.method === "OPTIONS") return send(204, {});
   // ponytail: publish/visibility filtering applies only to spec-created "e2e-" records so fixture screenshots stay stable.
-  const isPublic = p => !p.slug.startsWith("e2e-") || (p.publish_status === "published" && p.is_visible && !p.deleted_at);
+  const isPublic = p => (!p.slug.startsWith("e2e-") || (p.publish_status === "published" && p.is_visible && !p.deleted_at))
+    && !cats.some(c => c.id === p.category_id && !c.deleted_at && !c.is_visible); // a hidden category hides its products (all records, like the API)
   if (u.pathname === "/auth/v1/token") { let body = ""; req.on("data", c => body += c); req.on("end", () => { const b = JSON.parse(body || "{}"); if (u.searchParams.get("grant_type") === "refresh_token") return issued.delete(`r:${b.refresh_token}`) ? send(200, session()) : send(400, { error: "invalid_grant", msg: "Invalid Refresh Token", code: "refresh_token_not_found" }); if (b.password !== "qa-password-123") return send(400, { error: "invalid_grant", error_description: "Invalid login credentials", msg: "Invalid login credentials", code: "invalid_credentials" }); send(200, session()); }); return; }
   if (u.pathname === "/auth/v1/user") return issued.has((req.headers.authorization ?? "").replace(/^Bearer /, "")) ? send(200, user) : send(401, { msg: "invalid JWT" });
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
@@ -104,8 +107,8 @@ http.createServer((req, res) => {
     if (req.method !== "GET") return send(403, { error: { message: "QA mock: thao tác ghi bị tắt trong môi trường kiểm thử giao diện" } });
     const a = path.slice(6);
     if (a === "/dashboard/stats") return send(200, { products: products.length, categories: cats.length, posts: posts.length, visible_products: products.filter(p => p.is_visible).length, contact_clicks: 0 });
-    if (a === "/products") { /* mirrors repositories/catalog.py: admin search matches name only */ const t = q.get("search")?.toLowerCase(); return send(200, page(t ? products.filter(p => p.name.toLowerCase().includes(t)) : products, q)); }
-    const pm = a.match(/^\/products\/(.+)$/); if (pm) { const p = products.find(x => x.id === pm[1]); return p ? send(200, p) : send(404, { error: { message: "Không tìm thấy" } }); }
+    if (a === "/products") { /* mirrors repositories/catalog.py: admin search matches name only */ const t = q.get("search")?.toLowerCase(); return send(200, page((t ? products.filter(p => p.name.toLowerCase().includes(t)) : products).map(withCategory), q)); }
+    const pm = a.match(/^\/products\/(.+)$/); if (pm) { const p = products.find(x => x.id === pm[1]); return p ? send(200, withCategory(p)) : send(404, { error: { message: "Không tìm thấy" } }); }
     if (a === "/categories") return send(200, liveCats().map(c => ({ ...c, product_count: products.filter(p => p.category_id === c.id).length })));
     if (a === "/posts") return send(200, adminPosts);
     if (a === "/banners") return send(200, banners);
