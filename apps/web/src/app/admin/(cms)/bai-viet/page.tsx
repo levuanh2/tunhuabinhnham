@@ -6,7 +6,7 @@ import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { adminFetch } from "@/lib/admin-api";
-import { cleanupMediaUrls, deleteAdminMedia, uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
+import { cleanupMediaUrls, uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
 import type { MediaAsset, Post, PostImage } from "@/types/api";
 
 type FormState = {
@@ -23,13 +23,12 @@ function fromPost(post: Post): FormState {
 export default function PostsAdminPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [uploads, setUploads] = useState<Record<string, MediaAsset>>({});
   const [cleanup, setCleanup] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
   const query = useQuery({ queryKey: ["posts-admin"], queryFn: () => adminFetch<Post[]>("/posts") });
 
-  function reset() { setForm(emptyForm()); setUploads({}); setCleanup(new Set()); }
-  function edit(post: Post) { setForm(fromPost(post)); setUploads({}); setCleanup(new Set()); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  function reset() { setForm(emptyForm()); setCleanup(new Set()); }
+  function edit(post: Post) { setForm(fromPost(post)); setCleanup(new Set()); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
   async function uploadImages(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []); event.target.value = "";
@@ -41,7 +40,6 @@ export default function PostsAdminPage() {
     try {
       const assets: MediaAsset[] = [];
       for (const file of files) assets.push(await uploadAdminMedia("post-images", file));
-      setUploads(current => ({ ...current, ...Object.fromEntries(assets.map(asset => [asset.storage_key, asset])) }));
       setForm(current => {
         const images = [...current.images, ...assets.map((asset, offset) => ({ storage_key: asset.storage_key, url: asset.url, alt_text: current.title, sort_order: current.images.length + offset }))];
         return { ...current, images, cover_image_url: current.cover_image_url ?? images[0]?.url ?? null };
@@ -51,14 +49,10 @@ export default function PostsAdminPage() {
     finally { setUploading(false); }
   }
 
-  async function removeImage(index: number) {
+  // Removing only changes the form; the file is deleted after a successful save (V1-BUG-01).
+  function removeImage(index: number) {
     const image = form.images[index];
-    const uploaded = uploads[image.storage_key];
-    if (uploaded) {
-      try { await deleteAdminMedia({ id: uploaded.id }); }
-      catch (error) { toast.error(error instanceof Error ? error.message : "Không thể gỡ ảnh"); return; }
-      setUploads(current => { const next = { ...current }; delete next[image.storage_key]; return next; });
-    } else setCleanup(current => new Set(current).add(image.url));
+    setCleanup(current => new Set(current).add(image.url));
     setForm(current => {
       const images = current.images.filter((_, itemIndex) => itemIndex !== index).map((item, sort_order) => ({ ...item, sort_order }));
       return { ...current, images, cover_image_url: current.cover_image_url === image.url ? images[0]?.url ?? null : current.cover_image_url };
@@ -73,7 +67,7 @@ export default function PostsAdminPage() {
     onSuccess: async saved => {
       const failedCleanup = await cleanupMediaUrls(cleanup);
       await queryClient.invalidateQueries({ queryKey: ["posts-admin"] });
-      setForm(fromPost(saved)); setUploads({}); setCleanup(new Set(failedCleanup));
+      setForm(fromPost(saved)); setCleanup(new Set(failedCleanup));
       toast.success(form.id ? "Đã cập nhật bài viết" : "Đã tạo bài viết");
       if (failedCleanup.length) toast.warning("Nội dung đã lưu, nhưng có ảnh cũ chưa thể dọn dẹp");
     },
@@ -95,7 +89,7 @@ export default function PostsAdminPage() {
         <label className="label">Tóm tắt<textarea className="field min-h-24" value={form.excerpt} onChange={event => setForm({ ...form, excerpt: event.target.value })} /></label>
         <label className="label">Nội dung HTML<textarea className="field min-h-72 font-mono text-[.8125rem] leading-relaxed" value={form.content_html} onChange={event => setForm({ ...form, content_html: event.target.value })} /></label>
         <fieldset className="grid gap-4 rounded-lg border border-line p-4"><legend className="px-1 text-sm font-semibold">Ảnh bài viết</legend><p className="hint">JPEG, PNG hoặc WebP; tối đa 8 MiB mỗi ảnh.</p><label className="button secondary sm w-fit cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary">{uploading ? "Đang tải…" : "Tải ảnh lên"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={uploading} onChange={uploadImages} /></label>
-          {form.images.length === 0 ? <p className="rounded-lg border border-dashed border-line-strong p-4 text-center text-sm text-ink-soft">Chưa có ảnh trong bài viết.</p> : <div className="grid gap-4 sm:grid-cols-2">{form.images.map((image, index) => <div className="rounded-lg border border-line p-3" key={image.storage_key}><Image src={image.url} alt={image.alt_text ?? "Ảnh bài viết"} width={500} height={320} className="aspect-video w-full rounded object-cover" /><label className="label mt-3 text-sm">Mô tả ảnh<input className="field" maxLength={300} value={image.alt_text ?? ""} onChange={event => setForm(current => ({ ...current, images: current.images.map((item, itemIndex) => itemIndex === index ? { ...item, alt_text: event.target.value } : item) }))} /></label><div className="mt-3 flex flex-wrap gap-3"><button type="button" className="button ghost sm" onClick={() => setForm({ ...form, cover_image_url: image.url })}>{form.cover_image_url === image.url ? "Ảnh cover" : "Đặt làm cover"}</button><button type="button" className="button ghost sm !text-danger hover:!bg-danger-soft" onClick={() => void removeImage(index)}>Gỡ ảnh</button></div></div>)}</div>}
+          {form.images.length === 0 ? <p className="rounded-lg border border-dashed border-line-strong p-4 text-center text-sm text-ink-soft">Chưa có ảnh trong bài viết.</p> : <div className="grid gap-4 sm:grid-cols-2">{form.images.map((image, index) => <div className="rounded-lg border border-line p-3" key={image.storage_key}><Image src={image.url} alt={image.alt_text ?? "Ảnh bài viết"} width={500} height={320} className="aspect-video w-full rounded object-cover" /><label className="label mt-3 text-sm">Mô tả ảnh<input className="field" maxLength={300} value={image.alt_text ?? ""} onChange={event => setForm(current => ({ ...current, images: current.images.map((item, itemIndex) => itemIndex === index ? { ...item, alt_text: event.target.value } : item) }))} /></label><div className="mt-3 flex flex-wrap gap-3"><button type="button" className="button ghost sm" onClick={() => setForm({ ...form, cover_image_url: image.url })}>{form.cover_image_url === image.url ? "Ảnh cover" : "Đặt làm cover"}</button><button type="button" className="button ghost sm !text-danger hover:!bg-danger-soft" onClick={() => removeImage(index)}>Gỡ ảnh</button></div></div>)}</div>}
         </fieldset>
       </div>
       <aside className="grid content-start gap-5 rounded-lg bg-bg p-4 xl:sticky xl:top-6">

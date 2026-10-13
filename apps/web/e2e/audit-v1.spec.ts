@@ -96,7 +96,7 @@ test("A5. product images: upload two, make the second primary, remove the first,
     await expect(page.getByText("Ảnh chính", { exact: true })).toHaveCount(1); // exactly one primary badge
     await page.getByRole("button", { name: "Đặt làm ảnh chính" }).click();
     await page.getByRole("button", { name: "Gỡ ảnh" }).first().click();
-    await expect(page.getByRole("button", { name: "Gỡ ảnh" })).toHaveCount(1); // removal finished (see A6 for the race)
+    await expect(page.getByRole("button", { name: "Gỡ ảnh" })).toHaveCount(1); // removal is immediate in the form (the file is deleted after the save, see A6)
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     const items = (await (await request.get(`${mock}/api/v1/admin/products?page_size=100`)).json()).items as { name: string; images: { sort_order: number; is_primary: boolean }[] }[];
@@ -107,24 +107,80 @@ test("A5. product images: upload two, make the second primary, remove the first,
   }
 });
 
-test("A6. V1-BUG-01: saving while an image removal is still in flight must not keep the removed image", async ({ page, request }) => {
-  // Known bug, reported in docs/qa/FINAL_V1_PRODUCTION_AUDIT.md. Expected to fail until the product form
-  // blocks saving during a removal (or defers the media delete until after a successful save).
-  test.fail(true, "V1-BUG-01: Save stays enabled while DELETE /admin/media is pending");
+/** Records media uploads, media deletes (slowed down, as on a real network) and saves to `path`, in order. */
+async function trackMedia(page: Page, savePath: RegExp) {
+  const uploads: string[] = [];
+  const events: string[] = [];
+  page.on("response", async r => {
+    const method = r.request().method();
+    if (method === "POST" && /\/admin\/media\?/.test(r.url())) uploads.push((await r.json()).url);
+    if ((method === "POST" || method === "PATCH") && savePath.test(new URL(r.url()).pathname)) events.push(`saved ${r.status()}`);
+  });
+  await page.route("**/api/v1/admin/media**", async route => {
+    if (route.request().method() === "DELETE") {
+      events.push(`delete ${new URL(route.request().url()).searchParams.get("url")}`);
+      await new Promise(r => setTimeout(r, 800));
+    }
+    await route.continue();
+  });
+  return { uploads, events };
+}
+
+test("A6. V1-BUG-01: removing an image and saving at once keeps only the remaining image; the file is deleted after the save", async ({ page, request }) => {
   await request.post(`${mock}/__reset`);
   try {
     await login(page);
     await page.goto("/admin/san-pham/moi");
     await page.getByLabel("Tên sản phẩm").fill("Tủ race audit");
-    await page.route("**/api/v1/admin/media**", async route => { if (route.request().method() === "DELETE") await new Promise(r => setTimeout(r, 800)); await route.continue(); });
+    const { uploads, events } = await trackMedia(page, /\/admin\/products$/);
     await page.getByLabel("Ảnh sản phẩm").setInputFiles([{ name: "a.png", mimeType: "image/png", buffer: PNG }, { name: "b.png", mimeType: "image/png", buffer: PNG }]);
     await expect(page.getByRole("button", { name: "Gỡ ảnh" })).toHaveCount(2);
     await page.getByRole("button", { name: "Gỡ ảnh" }).first().click();
-    await page.getByRole("button", { name: "Lưu bản nháp" }).click(); // a quick owner on a slow network
+    await page.getByRole("button", { name: "Lưu bản nháp" }).dblclick(); // a quick owner, double-clicking
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
-    const items = (await (await request.get(`${mock}/api/v1/admin/products?page_size=100`)).json()).items as { name: string; images: unknown[] }[];
-    expect(items.find(p => p.name === "Tủ race audit")!.images).toHaveLength(1);
+    await expect.poll(() => events.length).toBe(2);
+    // One save, then the delete of the removed file, never the other way round.
+    expect(events).toEqual(["saved 201", `delete ${uploads[0]}`]);
+    const items = (await (await request.get(`${mock}/api/v1/admin/products?page_size=100`)).json()).items as { name: string; images: { url: string; is_primary: boolean }[] }[];
+    const saved = items.filter(p => p.name === "Tủ race audit");
+    expect(saved).toHaveLength(1);
+    expect(saved[0].images.map(i => [i.url, i.is_primary])).toEqual([[uploads[1], true]]);
   } finally {
     await request.post(`${mock}/__reset`);
   }
+});
+
+test("A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save", async ({ page, request }) => {
+  const slug = `bai-race-${Date.now()}`;
+  await login(page);
+  await page.goto("/admin/bai-viet");
+  await page.getByLabel("Tiêu đề").fill(`Bài race ${slug.slice(-6)}`);
+  await page.getByLabel("Slug").fill(slug);
+  const { uploads, events } = await trackMedia(page, /\/admin\/posts$/);
+  await page.locator("fieldset", { hasText: "Ảnh bài viết" }).locator("input[type=file]").setInputFiles([{ name: "a.png", mimeType: "image/png", buffer: PNG }, { name: "b.png", mimeType: "image/png", buffer: PNG }]);
+  const remove = page.locator("fieldset", { hasText: "Ảnh bài viết" }).getByRole("button", { name: "Gỡ ảnh" });
+  await expect(remove).toHaveCount(2);
+  await remove.first().click(); // the cover image
+  await page.getByRole("button", { name: "Tạo bài viết" }).click();
+  await expect.poll(() => events.length).toBe(2);
+  expect(events).toEqual(["saved 201", `delete ${uploads[0]}`]);
+  const posts = (await (await request.get(`${mock}/api/v1/admin/posts`)).json()) as { slug: string; cover_image_url: string; images: { url: string }[] }[];
+  const saved = posts.find(p => p.slug === slug)!;
+  expect(saved.images.map(i => i.url)).toEqual([uploads[1]]);
+  expect(saved.cover_image_url).toBe(uploads[1]);
+});
+
+test("A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved", async ({ page }) => {
+  await login(page);
+  await page.goto("/admin/banner");
+  await page.getByLabel("Tiêu đề").fill(`Banner race ${Date.now()}`);
+  const { uploads, events } = await trackMedia(page, /\/admin\/banners$/);
+  await page.locator("input[type=file]").first().setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("button", { name: "Gỡ ảnh" })).toBeVisible();
+  await page.locator("input[type=file]").first().setInputFiles({ name: "b.png", mimeType: "image/png", buffer: PNG }); // "Thay ảnh"
+  await expect.poll(() => uploads.length).toBe(2);
+  expect(events).toEqual([]); // nothing deleted before the save
+  await page.getByRole("button", { name: /Thêm banner|Lưu banner|Tạo banner/ }).click();
+  await expect.poll(() => events.length).toBe(2);
+  expect(events).toEqual(["saved 201", `delete ${uploads[0]}`]);
 });

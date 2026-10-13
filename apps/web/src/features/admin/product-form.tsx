@@ -11,9 +11,9 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AdminApiError, CacheRefreshError, adminFetch } from "@/lib/admin-api";
-import { cleanupMediaUrls, deleteAdminMedia, uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
+import { cleanupMediaUrls, uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
 import { SLUG_PATTERN, skuFromSlug, toPrice, toSlug, withSuffix } from "@/lib/slug";
-import type { AdminCategory, MediaAsset, Product, ProductImage } from "@/types/api";
+import type { AdminCategory, Product, ProductImage } from "@/types/api";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Nhập tên sản phẩm"),
@@ -29,10 +29,20 @@ type EditableImage = Pick<ProductImage, "storage_key" | "url" | "alt_text" | "so
 type SlugMode = "auto" | "fixed" | "edit";
 const MAX_SUFFIX = 20;
 
+/** Renumbers sort_order and keeps exactly one primary image (the first, if none is marked). */
+function withPrimary(list: EditableImage[]): EditableImage[] {
+  const hasPrimary = list.some(item => item.is_primary);
+  let seen = false;
+  return list.map((item, sort_order) => {
+    const is_primary = hasPrimary ? item.is_primary && !seen : sort_order === 0;
+    if (is_primary) seen = true;
+    return { ...item, sort_order, is_primary };
+  });
+}
+
 export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
   const [images, setImages] = useState<EditableImage[]>(() => product?.images.map(({ storage_key, url, alt_text, sort_order, is_primary }) => ({ storage_key, url, alt_text, sort_order, is_primary })) ?? []);
-  const [uploads, setUploads] = useState<Record<string, MediaAsset>>({});
   const [cleanup, setCleanup] = useState<Set<string>>(new Set());
   const [isUploading, setIsUploading] = useState(false);
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => adminFetch<AdminCategory[]>("/categories") });
@@ -57,28 +67,19 @@ export function ProductForm({ product }: { product?: Product }) {
       const uploaded: EditableImage[] = [];
       for (const file of files) {
         const asset = await uploadAdminMedia("product-images", file);
-        setUploads(current => ({ ...current, [asset.storage_key]: asset }));
         uploaded.push({ storage_key: asset.storage_key, url: asset.url, alt_text: product?.name ?? "", sort_order: images.length + uploaded.length, is_primary: images.length === 0 && uploaded.length === 0 });
       }
-      setImages(current => [...current, ...uploaded]);
+      setImages(current => withPrimary([...current, ...uploaded]));
       toast.success(`Đã tải lên ${uploaded.length} ảnh`);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể tải ảnh lên"); }
     finally { setIsUploading(false); }
   }
 
-  async function removeImage(index: number) {
-    const image = images[index];
-    const uploaded = uploads[image.storage_key];
-    if (uploaded) {
-      try { await deleteAdminMedia({ id: uploaded.id }); }
-      catch (error) { toast.error(error instanceof Error ? error.message : "Không thể gỡ ảnh"); return; }
-      setUploads(current => { const next = { ...current }; delete next[image.storage_key]; return next; });
-    } else setCleanup(current => new Set(current).add(image.url));
-    setImages(current => {
-      const remaining = current.filter((_, itemIndex) => itemIndex !== index);
-      const hasPrimary = remaining.some(item => item.is_primary);
-      return remaining.map((image, itemIndex) => ({ ...image, sort_order: itemIndex, is_primary: hasPrimary ? image.is_primary : itemIndex === 0 }));
-    });
+  // Removing only changes the form. The file is deleted after a successful save (cleanup), so a
+  // save can never reference a deleted object and an unsaved removal loses nothing (V1-BUG-01).
+  function removeImage(index: number) {
+    setCleanup(current => new Set(current).add(images[index].url));
+    setImages(current => withPrimary(current.filter((_, itemIndex) => itemIndex !== index)));
   }
 
   function editSlug() { setSlugMode("edit"); setTimeout(() => setFocus("slug")); }
@@ -120,6 +121,8 @@ export function ProductForm({ product }: { product?: Product }) {
       setError("slug", { message: "Sản phẩm này đã được đăng nên giữ đường dẫn cũ. Bấm lưu lại để lưu các thay đổi khác." });
     } else if (error instanceof AdminApiError && error.message === "SKU already exists") {
       setError("sku", { message: "Mã sản phẩm này đã dùng cho sản phẩm khác" }, { shouldFocus: true });
+    } else if (error instanceof AdminApiError && error.message === "Image was deleted") {
+      toast.error("Một ảnh trong sản phẩm đã bị xóa khỏi kho ảnh. Hãy gỡ ảnh đó rồi lưu lại.");
     } else if (error instanceof AdminApiError && error.message === "Category not found") {
       void categories.refetch();
       setError("category_id", { message: "Loại sản phẩm này vừa bị xóa. Hãy chọn loại khác." }, { shouldFocus: true });
@@ -187,7 +190,7 @@ export function ProductForm({ product }: { product?: Product }) {
                 <div className="flex flex-wrap items-center gap-1">
                   <button className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-muted disabled:opacity-35" type="button" disabled={index === 0} onClick={() => moveImage(index, -1)} aria-label={`Đưa ảnh ${index + 1} lên trước`}><ArrowLeft size={16} aria-hidden="true" /></button>
                   <button className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-muted disabled:opacity-35" type="button" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)} aria-label={`Đưa ảnh ${index + 1} ra sau`}><ArrowRight size={16} aria-hidden="true" /></button>
-                  <button className="button ghost sm ml-auto !text-danger hover:!bg-danger-soft" type="button" onClick={() => void removeImage(index)}>Gỡ ảnh</button>
+                  <button className="button ghost sm ml-auto !text-danger hover:!bg-danger-soft" type="button" onClick={() => removeImage(index)}>Gỡ ảnh</button>
                 </div>
                 {!image.is_primary && <button className="button secondary sm w-full" type="button" onClick={() => setImages(current => current.map((item, itemIndex) => ({ ...item, is_primary: itemIndex === index })))}>Đặt làm ảnh chính</button>}
               </div>

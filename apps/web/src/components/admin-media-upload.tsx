@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
-import { deleteAdminMedia, uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
+import { uploadAdminMedia, validateMediaFile } from "@/lib/admin-media";
 import type { MediaAsset } from "@/types/api";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   bucket: "post-images" | "banners" | "branding";
   value: string | null;
   onChange: (url: string | null, upload?: MediaAsset) => void;
+  /** The replaced or removed image: delete it after the record is saved, never before (V1-BUG-01). */
   onExistingRemoved?: (url: string) => void;
   allowIcon?: boolean;
   help?: string;
@@ -18,7 +19,6 @@ type Props = {
 };
 
 export function AdminMediaUpload({ label, bucket, value, onChange, onExistingRemoved, allowIcon = false, help, onBusyChange }: Props) {
-  const [upload, setUpload] = useState<MediaAsset | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function choose(event: ChangeEvent<HTMLInputElement>) {
@@ -31,33 +31,17 @@ export function AdminMediaUpload({ label, bucket, value, onChange, onExistingRem
     onBusyChange?.(true);
     try {
       const next = await uploadAdminMedia(bucket, file);
-      let previousDeleted = false;
-      if (upload) {
-        try { await deleteAdminMedia({ id: upload.id }); previousDeleted = true; }
-        catch { /* It may already be referenced by a saved record; clean it after save. */ }
-      }
-      if (value && !previousDeleted) onExistingRemoved?.(value);
-      setUpload(next);
+      if (value) onExistingRemoved?.(value);
       onChange(next.url, next);
       toast.success("Đã tải ảnh lên");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể tải ảnh"); }
     finally { setBusy(false); onBusyChange?.(false); }
   }
 
-  async function remove() {
+  function remove() {
     if (!value) return;
-    setBusy(true);
-    onBusyChange?.(true);
-    try {
-      let removed = false;
-      if (upload) {
-        try { await deleteAdminMedia({ id: upload.id }); removed = true; }
-        catch { /* A saved reference must be removed before the object can be deleted. */ }
-      }
-      if (!removed) onExistingRemoved?.(value);
-      setUpload(null);
-      onChange(null);
-    } finally { setBusy(false); onBusyChange?.(false); }
+    onExistingRemoved?.(value);
+    onChange(null);
   }
 
   return <fieldset className="grid gap-3 rounded-lg border border-line p-4">

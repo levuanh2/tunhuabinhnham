@@ -5,7 +5,8 @@ from typing import cast
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from sqlalchemy import func, select
+from pydantic import BaseModel
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -57,6 +58,30 @@ router = APIRouter(dependencies=[Depends(require_rate_limited_admin)])
 logger = logging.getLogger(__name__)
 
 
+_MEDIA_URL_FIELDS = ("image_url", "cover_image_url", "logo_url", "favicon_url")
+
+
+def _require_live_media(db: Session, data: BaseModel) -> None:
+    """Content may only reference media that has not been deleted.
+
+    The matching media rows are locked (FOR SHARE) until this save commits, and a delete locks
+    its row FOR UPDATE, so a save and a delete of the same asset are ordered: if the delete
+    wins, the save sees the deleted row (422); if the save wins, the delete sees the new
+    reference (409). Images without a media row (seed data, external URLs) are not checked.
+    """
+    keys = {image.storage_key for image in getattr(data, "images", None) or []}
+    urls = {url for field in _MEDIA_URL_FIELDS if (url := getattr(data, field, None))}
+    if not keys and not urls:
+        return
+    assets = db.scalars(
+        select(MediaAsset)
+        .where(or_(MediaAsset.storage_key.in_(keys), MediaAsset.public_url.in_(urls)))
+        .with_for_update(read=True)
+    ).all()
+    if any(asset.deleted_at is not None for asset in assets):
+        raise HTTPException(status_code=422, detail="Image was deleted")
+
+
 def missing(name: str) -> HTTPException:
     return HTTPException(status_code=404, detail=f"{name} not found")
 
@@ -80,6 +105,7 @@ def list_products(
 def create_product(
     data: ProductCreate, db: Session = Depends(get_db), admin: CurrentAdmin = Depends(require_admin)
 ) -> ProductOut:
+    _require_live_media(db, data)
     return ProductOut.model_validate(CatalogService(db).create_product(data, admin.id))
 
 
@@ -101,6 +127,7 @@ def update_product(
     item = ProductRepository(db).get(item_id)
     if item is None:
         raise missing("Product")
+    _require_live_media(db, data)
     return ProductOut.model_validate(CatalogService(db).update_product(item, data, admin.id))
 
 
@@ -137,6 +164,7 @@ def create_category(
     db: Session = Depends(get_db),
     admin: CurrentAdmin = Depends(require_admin),
 ) -> CategoryOut:
+    _require_live_media(db, data)
     return CategoryOut.model_validate(CatalogService(db).create_category(data, admin.id))
 
 
@@ -150,6 +178,7 @@ def update_category(
     item = CategoryRepository(db).get(item_id)
     if item is None:
         raise missing("Category")
+    _require_live_media(db, data)
     return CategoryOut.model_validate(CatalogService(db).update_category(item, data, admin.id))
 
 
@@ -214,6 +243,7 @@ def list_posts(db: Session = Depends(get_db)) -> list[PostOut]:
 def create_post(
     data: PostCreate, db: Session = Depends(get_db), admin: CurrentAdmin = Depends(require_admin)
 ) -> PostOut:
+    _require_live_media(db, data)
     values = data.model_dump(exclude={"images"})
     values["content_html"] = _sanitize(values["content_html"])
     if values["publish_status"] == PublishStatus.published and values["published_at"] is None:
@@ -253,6 +283,7 @@ def update_post(
     item = db.scalar(select(Post).where(Post.id == item_id, Post.deleted_at.is_(None)))
     if item is None:
         raise missing("Post")
+    _require_live_media(db, data)
     try:
         changes = data.model_dump(exclude_unset=True, exclude={"images"})
         if "content_html" in changes:
@@ -327,6 +358,7 @@ def list_banners(db: Session = Depends(get_db)) -> list[BannerOut]:
 def create_banner(
     data: BannerCreate, db: Session = Depends(get_db), admin: CurrentAdmin = Depends(require_admin)
 ) -> BannerOut:
+    _require_live_media(db, data)
     item = Banner(**data.model_dump())
     db.add(item)
     db.flush()
@@ -348,6 +380,7 @@ def update_banner(
     item = db.scalar(select(Banner).where(Banner.id == item_id, Banner.deleted_at.is_(None)))
     if item is None:
         raise missing("Banner")
+    _require_live_media(db, data)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
     db.add(
@@ -426,6 +459,7 @@ def update_settings(
     db: Session = Depends(get_db),
     admin: CurrentAdmin = Depends(require_admin),
 ) -> SiteSettingsOut:
+    _require_live_media(db, data)
     item = db.scalar(select(SiteSettings).limit(1))
     creating = item is None
     if item is None:
@@ -605,15 +639,7 @@ def _delete_media_asset(
         raise HTTPException(status_code=409, detail="Media is still referenced by content")
     if not settings.supabase_url or not settings.supabase_secret_key:
         raise HTTPException(status_code=503, detail="Supabase Storage is not configured")
-    try:
-        from supabase import create_client
-
-        create_client(settings.supabase_url, settings.supabase_secret_key).storage.from_(
-            asset.bucket
-        ).remove([asset.storage_key])
-    except Exception as exc:
-        logger.warning("storage_delete_failed bucket=%s", asset.bucket)
-        raise HTTPException(status_code=502, detail="Media storage deletion failed") from exc
+    # Mark it deleted durably first, so no save can reference it once the object is gone.
     asset.deleted_at = datetime.now(UTC)
     db.add(
         AuditLog(
@@ -625,6 +651,28 @@ def _delete_media_asset(
         )
     )
     db.commit()
+    try:
+        from supabase import create_client
+
+        create_client(settings.supabase_url, settings.supabase_secret_key).storage.from_(
+            asset.bucket
+        ).remove([asset.storage_key])
+    except Exception as exc:
+        logger.warning("storage_delete_failed bucket=%s", asset.bucket)
+        # The object still exists: make the asset usable again so the delete can be retried.
+        # If this revert fails too, the row stays deleted and the object is a harmless orphan.
+        asset.deleted_at = None
+        db.add(
+            AuditLog(
+                admin_user_id=admin.id,
+                action="restore",
+                entity_type="media",
+                entity_id=asset.id,
+                changes={"reason": "storage_delete_failed"},
+            )
+        )
+        db.commit()
+        raise HTTPException(status_code=502, detail="Media storage deletion failed") from exc
 
 
 @router.delete("/media", status_code=204)
@@ -636,7 +684,9 @@ def delete_media_by_url(
 ) -> None:
     """Delete an unreferenced managed asset after a content update removed its URL."""
     asset = db.scalar(
-        select(MediaAsset).where(MediaAsset.public_url == url, MediaAsset.deleted_at.is_(None))
+        select(MediaAsset)
+        .where(MediaAsset.public_url == url, MediaAsset.deleted_at.is_(None))
+        .with_for_update()
     )
     if asset is None:
         raise missing("Media")
@@ -651,7 +701,9 @@ def delete_media(
     settings: Settings = Depends(get_settings),
 ) -> None:
     asset = db.scalar(
-        select(MediaAsset).where(MediaAsset.id == asset_id, MediaAsset.deleted_at.is_(None))
+        select(MediaAsset)
+        .where(MediaAsset.id == asset_id, MediaAsset.deleted_at.is_(None))
+        .with_for_update()
     )
     if asset is None:
         raise missing("Media")
