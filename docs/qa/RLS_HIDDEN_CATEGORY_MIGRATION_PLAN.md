@@ -1,6 +1,6 @@
 # V1-SEC-03: RLS migration plan for products in hidden categories (needs separate approval)
 
-Status: **PLAN ONLY, not applied.** No policy was changed and no migration was run. The SQL below is not in `supabase/migrations/` so no `supabase db push` can apply it by accident.
+Status: **committed, not applied** (commit `14895d7`). The canonical SQL `supabase/migrations/20261014090000_rls_hidden_categories.sql` and the Alembic wrapper `0005` are in the repository, so `alembic upgrade head` on a `0004` database **will apply it**. The only normal production apply path is `python -m alembic -c apps/api/alembic.ini upgrade head`; never `supabase db push`.
 
 ## Finding
 
@@ -105,7 +105,7 @@ def downgrade() -> None:
 2. **Pre-check** (read-only):
    - `python -m alembic -c apps/api/alembic.ini current` must show `0004 (head)` before the change. If the live database is still on `0003`, stop: `0004` needs its own approval first (see `docs/RENDER_DEPLOYMENT.md`).
    - `select policyname, roles, qual from pg_policies where tablename in ('products','product_images');` must match the rollback SQL.
-3. **Commit** the canonical SQL and the `0005` wrapper (reviewed, CI green). Add a static pytest that the wrapper reads that exact file, like `test_security_migration.py`.
+3. **Done (`14895d7`):** the canonical SQL and the `0005` wrapper are committed, identical to the reviewed snippets; static tests in `test_security_migration.py`. Precondition: the backend suite is green at the commit being applied.
 4. **Apply.** The only normal path is `python -m alembic -c apps/api/alembic.ini upgrade head`, with `DATABASE_URL` from the secure environment, never printed. If the SQL Editor is ever used in an emergency, the same files must be committed and `alembic stamp` reconciled, so the history stays canonical.
 5. **Verify** (read-only):
    - `alembic current` shows `0005 (head)`, and `pg_policies` shows the new `qual` for both policies, roles `{anon,authenticated}`.
