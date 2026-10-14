@@ -25,10 +25,11 @@ Production probe, read-only GET with the publishable key from the public bundle,
 
 **Classification: P1** under the brief's rule that data the site deliberately hides must not be readable by anon or authenticated. The rows are published product details (no personal or secret data), so the impact is a broken "hide" promise, not a data breach.
 
-## Forward migration (proposed file `supabase/migrations/20261014090000_rls_hidden_categories.sql`)
+## Forward migration
+
+Canonical SQL `supabase/migrations/20261014090000_rls_hidden_categories.sql`, plus Alembic wrapper `apps/api/alembic/versions/0005_rls_hidden_categories.py` (below). There is no `begin`/`commit`: Alembic owns the transaction, so the policy change and the revision bookkeeping commit together.
 
 ```sql
-begin;
 alter policy "public read published products" on public.products using (
   publish_status = 'published' and is_visible and deleted_at is null
   and (published_at is null or published_at <= now())
@@ -42,7 +43,6 @@ alter policy "public read product images" on public.product_images using (
     and (p.category_id is null or exists (select 1 from public.categories c
       where c.id = p.category_id and c.is_visible and c.deleted_at is null)))
 );
-commit;
 ```
 
 Notes:
@@ -53,8 +53,9 @@ Notes:
 
 ## Rollback (restores the exact current definitions)
 
+The rollback is a new canonical file `supabase/migrations/<timestamp>_rls_hidden_categories_rollback.sql` with its own Alembic revision `0006`. History stays linear; it does not use `alembic downgrade`, which is disabled for security revisions as in `0004`.
+
 ```sql
-begin;
 alter policy "public read published products" on public.products using (
   publish_status = 'published' and is_visible and deleted_at is null
   and (published_at is null or published_at <= now())
@@ -63,18 +64,58 @@ alter policy "public read product images" on public.product_images using (
   exists (select 1 from public.products p where p.id = product_id
     and p.publish_status = 'published' and p.is_visible and p.deleted_at is null)
 );
-commit;
+```
+
+## Alembic wrapper (same pattern as `0004_security_hardening.py`)
+
+```python
+"""policies: products and images of hidden categories are not public
+
+Revision ID: 0005
+Revises: 0004
+"""
+
+from pathlib import Path
+
+from alembic import op
+
+revision = "0005"
+down_revision = "0004"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    sql_path = (
+        Path(__file__).resolve().parents[4]
+        / "supabase"
+        / "migrations"
+        / "20261014090000_rls_hidden_categories.sql"
+    )
+    op.execute(sql_path.read_text(encoding="utf-8"))
+
+
+def downgrade() -> None:
+    raise RuntimeError("Apply the reviewed rollback migration instead of downgrading.")
 ```
 
 ## Steps (after approval)
 
-1. Backup: the Free plan has **no automatic daily backups**. Take a fresh logical dump (`supabase db dump` for the schema and for `--data-only`, or `pg_dump`), store it off the machine, and check that it restores into a local database before going on.
-2. Review: `select policyname, qual from pg_policies where tablename in ('products','product_images');` (read-only), and compare it with the rollback SQL.
-3. Apply it through the canonical workflow: add the reviewed file `supabase/migrations/20261014090000_rls_hidden_categories.sql` in a commit, then apply it with the migration tooling (one transaction). If the SQL Editor is ever used in an emergency, the same file must still be committed so the migration history stays canonical.
-4. Verify read-only with the publishable key:
-   - `GET /rest/v1/products?select=id` equals the FastAPI public list;
-   - same for `product_images`;
-   - the internal tables still return 401 to anon.
-5. Verify the site: product list, detail, gallery and admin save (FastAPI owner connection) are unchanged.
-6. Deny test, which needs a write and therefore approval: hide a category that has a test product, check that anon REST returns 0 rows for it, then show it again.
-7. If anything is wrong: apply the rollback SQL as a new migration (or in the SQL Editor, then commit it), then re-check step 4.
+1. **Backup.** The Free plan has **no automatic daily backups**. Take a fresh logical dump (`supabase db dump`, schema and `--data-only`, or `pg_dump`), store it off the machine, and check that it restores into a local database.
+2. **Pre-check** (read-only):
+   - `python -m alembic -c apps/api/alembic.ini current` must show `0004 (head)` before the change. If the live database is still on `0003`, stop: `0004` needs its own approval first (see `docs/RENDER_DEPLOYMENT.md`).
+   - `select policyname, roles, qual from pg_policies where tablename in ('products','product_images');` must match the rollback SQL.
+3. **Commit** the canonical SQL and the `0005` wrapper (reviewed, CI green). Add a static pytest that the wrapper reads that exact file, like `test_security_migration.py`.
+4. **Apply.** The only normal path is `python -m alembic -c apps/api/alembic.ini upgrade head`, with `DATABASE_URL` from the secure environment, never printed. If the SQL Editor is ever used in an emergency, the same files must be committed and `alembic stamp` reconciled, so the history stays canonical.
+5. **Verify** (read-only):
+   - `alembic current` shows `0005 (head)`, and `pg_policies` shows the new `qual` for both policies, roles `{anon,authenticated}`.
+   - anon `GET /rest/v1/products?select=id` equals the ids FastAPI returns publicly.
+   - anon `GET /rest/v1/product_images?select=id,product_id` equals the images nested in those FastAPI products. FastAPI returns images inside each product; flatten `items[].images[].id` to compare.
+   - The internal tables still return 401 to anon.
+6. **Site check:** product list, detail, gallery and an admin save are unchanged. FastAPI connects as the owner role, so these policies do not apply to it.
+7. **Deny matrix** (needs approved disposable test data and a signed-in non-admin test user):
+   - hide a category that contains a test product with an image;
+   - for **anon** and for the **authenticated non-admin**, expect 0 rows from `products?id=eq.<test product>` and 0 rows from `product_images?product_id=eq.<test product>`;
+   - show the category again;
+   - both roles must see the product row and its image row again.
+8. **If anything is wrong:** commit and apply the rollback migration `0006` the same way, then repeat step 5.
