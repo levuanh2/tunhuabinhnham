@@ -58,6 +58,7 @@ app.include_router(api_router, prefix="/api/v1")
 @app.middleware("http")
 async def request_context(request: Request, call_next):  # type: ignore[no-untyped-def]
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    request.state.request_id = request_id  # scope state: the 500 handler reports the same id
     started = time.perf_counter()
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
@@ -140,7 +141,11 @@ async def validation_error(_: Request, exc: RequestValidationError) -> JSONRespo
 
 @app.exception_handler(Exception)
 async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
-    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    request_id = (
+        getattr(request.state, "request_id", None)
+        or request.headers.get("x-request-id")
+        or str(uuid.uuid4())
+    )
     logging.exception("Unhandled error request_id=%s path=%s", request_id, request.url.path)
     return JSONResponse(
         status_code=500,

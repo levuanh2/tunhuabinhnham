@@ -16,19 +16,25 @@ class FixedWindowRateLimiter:
         self._entries: dict[str, tuple[float, int]] = {}
         self._lock = threading.Lock()
         self._max_keys = max_keys
+        self._full_until = 0.0  # while full: no entry can expire before this, skip pruning
 
     def retry_after(self, key: str, limit: int, window_seconds: int = 60) -> int | None:
         now = time.monotonic()
         with self._lock:
             if key not in self._entries and len(self._entries) >= self._max_keys:
+                # Memory is bounded: while full of live windows, new keys are refused, in O(1)
+                # until the oldest window can have expired, then one prune.
+                if now < self._full_until:
+                    return max(1, math.ceil(self._full_until - now))
                 self._entries = {
                     entry_key: entry
                     for entry_key, entry in self._entries.items()
                     if now - entry[0] < window_seconds
                 }
                 if len(self._entries) >= self._max_keys:
-                    # Memory is bounded: while full of live windows, new keys are refused.
-                    return window_seconds
+                    oldest = min(started for started, _ in self._entries.values())
+                    self._full_until = oldest + window_seconds
+                    return max(1, math.ceil(self._full_until - now))
             started, count = self._entries.get(key, (now, 0))
             if now - started >= window_seconds:
                 started, count = now, 0

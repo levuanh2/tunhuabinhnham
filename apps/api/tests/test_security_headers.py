@@ -52,6 +52,8 @@ def test_unhandled_500_is_redacted_and_keeps_cors_and_security_headers() -> None
         app.dependency_overrides.clear()
     assert response.status_code == 500
     assert response.json()["error"]["code"] == "internal_error"
+    # One correlation id across body and header (none was sent, so the API made one).
+    assert response.json()["error"]["details"]["request_id"] == response.headers["x-request-id"]
     assert "secret" not in response.text
     assert response.headers["access-control-allow-origin"] == origin
     assert_secure(response)

@@ -4,11 +4,11 @@ Status: **PLAN ONLY, not applied.** No policy was changed and no migration was r
 
 ## Finding
 
-| Path | Hidden-category products / their images | Future-dated product images | Internal tables |
+| Path | Hidden-category products / their images | Future-dated products / their images | Internal tables |
 |---|---|---|---|
 | FastAPI public API | hidden (`public_product_conditions`, `repositories/catalog.py:14-27`) | hidden | not exposed |
-| PostgREST, `anon` | **readable** | **readable** (image policy has no `published_at` check) | 401 (no grant) |
-| PostgREST, `authenticated` (signed-up, not an admin) | **readable**, same grants and policies as anon | **readable** | 401 |
+| PostgREST, `anon` | **readable** | hidden: the image policy's subquery reads `products` as the caller, so the products policy (with its `published_at` check) also applies | 401 (no grant, `42501`) |
+| PostgREST, `authenticated` (signed-up, not an admin) | **readable**, same grants and policies as anon | hidden | 403 (`42501` for an authenticated request; not probed) |
 | `service_role` | bypasses RLS by design; server-side only (Render env, `sync: false`) | | |
 | Storage | public buckets: an object URL is readable when its random key is known; no listing or write policy for anon/authenticated | | |
 
@@ -19,7 +19,7 @@ Evidence:
 
 Production probe, read-only GET with the publishable key from the public bundle, 2026-10-14:
 - anon REST returns 1 product and 1 image, identical to FastAPI;
-- `admin_users`, `contact_clicks`, `audit_logs` and `media_assets` return 401.
+- `admin_users`, `contact_clicks`, `audit_logs` and `media_assets` return 401 to anon. The authenticated result (403) follows from the same revoked grants but was not probed: that needs a signed-in user.
 
 **The exposure is latent**: no category is hidden today. As soon as the owner hides one, its products become readable through the Data API.
 
@@ -46,6 +46,7 @@ commit;
 ```
 
 Notes:
+- The explicit `published_at` check in the new image policy is defence in depth: the products policy already filters it through the subquery.
 - `alter policy` keeps the policy names, roles (`anon, authenticated`) and grants. It touches only these two policies, takes a brief lock, and moves no data.
 - `categories` has an index on `id` (PK); `products.category_id` is indexed (`ix_products_category`, `202610100001_initial.sql:34`). The extra `exists` is an index lookup per row.
 - The FastAPI and the web app do not read through these policies: the API connects with the database owner role (no `FORCE ROW LEVEL SECURITY` in any migration), so RLS does not apply to it. The site is unaffected.
@@ -67,13 +68,13 @@ commit;
 
 ## Steps (after approval)
 
-1. Take a backup or snapshot note (Free plan: daily backup; record the time).
+1. Backup: the Free plan has **no automatic daily backups**. Take a fresh logical dump (`supabase db dump` for the schema and for `--data-only`, or `pg_dump`), store it off the machine, and check that it restores into a local database before going on.
 2. Review: `select policyname, qual from pg_policies where tablename in ('products','product_images');` (read-only), and compare it with the rollback SQL.
-3. Apply the forward SQL in the Supabase SQL editor, or add it as the migration file above and push it, as one transaction.
+3. Apply it through the canonical workflow: add the reviewed file `supabase/migrations/20261014090000_rls_hidden_categories.sql` in a commit, then apply it with the migration tooling (one transaction). If the SQL Editor is ever used in an emergency, the same file must still be committed so the migration history stays canonical.
 4. Verify read-only with the publishable key:
    - `GET /rest/v1/products?select=id` equals the FastAPI public list;
    - same for `product_images`;
-   - the internal tables still return 401.
+   - the internal tables still return 401 to anon.
 5. Verify the site: product list, detail, gallery and admin save (FastAPI owner connection) are unchanged.
 6. Deny test, which needs a write and therefore approval: hide a category that has a test product, check that anon REST returns 0 rows for it, then show it again.
-7. If anything is wrong: run the rollback SQL, then re-check step 4.
+7. If anything is wrong: apply the rollback SQL as a new migration (or in the SQL Editor, then commit it), then re-check step 4.

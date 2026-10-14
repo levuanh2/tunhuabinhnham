@@ -183,6 +183,12 @@ def test_limiter_memory_is_bounded_and_recovers(monkeypatch: pytest.MonkeyPatch)
     limiter = rate_limit.FixedWindowRateLimiter(max_keys=3)
     assert [limiter.retry_after(f"ip{i}", limit=5) for i in range(3)] == [None, None, None]
     assert limiter.retry_after("ip-new", limit=5) == 60  # full of live windows: refused
+    entries = limiter._entries
+    clock[0] += 30
+    for i in range(100):  # repeated overflow: O(1) refusals, no re-prune until the oldest expires
+        assert limiter.retry_after(f"flood{i}", limit=5) == 30
+    assert limiter._entries is entries
+    clock[0] -= 30
     assert limiter.retry_after("ip0", limit=5) is None  # known keys still counted
     assert len(limiter._entries) == 3
     clock[0] += 61  # windows expired: pruned, new keys accepted again

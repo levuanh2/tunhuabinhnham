@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gotoReady } from "./hydration";
 
 /*
  * Final V1 audit: admin CMS flows that had no fixture coverage (news, banners, contact settings reaching the
@@ -12,7 +13,7 @@ const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==", "base64");
 
 async function login(page: Page) {
-  await page.goto("/admin/login");
+  await gotoReady(page, "/admin/login");
   await page.getByLabel("Email").fill("qa@example.test");
   await page.getByLabel("Mật khẩu").fill("qa-password-123");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
@@ -23,7 +24,7 @@ test("A1. news: create and publish an article; it appears on /tin-tuc and on its
   const slug = `bai-audit-${Date.now()}`;
   const title = `Bài kiểm thử audit ${slug.slice(-6)}`; // the fixture keeps posts across runs
   await login(page);
-  await page.goto("/admin/bai-viet");
+  await gotoReady(page, "/admin/bai-viet");
   await page.getByLabel("Tiêu đề").fill(title);
   await page.getByLabel("Slug").fill(slug);
   await page.getByLabel("Tóm tắt").fill("Tóm tắt kiểm thử");
@@ -42,7 +43,7 @@ test("A1. news: create and publish an article; it appears on /tin-tuc and on its
 
 test("A2. banners: add a banner with an uploaded image; it is listed in admin", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/banner");
+  await gotoReady(page, "/admin/banner");
   const title = `Banner audit ${Date.now()}`;
   await page.getByLabel("Tiêu đề").fill(title);
   await page.getByLabel("Phụ đề").fill("Phụ đề kiểm thử");
@@ -56,7 +57,7 @@ test("A3. settings: hotline and Messenger saved in admin drive the public contac
   await request.post(`${mock}/__reset`);
   try {
     await login(page);
-    await page.goto("/admin/cai-dat");
+    await gotoReady(page, "/admin/cai-dat");
     await page.getByLabel("Hotline").fill("0912 345 678");
     await page.getByLabel("Messenger URL").fill("https://m.me/tunhuabinhnham.test");
     await page.getByRole("button", { name: "Lưu thay đổi" }).click();
@@ -71,14 +72,14 @@ test("A3. settings: hotline and Messenger saved in admin drive the public contac
 
 test("A4. a session that expires mid-session is reported in Vietnamese and leads back to login", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/san-pham/moi");
+  await gotoReady(page, "/admin/san-pham/moi");
   await page.getByLabel("Tên sản phẩm").fill("Tủ phiên hết hạn");
   // The API now rejects the token (expired/revoked).
   await page.route("**/api/v1/admin/products", route => route.request().method() === "POST" ? route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: { message: "Authentication required" } }) }) : route.continue());
   await page.getByRole("button", { name: "Lưu bản nháp" }).click();
   await expect(page.getByText("Phiên đăng nhập đã hết hạn")).toBeVisible();
   await expect(page.getByLabel("Tên sản phẩm")).toHaveValue("Tủ phiên hết hạn"); // input kept
-  await page.goto("/admin/san-pham");
+  await gotoReady(page, "/admin/san-pham");
   await expect(page).toHaveURL(/\/admin\/login/);
 });
 
@@ -86,7 +87,7 @@ test("A5. product images: upload two, make the second primary, remove the first,
   await request.post(`${mock}/__reset`);
   try {
     await login(page);
-    await page.goto("/admin/san-pham/moi");
+    await gotoReady(page, "/admin/san-pham/moi");
     await page.getByLabel("Tên sản phẩm").fill("Tủ ảnh audit");
     await page.getByLabel("Ảnh sản phẩm").setInputFiles([
       { name: "a.png", mimeType: "image/png", buffer: PNG },
@@ -130,7 +131,7 @@ test("A6. V1-BUG-01: removing an image and saving at once keeps only the remaini
   await request.post(`${mock}/__reset`);
   try {
     await login(page);
-    await page.goto("/admin/san-pham/moi");
+    await gotoReady(page, "/admin/san-pham/moi");
     await page.getByLabel("Tên sản phẩm").fill("Tủ race audit");
     const { uploads, events } = await trackMedia(page, /\/admin\/products$/);
     await page.getByLabel("Ảnh sản phẩm").setInputFiles([{ name: "a.png", mimeType: "image/png", buffer: PNG }, { name: "b.png", mimeType: "image/png", buffer: PNG }]);
@@ -153,7 +154,7 @@ test("A6. V1-BUG-01: removing an image and saving at once keeps only the remaini
 test("A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save", async ({ page, request }) => {
   const slug = `bai-race-${Date.now()}`;
   await login(page);
-  await page.goto("/admin/bai-viet");
+  await gotoReady(page, "/admin/bai-viet");
   await page.getByLabel("Tiêu đề").fill(`Bài race ${slug.slice(-6)}`);
   await page.getByLabel("Slug").fill(slug);
   const { uploads, events } = await trackMedia(page, /\/admin\/posts$/);
@@ -172,7 +173,7 @@ test("A7. V1-BUG-01 (news): removing an image and saving at once keeps only the 
 
 test("A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/banner");
+  await gotoReady(page, "/admin/banner");
   await page.getByLabel("Tiêu đề").fill(`Banner race ${Date.now()}`);
   const { uploads, events } = await trackMedia(page, /\/admin\/banners$/);
   await page.locator("input[type=file]").first().setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });

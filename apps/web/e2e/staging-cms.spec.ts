@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { gotoReady, waitForHydration } from "./hydration";
 import { toSlug } from "../src/lib/slug";
 
 const canWrite = process.env.E2E_ALLOW_STAGING_WRITES === "true";
@@ -24,20 +25,6 @@ async function accessToken(page: import("@playwright/test").Page): Promise<strin
 }
 
 /** Navigate and wait until the client has hydrated: react-hook-form/useState reset values typed into SSR markup. */
-async function gotoReady(page: import("@playwright/test").Page, url: string) {
-  await page.goto(url);
-  await waitForHydration(page);
-}
-
-/** React attaches __reactFiber* keys to DOM nodes only when it has hydrated them. */
-async function waitForHydration(page: import("@playwright/test").Page) {
-  await page.waitForLoadState("networkidle");
-  await page.waitForFunction(() => {
-    const el = document.querySelector("main input, main textarea, main select, main button");
-    return !el || Object.keys(el).some(key => key.startsWith("__reactFiber"));
-  });
-}
-
 async function login(page: import("@playwright/test").Page) {
   await gotoReady(page, "/admin/login");
   await page.getByLabel("Email").fill(email!);
