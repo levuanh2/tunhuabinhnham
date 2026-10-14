@@ -43,9 +43,12 @@ class Settings(BaseSettings):
     contact_click_limit_per_minute: int = Field(default=10, ge=1, le=1000)
     contact_click_global_limit_per_hour: int = Field(default=300, ge=1, le=100_000)
     # Visitor IP for the contact-click limit: a header the edge in front of the API sets and
-    # overwrites. onrender.com is served through Cloudflare, so CF-Connecting-IP. Only a single
-    # valid IP is accepted, otherwise the socket peer is used. A forged value can only dodge the
-    # per-client limit; the global cap and the limiter's key cap still apply. Empty = peer only.
+    # overwrites. onrender.com is served through Cloudflare, so CF-Connecting-IP: measured
+    # 2026-10-14, Cloudflare sets it to the real client and rejects a client-sent one with 403
+    # (error 1000). X-Forwarded-For keeps a client-sent first entry and is never trusted. Only a
+    # single valid IP is accepted, otherwise the socket peer is used. Should a forged value ever
+    # get through, it can only dodge the per-client limit; the global cap and the limiter's key
+    # cap still apply. Empty = peer only.
     client_ip_header: str = "CF-Connecting-IP"
 
     @field_validator("database_url")

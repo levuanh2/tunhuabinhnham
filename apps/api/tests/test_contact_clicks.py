@@ -143,6 +143,28 @@ def test_spoofed_ip_headers_do_not_bypass_the_limit(client: TestClient, db: Sess
     assert codes == [202, 202, 429]
 
 
+def test_default_config_ignores_other_forwarding_headers(client: TestClient) -> None:
+    # Measured 2026-10-14 on onrender.com: Cloudflare overwrites CF-Connecting-IP and
+    # True-Client-IP, answers a client-sent CF-Connecting-IP with 403 (error 1000), and keeps a
+    # client-sent X-Forwarded-For as the first entry. Only CF-Connecting-IP may be trusted.
+    configure(contact_click_limit_per_minute=2)
+    assert get_settings().client_ip_header == "CF-Connecting-IP"
+    codes = [
+        client.post(
+            URL,
+            json={},
+            headers={
+                "cf-connecting-ip": "203.0.113.50",
+                "x-forwarded-for": f"198.51.100.{i}",
+                "true-client-ip": f"198.51.100.{i}",
+                "x-real-ip": f"198.51.100.{i}",
+            },
+        ).status_code
+        for i in range(3)
+    ]
+    assert codes == [202, 202, 429]
+
+
 def test_ipv6_clients_are_grouped_by_64(client: TestClient) -> None:
     configure(contact_click_limit_per_minute=2, client_ip_header="cf-connecting-ip")
     codes = [
