@@ -42,6 +42,19 @@ export function isEdgeCacheableRequest(request: Request): boolean {
 }
 
 /** Headers that make the response edge-cacheable, or null to keep Next's private/no-store headers. */
+const PRODUCT_PATH = /^\/san-pham\/[^/]+$/;
+
+/** The product page's own redirect from an old URL to the current one (permanentRedirect, a 308).
+ * Only that one may become a 301: any other 308 keeps its method-preserving status. */
+export function isProductMove(request: Request, response: Response): boolean {
+  if (response.status !== 308 || (request.method !== "GET" && request.method !== "HEAD")) return false;
+  const from = new URL(request.url);
+  const location = response.headers.get("location");
+  if (!location || !PRODUCT_PATH.test(from.pathname)) return false;
+  const to = new URL(location, from);
+  return to.origin === from.origin && PRODUCT_PATH.test(to.pathname) && to.pathname !== from.pathname;
+}
+
 export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = false): Headers | null {
   if (degraded || response.status !== 200 || response.headers.has("set-cookie")) return null;
   if (!(response.headers.get("content-type") ?? "").startsWith(rsc ? "text/x-component" : "text/html")) return null;

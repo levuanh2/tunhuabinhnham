@@ -67,6 +67,8 @@ test.describe("product URL change", () => {
 
     // Old URL: one 301 straight to the current URL, query kept, never cached.
     expect(await redirectOf(page, "/san-pham/tu-ao-3-canh?utm_source=zalo&a=1&a=2")).toEqual([301, "/san-pham/tu-ao-3-canh-guong?utm_source=zalo&a=1&a=2", "no-store"]);
+    // Next's own 308s (here the trailing slash) are not product moves and keep their status.
+    expect((await redirectOf(page, "/san-pham/tu-ao-3-canh-guong/")).slice(0, 2)).toEqual([308, "/san-pham/tu-ao-3-canh-guong"]);
     const landed = await page.goto("/san-pham/tu-ao-3-canh?utm_source=zalo");
     expect(landed?.status()).toBe(200);
     await expect(page).toHaveURL(/\/san-pham\/tu-ao-3-canh-guong\?utm_source=zalo$/);

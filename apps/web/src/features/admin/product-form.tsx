@@ -49,7 +49,8 @@ export function ProductForm({ product }: { product?: Product }) {
   const { register, handleSubmit, setValue, setError, setFocus, control, formState: { errors, isSubmitting } } = useForm<Values>({ resolver: zodResolver(schema), mode: "onTouched", defaultValues: { name: product?.name ?? "", slug: product?.slug ?? "", sku: product?.sku ?? "", category_id: product?.category_id ?? product?.category?.id ?? "", price: product?.price?.replace(/\.0+$/, "") ?? "", description: product?.description ?? "", stock_status: product?.stock_status ?? "contact", publish_status: product?.publish_status ?? "draft", is_visible: product?.is_visible ?? true } });
   const [slugMode, setSlugMode] = useState<SlugMode>(product ? "fixed" : "auto");
   // Once public, a URL may still change: the old one then redirects to the new one (product_slugs).
-  const wasPublic = Boolean(product && (product.published_at || product.publish_status === "published"));
+  // Same rule as the API: a past published date means customers may have the URL; a future one is only a schedule.
+  const wasPublic = Boolean(product?.published_at && Date.parse(product.published_at) <= Date.now());
   const [savedSlug, setSavedSlug] = useState(product?.slug ?? "");
   const [moved, setMoved] = useState<{ from: string; to: string } | null>(null);
   const [confirming, setConfirming] = useState<{ from: string; to: string } | null>(null);

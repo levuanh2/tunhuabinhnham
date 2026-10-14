@@ -12,6 +12,11 @@ from app.repositories.catalog import CategoryRepository, ProductRepository
 from app.schemas.catalog import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate
 
 
+def _aware(value: datetime) -> datetime:
+    """SQLite returns naive datetimes; PostgreSQL timestamptz values are already aware."""
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
 class CatalogService:
     def __init__(self, db: Session):
         self.db = db
@@ -145,9 +150,14 @@ class CatalogService:
         changes = data.model_dump(exclude_unset=True, exclude={"images"})
         # Re-read under a row lock: another admin may have published it since this form loaded.
         self.db.refresh(item, with_for_update=True)
-        was_public = item.published_at is not None or item.publish_status == PublishStatus.published
-        if was_public and "published_at" in changes and changes["published_at"] is None:
-            # published_at records that the URL was public, which is what keeps it as a redirect.
+        now = datetime.now(UTC)
+        # A past published_at is the record that the URL has been public (it is set when a
+        # product is published and kept when it is unpublished); a future one is only a schedule.
+        # ponytail: a product hidden the whole time still counts as public; its old URL is kept.
+        was_public = item.published_at is not None and _aware(item.published_at) <= now
+        if was_public and "published_at" in changes and (
+            changes["published_at"] is None or _aware(changes["published_at"]) > now
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Published date cannot be cleared"
             )
@@ -164,7 +174,7 @@ class CatalogService:
             and item.publish_status == PublishStatus.published
             and item.published_at is None
         ):
-            item.published_at = datetime.now(UTC)
+            item.published_at = now
         try:
             if new_slug != previous_slug:
                 if not was_public:

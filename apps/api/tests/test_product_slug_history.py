@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -121,7 +122,7 @@ def test_draft_urls_never_public_are_not_kept(admin_client: TestClient, db: Sess
     assert admin_client.post(ADMIN, json={"name": "y", "slug": "go-nham", "sku": "Y-1"}).status_code == 201
 
 
-def test_old_urls_never_reveal_a_product_that_is_not_public(admin_client: TestClient) -> None:
+def test_old_urls_never_reveal_a_product_that_is_not_public(admin_client: TestClient, db: Session) -> None:
     category = admin_client.post("/api/v1/admin/categories", json={"name": "Loại", "slug": "loai"}).json()
     product = create(admin_client, "cu", category_id=category["id"])
     rename(admin_client, product, "moi")
@@ -136,15 +137,21 @@ def test_old_urls_never_reveal_a_product_that_is_not_public(admin_client: TestCl
     for hide, show in (
         ({"is_visible": False}, {"is_visible": True}),
         ({"publish_status": "draft"}, {"publish_status": "published"}),
-        (
-            {"published_at": (datetime.now(UTC) + timedelta(days=3)).isoformat()},
-            {"published_at": datetime.now(UTC).isoformat()},
-        ),
     ):
         admin_client.patch(f"{ADMIN}/{product['id']}", json=hide)
         assert both() == (404, 404), hide
         admin_client.patch(f"{ADMIN}/{product['id']}", json=show)
         assert both() == (301, 200), show
+    # The API refuses a future date here (see below), so set it the way another writer could.
+    stored = db.get(Product, uuid.UUID(product["id"]))
+    assert stored is not None
+    published_at = stored.published_at
+    stored.published_at = datetime.now(UTC) + timedelta(days=3)
+    db.commit()
+    assert both() == (404, 404)
+    stored.published_at = published_at
+    db.commit()
+    assert both() == (301, 200)
     admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": False})
     assert both() == (404, 404)
     admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": True})
@@ -158,6 +165,30 @@ def test_published_date_cannot_be_cleared(admin_client: TestClient) -> None:
     cleared = admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": None})
     assert cleared.status_code == 409
     assert cleared.json()["error"]["message"] == "Published date cannot be cleared"
+
+
+def test_published_date_cannot_move_to_the_future(admin_client: TestClient) -> None:
+    # Otherwise the product would look never-public and a rename would free a URL customers have.
+    product = create(admin_client, "da-dang-2")
+    later = (datetime.now(UTC) + timedelta(days=3)).isoformat()
+    moved = admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": later})
+    assert moved.status_code == 409
+
+
+@pytest.mark.parametrize("publish_status", ["draft", "published"])
+def test_a_scheduled_product_that_was_never_public_frees_its_old_slug(
+    admin_client: TestClient, publish_status: str
+) -> None:
+    later = (datetime.now(UTC) + timedelta(days=3)).isoformat()
+    product = admin_client.post(
+        ADMIN,
+        json={"name": "h", "slug": "hen-gio", "sku": "HEN-GIO", "publish_status": publish_status, "published_at": later},
+    ).json()
+    assert admin_client.patch(f"{ADMIN}/{product['id']}", json={"slug": "hen-gio-moi"}).status_code == 200
+    assert admin_client.get("/api/v1/products/hen-gio", follow_redirects=False).status_code == 404
+    assert admin_client.post(ADMIN, json={"name": "k", "slug": "hen-gio", "sku": "K-1"}).status_code == 201
+    # Its schedule can still be cleared or moved: nobody has seen the URL yet.
+    assert admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": None}).status_code == 200
 
 
 def test_rename_is_audited(admin_client: TestClient, db: Session) -> None:

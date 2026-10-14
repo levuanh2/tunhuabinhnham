@@ -19,9 +19,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.auth import CurrentAdmin, require_admin
+from app.core.conflicts import integrity_conflict
 from app.db.session import get_db
 from app.main import app
 
@@ -218,6 +220,30 @@ def test_database_refuses_a_second_owner_even_without_the_api(engine: Engine, ap
         connection.execute(text(
             "insert into public.product_slugs (product_id, slug) values (:id, :slug)"
         ), {"id": other["id"], "slug": owner["slug"]})
+
+
+def test_a_writer_that_ignores_the_history_cannot_take_an_old_slug(api: TestClient, engine: Engine) -> None:
+    # Backend 3e8c5f0 (the rollback target) writes products only; these are its statements.
+    old, new = unique("cu-rollback"), unique("moi-rollback")
+    owner = create(api, old)
+    assert api.patch(f"{ADMIN}/{owner['id']}", json={"slug": new}).status_code == 200
+    draft = api.post(ADMIN, json={"name": "nhap", "slug": unique("nhap"), "sku": unique("NHAP")}).json()
+    statements = (
+        ("insert into public.products (name, slug, sku) values ('khac', :slug, :sku)",
+         {"slug": old, "sku": unique("KHAC")}),
+        ("update public.products set slug = :slug where id = :id", {"slug": old, "id": draft["id"]}),
+    )
+    for statement, values in statements:
+        with engine.connect() as connection, pytest.raises(IntegrityError) as refused:
+            connection.execute(text(statement), values)
+        # The old backend maps this constraint name to its usual 409 "Slug already exists".
+        assert refused.value.orig.diag.constraint_name == "products_slug_key"
+        assert integrity_conflict(refused.value).detail == "Slug already exists"
+    assert get(api, old) == (301, f"/api/v1/products/{new}")
+    # Its own old slug stays usable: moving back is allowed, and the trigger lets it through.
+    with engine.begin() as connection:
+        connection.execute(text("update public.products set slug = :slug where id = :id"), {"slug": old, "id": owner["id"]})
+    assert get(api, new) == (301, f"/api/v1/products/{old}")
 
 
 def test_downgrade_is_refused(engine: Engine) -> None:

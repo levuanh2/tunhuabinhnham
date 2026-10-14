@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -70,9 +71,17 @@ def test_slug_history_migration_is_additive_and_private() -> None:
     assert "references public.products(id) on delete cascade" in sql
     assert "alter table public.product_slugs enable row level security" in sql
     assert "revoke all privileges on table public.product_slugs from anon, authenticated" in sql
-    for forbidden in ("grant ", "drop ", "truncate", "delete from", "update ", "alter policy",
-                      "create policy", "begin", "commit"):
-        assert forbidden not in sql, forbidden
+    assert "set local lock_timeout" in sql  # never queue for long behind product writes
+    # The guard keeps a historical slug with its product even for writers that ignore the table.
+    assert "before insert or update of slug on public.products" in sql
+    assert "constraint = 'products_slug_key'" in sql  # older backends map it to "Slug already exists"
+    assert "set search_path = ''" in sql
+    assert "revoke all on function public.product_slug_not_owned_elsewhere() from public, anon, authenticated" in sql
+    # No statement writes product data, grants privileges, changes policies or ends the transaction.
+    statements = re.sub(r"\$\$.*?\$\$", "", re.sub(r"--[^\n]*", "", sql), flags=re.S)
+    for forbidden in ("grant", "drop", "truncate", "delete", "update", "alter policy",
+                      "create policy", "begin", "commit", "rollback"):
+        assert not re.search(rf"(^|;)\s*{forbidden}\b", statements, flags=re.M), forbidden
 
 
 def test_alembic_wrapper_executes_only_the_canonical_0006_sql() -> None:
