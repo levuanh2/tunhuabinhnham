@@ -20,6 +20,21 @@
 6. Trigger deploy thủ công. Kiểm tra `/health/live`, `/health/ready`, `/docs`, log startup và một public endpoint.
 7. Sau khi deployment policy được phê duyệt, đổi Auto-Deploy thành **After CI Checks Pass** (`checksPass`). Giữ `off` cho đến lúc đó.
 
+## Giới hạn lượt nhấn liên hệ (V1.0, không phải secret)
+
+`POST /api/v1/contact-clicks` là endpoint công khai nên có giới hạn trong process (một worker):
+
+| Biến | Giá trị | Ý nghĩa |
+|---|---|---|
+| `CLIENT_IP_HEADER` | `CF-Connecting-IP` | Header IP khách do Cloudflare (đứng trước onrender.com) đặt và ghi đè. Đây cũng là mặc định trong code |
+| `CONTACT_CLICK_LIMIT_PER_MINUTE` | `10` | Mỗi khách (IPv6 gộp theo /64) |
+| `CONTACT_CLICK_GLOBAL_LIMIT_PER_HOUR` | `300` | Trần tổng số dòng ghi mỗi giờ, kể cả khi IP bị giả mạo |
+
+- Trước Manual Deploy, đặt và kiểm tra 3 biến trong Render Dashboard → Environment (Blueprint không tự đồng bộ vì auto-deploy tắt). Thiếu biến thì code dùng đúng các mặc định trên.
+- Bộ đếm nằm trong RAM: restart hoặc spin-down (Free) sẽ reset. Chạy nhiều worker thì cần store dùng chung (Redis/DB) trước.
+- Vượt giới hạn trả `429` + `Retry-After` và không ghi dòng nào. Nút "Nhắn tin để mua" mở Messenger trước, không chờ tracking.
+- Smoke sau deploy (chỉ GET): `/health/ready` 200; response có `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security`.
+
 ## Region và database pool
 
 Render hiện không có region Sydney. Singapore là lựa chọn gần nhất về địa lý trong các region Render đang công bố, nhưng đây mới là lựa chọn tạm thời. Sau khi được phép tạo service, đo nhiều lần thời gian `select 1` từ Render tới Supabase Sydney trước khi cutover. Region Render không đổi được tại chỗ; nếu latency không đạt, phải tạo lại service ở region đã đánh giá trước khi đổi DNS.

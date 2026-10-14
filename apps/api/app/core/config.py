@@ -42,9 +42,11 @@ class Settings(BaseSettings):
     admin_rate_limit_per_minute: int = Field(default=120, ge=10, le=10_000)
     contact_click_limit_per_minute: int = Field(default=10, ge=1, le=1000)
     contact_click_global_limit_per_hour: int = Field(default=300, ge=1, le=100_000)
-    # A header the edge in front of the API sets and overwrites, e.g. CF-Connecting-IP.
-    # Empty means the socket peer, which behind a proxy is the proxy itself.
-    client_ip_header: str = ""
+    # Visitor IP for the contact-click limit: a header the edge in front of the API sets and
+    # overwrites. onrender.com is served through Cloudflare, so CF-Connecting-IP. Only a single
+    # valid IP is accepted, otherwise the socket peer is used. A forged value can only dodge the
+    # per-client limit; the global cap and the limiter's key cap still apply. Empty = peer only.
+    client_ip_header: str = "CF-Connecting-IP"
 
     @field_validator("database_url")
     @classmethod

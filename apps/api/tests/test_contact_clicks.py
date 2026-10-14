@@ -126,7 +126,7 @@ def test_global_cap_holds_across_clients(client: TestClient, db: Session) -> Non
 
 def test_spoofed_ip_headers_do_not_bypass_the_limit(client: TestClient, db: Session) -> None:
     # Header not configured: client-supplied headers are ignored.
-    configure(contact_click_limit_per_minute=2)
+    configure(contact_click_limit_per_minute=2, client_ip_header="")
     codes = [
         client.post(URL, json={}, headers={"cf-connecting-ip": f"198.51.100.{i}"}).status_code
         for i in range(3)
@@ -175,3 +175,16 @@ def test_concurrent_requests_never_exceed_the_limit() -> None:
     for thread in threads:
         thread.join()
     assert allowed.count(True) == 10
+
+
+def test_limiter_memory_is_bounded_and_recovers(monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = [0.0]
+    monkeypatch.setattr(rate_limit.time, "monotonic", lambda: clock[0])
+    limiter = rate_limit.FixedWindowRateLimiter(max_keys=3)
+    assert [limiter.retry_after(f"ip{i}", limit=5) for i in range(3)] == [None, None, None]
+    assert limiter.retry_after("ip-new", limit=5) == 60  # full of live windows: refused
+    assert limiter.retry_after("ip0", limit=5) is None  # known keys still counted
+    assert len(limiter._entries) == 3
+    clock[0] += 61  # windows expired: pruned, new keys accepted again
+    assert limiter.retry_after("ip-new", limit=5) is None
+    assert len(limiter._entries) == 1

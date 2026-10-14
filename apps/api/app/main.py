@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -32,6 +33,18 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+
+async def catch_unhandled(request: Request, call_next):  # type: ignore[no-untyped-def]
+    # Registered inside CORS and request_context: unhandled errors become the redacted 500 here,
+    # so it still gets CORS and the security headers (Starlette's own 500 bypasses all middleware).
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        return await unexpected_error(request, exc)
+
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=catch_unhandled)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -51,6 +64,8 @@ async def request_context(request: Request, call_next):  # type: ignore[no-untyp
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Strict-Transport-Security"] = "max-age=15552000"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
     if not request.url.path.startswith(("/docs", "/redoc")):  # Swagger/ReDoc load CDN assets
         response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     logger.info(
@@ -65,7 +80,11 @@ async def request_context(request: Request, call_next):  # type: ignore[no-untyp
     )
     if request.url.path.startswith("/api/v1/admin") or request.url.path == "/api/v1/auth/me":
         response.headers["Cache-Control"] = "no-store"
-    elif request.method == "GET" and request.url.path.startswith("/api/v1/"):
+    elif (
+        request.method == "GET"
+        and request.url.path.startswith("/api/v1/")
+        and response.status_code == 200
+    ):
         response.headers["Cache-Control"] = (
             f"public, max-age={settings.public_cache_seconds}, stale-while-revalidate=60"
         )
