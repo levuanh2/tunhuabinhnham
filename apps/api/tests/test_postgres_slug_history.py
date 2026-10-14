@@ -44,8 +44,11 @@ def alembic(*args: str) -> None:
 
 @pytest.fixture(scope="module")
 def engine() -> Generator[Engine, None, None]:
-    alembic("upgrade", "0005")
     engine = create_engine(URL, pool_size=20, max_overflow=0)
+    with engine.connect() as connection:
+        if connection.execute(text("select to_regclass('public.products')")).scalar_one() is not None:
+            pytest.skip("needs a fresh disposable database (the suite migrates it from scratch)")
+    alembic("upgrade", "0005")
     with engine.begin() as connection:
         # Products that exist before 0006, one soft-deleted, inserted the way the old API did.
         connection.execute(text(
