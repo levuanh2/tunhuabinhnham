@@ -13,12 +13,22 @@ function finalHeaders(source: Headers): Headers {
   return headers;
 }
 
+const PRODUCT_PATH = /^\/san-pham\/[^/]+$/;
+
+/** An old product URL is a 301 (Next can only emit 308 for permanentRedirect), and no cache keeps
+ * it: the product may move again, and a remembered A→B would loop once B→A. */
+function finalResponse(request: Request, response: Response, body: BodyInit | null, headers: Headers): Response {
+  const moved = response.status === 308 && PRODUCT_PATH.test(new URL(request.url).pathname);
+  if (moved) headers.set("Cache-Control", "no-store");
+  return new Response(body, { status: moved ? 301 : response.status, statusText: moved ? "Moved Permanently" : response.statusText, headers });
+}
+
 // Wraps the OpenNext worker so Workers Cache (wrangler.jsonc "cache") can store anonymous public pages.
 const worker = {
   async fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> {
     if (!isEdgeCacheableRequest(request)) {
       const response = await next.fetch(request, env, ctx);
-      return new Response(response.body, { status: response.status, statusText: response.statusText, headers: finalHeaders(response.headers) });
+      return finalResponse(request, response, response.body, finalHeaders(response.headers));
     }
     const state = { degraded: false };
     return renderState.run(state, async () => {
@@ -26,11 +36,8 @@ const worker = {
       // Read the whole body first: rendering may still be fetching data after the headers exist,
       // and the degraded flag is only final once the page is complete.
       const body = await response.arrayBuffer();
-      return new Response(request.method === "HEAD" ? null : body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: finalHeaders(edgeCacheHeaders(response, state.degraded, isRscRequest(request)) ?? response.headers),
-      });
+      return finalResponse(request, response, request.method === "HEAD" ? null : body,
+        finalHeaders(edgeCacheHeaders(response, state.degraded, isRscRequest(request)) ?? response.headers));
     });
   },
 };

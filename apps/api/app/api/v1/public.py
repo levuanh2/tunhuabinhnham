@@ -2,7 +2,8 @@ import ipaddress
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
@@ -51,12 +52,27 @@ def products(
     )
 
 
-@router.get("/products/{slug}", response_model=ProductOut)
-def product(slug: str, db: Session = Depends(get_db)) -> ProductOut:
-    item = ProductRepository(db).by_slug(slug)
-    if item is None:
+@router.get(
+    "/products/{slug}",
+    response_model=ProductOut,
+    responses={301: {"description": "Old URL: Location is the product's current URL"}},
+)
+def product(slug: str, request: Request, db: Session = Depends(get_db)) -> ProductOut | Response:
+    repository = ProductRepository(db)
+    item = repository.by_slug(slug)
+    if item is not None:
+        return ProductOut.model_validate(item)
+    moved = repository.public_by_old_slug(slug)
+    if moved is None:
         raise HTTPException(status_code=404, detail="Product not found")
-    return ProductOut.model_validate(item)
+    # The target comes from the database only (a validated slug on a fixed path), never from the
+    # request; the query string is carried over as is. Not cached: the product may move again.
+    location = request.app.url_path_for("product", slug=moved.slug)
+    if request.url.query:
+        location += f"?{request.url.query}"
+    return RedirectResponse(
+        location, status_code=status.HTTP_301_MOVED_PERMANENTLY, headers={"Cache-Control": "no-store"}
+    )
 
 
 @router.get("/categories", response_model=list[CategoryOut])

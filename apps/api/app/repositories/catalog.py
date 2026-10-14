@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.base import ExecutableOption
 from sqlalchemy.sql.elements import ColumnElement
 
-from app.models import Category, Product, PublishStatus
+from app.models import Category, Product, ProductSlug, PublishStatus
 
 
 def public_product_conditions() -> list[ColumnElement[bool]]:
@@ -128,3 +128,12 @@ class ProductRepository:
         )
         conditions.append(Product.slug == slug)
         return self.db.scalar(select(Product).options(*self.eager()).where(*conditions))
+
+    def public_by_old_slug(self, slug: str) -> Product | None:
+        """The public product that used to have this slug (its URL changed since)."""
+        return self.db.scalar(
+            select(Product)
+            .options(*self.eager())
+            .join(ProductSlug, ProductSlug.product_id == Product.id)
+            .where(ProductSlug.slug == slug, Product.slug != slug, *public_product_conditions())
+        )

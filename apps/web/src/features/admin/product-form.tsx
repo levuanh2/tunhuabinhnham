@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -48,12 +48,22 @@ export function ProductForm({ product }: { product?: Product }) {
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => adminFetch<AdminCategory[]>("/categories") });
   const { register, handleSubmit, setValue, setError, setFocus, control, formState: { errors, isSubmitting } } = useForm<Values>({ resolver: zodResolver(schema), mode: "onTouched", defaultValues: { name: product?.name ?? "", slug: product?.slug ?? "", sku: product?.sku ?? "", category_id: product?.category_id ?? product?.category?.id ?? "", price: product?.price?.replace(/\.0+$/, "") ?? "", description: product?.description ?? "", stock_status: product?.stock_status ?? "contact", publish_status: product?.publish_status ?? "draft", is_visible: product?.is_visible ?? true } });
   const [slugMode, setSlugMode] = useState<SlugMode>(product ? "fixed" : "auto");
-  // There is no redirect from old product URLs yet, so a product that was ever public keeps its URL.
-  const slugLocked = Boolean(product && (product.published_at || product.publish_status === "published"));
+  // Once public, a URL may still change: the old one then redirects to the new one (product_slugs).
+  const wasPublic = Boolean(product && (product.published_at || product.publish_status === "published"));
+  const [savedSlug, setSavedSlug] = useState(product?.slug ?? "");
+  const [moved, setMoved] = useState<{ from: string; to: string } | null>(null);
+  const [confirming, setConfirming] = useState<{ from: string; to: string } | null>(null);
+  const confirmDialog = useRef<HTMLDialogElement>(null);
   const [slug, name, publishStatus, isVisible, categoryId] = useWatch({ control, name: ["slug", "name", "publish_status", "is_visible", "category_id"] });
   const hiddenCategory = categories.data?.find(category => category.id === categoryId && !category.is_visible);
-  // Publishing for the first time fixes the URL for good (no redirects yet), so it must be checked first.
-  const firstPublish = publishStatus === "published" && !slugLocked;
+  const firstPublish = publishStatus === "published" && !wasPublic;
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+
+  useEffect(() => {
+    const dialog = confirmDialog.current;
+    if (confirming && dialog && !dialog.open) dialog.showModal();
+    if (!confirming && dialog?.open) dialog.close();
+  }, [confirming]);
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -82,10 +92,18 @@ export function ProductForm({ product }: { product?: Product }) {
     setImages(current => withPrimary(current.filter((_, itemIndex) => itemIndex !== index)));
   }
 
-  function editSlug() { setSlugMode("edit"); setTimeout(() => setFocus("slug")); }
+  function editSlug() { setMoved(null); setSlugMode("edit"); setTimeout(() => setFocus("slug")); }
+  function keepSlug() { setSlugMode("fixed"); setValue("slug", savedSlug, { shouldValidate: true }); }
   function autoSlug() { setSlugMode("auto"); setValue("slug", toSlug(name), { shouldValidate: true }); }
 
+  // A public product's URL changes only after the admin confirms what happens to the old one.
   async function submit(values: Values) {
+    if (wasPublic && values.slug !== savedSlug) { setConfirming({ from: savedSlug, to: values.slug }); return; }
+    await save(values);
+  }
+
+  async function save(values: Values) {
+    setConfirming(null);
     const body = { ...values, sku: values.sku.trim(), category_id: values.category_id || null, price: toPrice(values.price) || null, attributes: product?.attributes ?? {}, images };
     // The database unique constraints are the final check. On a conflict, generated values get -2, -3...
     // (this also covers two admins saving the same name at once); values the admin typed are reported instead.
@@ -108,17 +126,20 @@ export function ProductForm({ product }: { product?: Product }) {
     if (finalSlug !== values.slug) toast.info(`Đường dẫn “${values.slug}” đã có sản phẩm khác dùng, nên sản phẩm này dùng /san-pham/${finalSlug}`);
     if (cacheStale) toast.warning("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 5 phút");
     if (failedCleanup.length) toast.warning("Sản phẩm đã lưu, nhưng có ảnh cũ chưa thể dọn dẹp");
+    if (wasPublic && finalSlug !== savedSlug) {
+      // Stay on the form: it now shows the new URL and a link to open it; the other fields are kept.
+      setMoved({ from: savedSlug, to: finalSlug }); setSavedSlug(finalSlug); setSlugMode("fixed"); setCleanup(new Set());
+      router.refresh();
+      return;
+    }
     router.push("/admin/san-pham"); router.refresh();
   }
 
   function showSaveError(error: unknown) {
     if (error instanceof AdminApiError && error.message === "Slug already exists") {
       setSlugMode("edit");
-      setError("slug", { message: "Đường dẫn này đã có sản phẩm khác dùng. Hãy thêm số hoặc chữ ở cuối, ví dụ …-2" }, { shouldFocus: true });
-    } else if (error instanceof AdminApiError && error.message === "Published product URL cannot change" && product) {
-      // Someone published it after this form was opened: keep the public URL.
-      setSlugMode("fixed"); setValue("slug", product.slug);
-      setError("slug", { message: "Sản phẩm này đã được đăng nên giữ đường dẫn cũ. Bấm lưu lại để lưu các thay đổi khác." });
+      // An old URL of another product counts too: it keeps redirecting there forever.
+      setError("slug", { message: "Đường dẫn này đang hoặc đã từng được sản phẩm khác dùng. Hãy thêm số hoặc chữ ở cuối, ví dụ …-2" }, { shouldFocus: true });
     } else if (error instanceof AdminApiError && error.message === "SKU already exists") {
       setError("sku", { message: "Mã sản phẩm này đã dùng cho sản phẩm khác" }, { shouldFocus: true });
     } else if (error instanceof AdminApiError && error.message === "Image was deleted") {
@@ -150,16 +171,17 @@ export function ProductForm({ product }: { product?: Product }) {
           {slugMode === "edit"
             ? <label className="label">Đường dẫn sản phẩm<span className="flex items-center gap-1"><span className="text-sm font-normal text-ink-soft" aria-hidden="true">/san-pham/</span><input className="field min-w-0 flex-1" aria-invalid={errors.slug ? true : undefined} aria-describedby="duong-dan-goi-y" autoCapitalize="none" spellCheck={false} {...register("slug")} /></span></label>
             : <><span className="label" id="duong-dan-nhan">Đường dẫn sản phẩm</span>
-                <p className="flex flex-wrap items-center gap-x-3 text-sm"><output aria-labelledby="duong-dan-nhan" aria-describedby="duong-dan-goi-y" className="min-w-0 break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{slug || "…"}</output>{!slugLocked && <button type="button" className="link min-h-11 font-medium" onClick={editSlug}>Chỉnh sửa đường dẫn</button>}</p></>}
+                <p className="flex flex-wrap items-center gap-x-3 text-sm"><output aria-labelledby="duong-dan-nhan" aria-describedby="duong-dan-goi-y" className="min-w-0 break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{slug || "…"}</output><button type="button" className="link min-h-11 font-medium" onClick={editSlug}>Chỉnh sửa đường dẫn</button></p></>}
           {fieldError(errors.slug?.message)}
+          {moved && <p role="status" className="grid gap-1 rounded-lg bg-success-soft px-3 py-2.5 text-sm"><span className="font-semibold">Đã đổi đường dẫn</span><span className="break-all text-ink-soft">Khách mở /san-pham/{moved.from} sẽ được tự động chuyển sang /san-pham/{moved.to}.</span><a className="link w-fit font-medium" href={`/san-pham/${moved.to}`} target="_blank" rel="noopener">Mở trang sản phẩm<span className="sr-only"> (mở tab mới)</span></a></p>}
           <span id="duong-dan-goi-y" className="hint">{
-            firstPublish ? "Kiểm tra kỹ: sau khi đăng, đường dẫn này sẽ không đổi được."
-            : slugMode === "auto" ? "Tự tạo từ tên sản phẩm."
-            : slugLocked ? "Sản phẩm đã đăng nên giữ nguyên đường dẫn, để các link khách đã lưu hoặc chia sẻ không bị hỏng."
+            slugMode === "auto" ? "Tự tạo từ tên sản phẩm."
             : slugMode === "fixed" ? "Đổi tên sản phẩm không làm thay đổi đường dẫn."
+            : wasPublic ? "Khách mở đường dẫn cũ sẽ được tự động chuyển sang đường dẫn mới. Bạn sẽ được hỏi lại trước khi lưu."
             : product ? "Lưu ý: đổi đường dẫn sẽ đổi địa chỉ trang của sản phẩm này."
             : "Đường dẫn sẽ không tự đổi theo tên nữa."}
             {slugMode === "edit" && !product && <> <button type="button" className="link font-medium" onClick={autoSlug}>Tạo lại từ tên</button></>}
+            {slugMode === "edit" && product && <> <button type="button" className="link font-medium" onClick={keepSlug}>Giữ đường dẫn cũ</button></>}
           </span>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -204,8 +226,24 @@ export function ProductForm({ product }: { product?: Product }) {
       <label className="label">Tình trạng hàng<select className="field" {...register("stock_status")}><option value="in_stock">Còn hàng</option><option value="out_of_stock">Hết hàng</option><option value="contact">Liên hệ</option></select></label>
       <div className="grid gap-1"><label className="flex min-h-11 items-center gap-3 text-sm font-medium"><input type="checkbox" className="size-5" {...register("is_visible")} />Hiển thị trên website</label><span className="hint">Bỏ chọn để tạm ẩn sản phẩm mà không cần gỡ đăng.</span></div>
       <p className="rounded-lg bg-muted px-3 py-2.5 text-sm" aria-live="polite">{publishStatus === "draft" ? "Chưa đăng: khách chưa thấy sản phẩm này." : !isVisible ? "Đã đăng nhưng đang ẩn: khách chưa thấy sản phẩm này." : hiddenCategory ? `Loại “${hiddenCategory.name}” đang ẩn: khách chưa thấy sản phẩm này.` : "Khách xem được sản phẩm này trên website."}</p>
-      {firstPublish && <div role="note" className="grid gap-1 rounded-lg border border-line-strong px-3 py-2.5 text-sm"><span className="font-semibold">Kiểm tra đường dẫn trước khi đăng</span><span className="break-all font-medium text-primary">/san-pham/{slug || "…"}</span><span className="text-ink-soft">Sau khi đăng, đường dẫn này được giữ cố định để link khách đã lưu hoặc chia sẻ không bị hỏng.</span></div>}
+      {firstPublish && <div role="note" className="grid gap-1 rounded-lg border border-line-strong px-3 py-2.5 text-sm"><span className="font-semibold">Kiểm tra đường dẫn trước khi đăng</span><span className="break-all font-medium text-primary">/san-pham/{slug || "…"}</span><span className="text-ink-soft">Đây là địa chỉ khách sẽ lưu và chia sẻ. Nếu sau này đổi, đường dẫn cũ sẽ tự chuyển sang đường dẫn mới.</span></div>}
       <button className="button w-full" aria-busy={isSubmitting || undefined} disabled={isSubmitting || isUploading}>{isSubmitting ? "Đang lưu…" : publishStatus === "draft" ? "Lưu bản nháp" : product?.publish_status === "published" ? "Lưu thay đổi" : "Đăng sản phẩm"}</button>
     </aside>
+
+    <dialog ref={confirmDialog} aria-labelledby="xac-nhan-duong-dan" onClose={() => setConfirming(null)} className="m-auto w-[min(92vw,30rem)] rounded-xl bg-bg p-0 text-ink shadow-xl backdrop:bg-ink/40">
+      {confirming && <div className="grid gap-4 p-5 sm:p-6">
+        <h2 id="xac-nhan-duong-dan" className="text-lg font-semibold">Đổi đường dẫn sản phẩm?</h2>
+        <dl className="grid gap-3 text-sm">
+          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn cũ</dt><dd className="break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{confirming.from}</dd></div>
+          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn mới</dt><dd className="break-all rounded-md bg-muted px-2.5 py-1.5 font-medium text-primary">/san-pham/{confirming.to}</dd></div>
+          <div className="grid gap-1"><dt className="text-ink-soft">Khách sẽ thấy địa chỉ</dt><dd className="break-all">{siteUrl}/san-pham/{confirming.to}</dd></div>
+        </dl>
+        <p className="rounded-lg border border-line-strong px-3 py-2.5 text-sm">Khách mở đường dẫn cũ (link đã lưu, đã chia sẻ hoặc tìm trên Google) sẽ được tự động chuyển sang đường dẫn mới. Đường dẫn cũ sẽ không dùng được cho sản phẩm khác.</p>
+        <div className="flex flex-wrap justify-end gap-3">
+          <button type="button" className="button secondary" onClick={() => setConfirming(null)}>Quay lại</button>
+          <button type="button" className="button" onClick={() => void handleSubmit(save)()}>Đổi đường dẫn và lưu</button>
+        </div>
+      </div>}
+    </dialog>
   </form>;
 }

@@ -2,12 +2,12 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.conflicts import integrity_conflict
-from app.models import AuditLog, Category, Product, ProductImage, PublishStatus
+from app.models import AuditLog, Category, Product, ProductImage, ProductSlug, PublishStatus
 from app.repositories.catalog import CategoryRepository, ProductRepository
 from app.schemas.catalog import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate
 
@@ -102,9 +102,22 @@ class CatalogService:
         )
         self.db.commit()
 
+    def _require_free_slug(self, slug: str, product_id: uuid.UUID | None) -> bool:
+        """True when the product already owns this slug (now or in its history).
+
+        A slug, current or old, belongs to one product forever, so an old URL can never start
+        showing another product. The unique key on product_slugs.slug settles two saves racing
+        for the same free slug: the second gets an IntegrityError, mapped to the same 409.
+        """
+        owner = self.db.scalar(select(ProductSlug.product_id).where(ProductSlug.slug == slug))
+        if owner is not None and owner != product_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
+        return owner is not None
+
     def create_product(self, data: ProductCreate, admin_id: uuid.UUID) -> Product:
         values = data.model_dump(exclude={"images"})
         self._require_live_category(data.category_id)
+        self._require_free_slug(data.slug, None)
         item = Product(**values)
         if item.publish_status == PublishStatus.published and item.published_at is None:
             item.published_at = datetime.now(UTC)
@@ -112,6 +125,7 @@ class CatalogService:
         self.db.add(item)
         try:
             self.db.flush()
+            self.db.add(ProductSlug(product_id=item.id, slug=item.slug))
             self.db.add(
                 AuditLog(
                     admin_user_id=admin_id,
@@ -132,15 +146,15 @@ class CatalogService:
         # Re-read under a row lock: another admin may have published it since this form loaded.
         self.db.refresh(item, with_for_update=True)
         was_public = item.published_at is not None or item.publish_status == PublishStatus.published
-        if was_public and (
-            ("slug" in changes and changes["slug"] != item.slug)
-            # Clearing published_at would unlock the slug on a later request.
-            or ("published_at" in changes and changes["published_at"] is None)
-        ):
-            # There are no redirects from old product URLs, so a once-public URL stays valid.
+        if was_public and "published_at" in changes and changes["published_at"] is None:
+            # published_at records that the URL was public, which is what keeps it as a redirect.
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Published product URL cannot change"
+                status_code=status.HTTP_409_CONFLICT, detail="Published date cannot be cleared"
             )
+        previous_slug = item.slug
+        new_slug = changes.get("slug", previous_slug)
+        # Checked before anything changes, so a refused rename leaves the product as it was.
+        new_slug_owned = new_slug != previous_slug and self._require_free_slug(new_slug, item.id)
         if "category_id" in changes:
             self._require_live_category(changes["category_id"])
         for key, value in changes.items():
@@ -152,6 +166,20 @@ class CatalogService:
         ):
             item.published_at = datetime.now(UTC)
         try:
+            if new_slug != previous_slug:
+                if not was_public:
+                    # Never public, so nobody can have the old URL: free it (typos in drafts).
+                    self.db.execute(
+                        delete(ProductSlug).where(
+                            ProductSlug.slug == previous_slug, ProductSlug.product_id == item.id
+                        )
+                    )
+                elif not self._require_free_slug(previous_slug, item.id):
+                    # Products created before product_slugs existed are backfilled by the
+                    # migration; this keeps any other writer's product redirectable too.
+                    self.db.add(ProductSlug(product_id=item.id, slug=previous_slug))
+                if not new_slug_owned:
+                    self.db.add(ProductSlug(product_id=item.id, slug=new_slug))
             if data.images is not None:
                 existing = {image.storage_key: image for image in item.images}
                 current_max = max((image.sort_order for image in item.images), default=-1)
@@ -183,7 +211,10 @@ class CatalogService:
                     action="update",
                     entity_type="product",
                     entity_id=item.id,
-                    changes={key: str(value) for key, value in changes.items()},
+                    changes={
+                        **{key: str(value) for key, value in changes.items()},
+                        **({"previous_slug": previous_slug} if new_slug != previous_slug else {}),
+                    },
                 )
             )
             self.db.commit()

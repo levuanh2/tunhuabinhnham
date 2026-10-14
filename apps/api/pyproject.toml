@@ -29,7 +29,10 @@ packages = ["app"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-markers = ["integration_supabase: requires a real Supabase project"]
+markers = [
+  "integration_supabase: requires a real Supabase project",
+  "integration_postgres: requires TEST_POSTGRES_URL, a disposable local PostgreSQL",
+]
 
 [tool.ruff]
 line-length = 100

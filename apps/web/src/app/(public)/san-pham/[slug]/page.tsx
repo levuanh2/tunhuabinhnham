@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { ContactButton, CopyButton } from "@/components/contact-button";
 import { ProductCard } from "@/components/product-card";
@@ -12,7 +12,7 @@ import { getStoreName } from "@/lib/brand";
 import { formatPrice } from "@/lib/format";
 import { allowedMessengerUrl } from "@/lib/messenger";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const [product, siteName] = await Promise.all([publicApi.product((await params).slug), getStoreName()]);
@@ -30,9 +30,16 @@ const availability = {
   contact: { label: "Liên hệ để biết tình trạng", tone: "" },
 } as const;
 
-export default async function ProductDetailPage({ params }: Props) {
+export default async function ProductDetailPage({ params, searchParams }: Props) {
   const slug = (await params).slug; let product;
   try { product = await publicApi.product(slug); } catch { notFound(); }
+  // An old URL: the API answered for the product's current slug. One hop to the current URL,
+  // query kept (worker.ts turns Next's 308 into a 301 and keeps it out of every cache).
+  if (product.slug !== slug) {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(await searchParams)) for (const item of [value ?? []].flat()) query.append(key, item);
+    permanentRedirect(`/san-pham/${product.slug}${query.size ? `?${query}` : ""}`);
+  }
   const [related, settings] = await Promise.all([
     publicApi.products(`category=${product.category?.slug ?? ""}&page_size=5`).catch(() => ({ items: [], page: 1, page_size: 5, total: 0, pages: 0 })),
     publicApi.settings().catch(() => null),

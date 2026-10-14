@@ -56,3 +56,29 @@ def test_alembic_wrapper_executes_only_the_canonical_0005_sql() -> None:
     assert 'down_revision = "0004"' in wrapper
     assert '"20261014090000_rls_hidden_categories.sql"' in wrapper
     assert "op.execute(sql_path.read_text" in wrapper
+
+
+SLUG_MIGRATION = ROOT / "supabase" / "migrations" / "20261015090000_product_slug_history.sql"
+SLUG_WRAPPER = ROOT / "apps" / "api" / "alembic" / "versions" / "0006_product_slug_history.py"
+
+
+def test_slug_history_migration_is_additive_and_private() -> None:
+    sql = SLUG_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create table public.product_slugs" in sql
+    assert "slug varchar(260) not null unique" in sql
+    assert "references public.products(id) on delete cascade" in sql
+    assert "alter table public.product_slugs enable row level security" in sql
+    assert "revoke all privileges on table public.product_slugs from anon, authenticated" in sql
+    for forbidden in ("grant ", "drop ", "truncate", "delete from", "update ", "alter policy",
+                      "create policy", "begin", "commit"):
+        assert forbidden not in sql, forbidden
+
+
+def test_alembic_wrapper_executes_only_the_canonical_0006_sql() -> None:
+    wrapper = SLUG_WRAPPER.read_text(encoding="utf-8")
+
+    assert 'revision = "0006"' in wrapper
+    assert 'down_revision = "0005"' in wrapper
+    assert '"20261015090000_product_slug_history.sql"' in wrapper
+    assert "raise RuntimeError" in wrapper  # no downgrade: dropping the table breaks old links

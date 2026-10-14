@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 _CONSTRAINT_MESSAGES = {
     "categories_slug_key": "Slug already exists",
     "products_slug_key": "Slug already exists",
+    "product_slugs_slug_key": "Slug already exists",
     "products_sku_key": "SKU already exists",
     "posts_slug_key": "Slug already exists",
     "product_images_storage_key_key": "Image storage key already exists",
@@ -16,6 +17,7 @@ _CONSTRAINT_MESSAGES = {
 _SQLITE_MARKER_MESSAGES = {
     "UNIQUE constraint failed: categories.slug": "Slug already exists",
     "UNIQUE constraint failed: products.slug": "Slug already exists",
+    "UNIQUE constraint failed: product_slugs.slug": "Slug already exists",
     "UNIQUE constraint failed: products.sku": "SKU already exists",
     "UNIQUE constraint failed: posts.slug": "Slug already exists",
     "UNIQUE constraint failed: product_images.storage_key": "Image storage key already exists",

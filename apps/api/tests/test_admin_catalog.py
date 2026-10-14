@@ -220,41 +220,6 @@ def test_duplicate_category_slug_returns_conflict(admin_client: TestClient) -> N
     assert conflict.json()["error"]["message"] == "Slug already exists"
 
 
-def test_published_product_keeps_its_slug(admin_client: TestClient) -> None:
-    # No redirect from old product URLs exists, so the API refuses to break a public URL,
-    # including when a second admin saves a stale form after someone else published it.
-    def create(slug: str, publish_status: str) -> str:
-        created = admin_client.post(
-            "/api/v1/admin/products",
-            json={"name": slug, "slug": slug, "sku": slug.upper(), "publish_status": publish_status},
-        )
-        assert created.status_code == 201, created.text
-        return str(created.json()["id"])
-
-    published = create("giu-url", "published")
-    changed = admin_client.patch(f"/api/v1/admin/products/{published}", json={"slug": "url-moi"})
-    assert changed.status_code == 409
-    assert changed.json()["error"]["message"] == "Published product URL cannot change"
-    same = admin_client.patch(
-        f"/api/v1/admin/products/{published}", json={"slug": "giu-url", "name": "Tên mới"}
-    )
-    assert same.status_code == 200
-    unpublished = admin_client.patch(
-        f"/api/v1/admin/products/{published}", json={"publish_status": "draft", "slug": "lan-nua"}
-    )
-    assert unpublished.status_code == 409  # once public, always kept (published_at stays set)
-
-    draft = create("ban-nhap", "draft")
-    renamed = admin_client.patch(f"/api/v1/admin/products/{draft}", json={"slug": "ban-nhap-moi"})
-    assert renamed.status_code == 200
-    assert renamed.json()["slug"] == "ban-nhap-moi"
-    admin_client.patch(f"/api/v1/admin/products/{draft}", json={"publish_status": "published"})
-    stale = admin_client.patch(
-        f"/api/v1/admin/products/{draft}", json={"publish_status": "draft", "slug": "doi-sau-khi-dang"}
-    )
-    assert stale.status_code == 409
-
-
 def test_products_cannot_be_assigned_to_a_deleted_category(admin_client: TestClient) -> None:
     gone = admin_client.post("/api/v1/admin/categories", json={"name": "Cũ", "slug": "cu"}).json()
     live = admin_client.post("/api/v1/admin/categories", json={"name": "Mới", "slug": "moi"}).json()
@@ -319,25 +284,6 @@ def test_hidden_category_hides_its_products_from_every_public_view(
     admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": True})
     assert admin_client.get("/api/v1/products/tu-loai-an").status_code == 200
     assert sorted(public_slugs()) == ["tu-khong-loai", "tu-loai-an"]
-
-
-def test_published_date_cannot_be_cleared_to_unlock_the_url(admin_client: TestClient) -> None:
-    created = admin_client.post(
-        "/api/v1/admin/products",
-        json={"name": "Đã đăng", "slug": "da-dang", "sku": "DA-DANG", "publish_status": "published"},
-    ).json()
-    cleared = admin_client.patch(
-        f"/api/v1/admin/products/{created['id']}", json={"published_at": None}
-    )
-    assert cleared.status_code == 409
-    assert cleared.json()["error"]["message"] == "Published product URL cannot change"
-    both = admin_client.patch(
-        f"/api/v1/admin/products/{created['id']}", json={"published_at": None, "slug": "mo-khoa"}
-    )
-    assert both.status_code == 409
-    current = admin_client.get(f"/api/v1/admin/products/{created['id']}").json()
-    assert current["slug"] == "da-dang"
-    assert current["published_at"] is not None
 
 
 def test_products_left_in_a_category_deleted_before_the_guard_are_not_public(
