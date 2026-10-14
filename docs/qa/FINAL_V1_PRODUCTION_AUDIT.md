@@ -10,7 +10,7 @@ Status keys: PASS · FAIL · BLOCKED · NOT_IMPLEMENTED · ACCEPTED_RISK · CONT
 
 ## 1. Executive summary
 
-**Verdict: NOT_READY.** The code base is in good shape: security controls hold, there are no data leaks, and the cache works as designed. Three P1 items block handover; they affect **contacting the shop**, **security** and **product display**:
+**Update 2026-10-14, after the V1.0 release: still NOT_READY, now only for owner content (see §19).** Original audit verdict: **NOT_READY.** The code base is in good shape: security controls hold, there are no data leaks, and the cache works as designed. Three P1 items block handover; they affect **contacting the shop**, **security** and **product display**:
 
 1. **V1-CONTENT-01**: the main purchase CTA "Nhắn tin để mua" opens `https://m.me/` (placeholder), not the shop's Messenger. Owner fix in Admin → Cài đặt (2 minutes).
 2. **V1-SEC-01**: the public `POST /contact-clicks` accepts unlimited anonymous writes and turns an unknown product id into a 500 error. Code fix needed.
@@ -307,3 +307,36 @@ Hosting risks (Free): see §11 and §16 (CPU on MISS, quota, cold start, bots).
 4. Then accept as risks, or schedule: V1-SEC-03 (migration), V1-SEARCH-01/PERF-01 (migration), and the Free-hosting risks.
 
 Nothing was deployed, merged to main, migrated or written to production during this audit.
+
+## 19. Release update (2026-10-14)
+
+Full record: `docs/qa/FINAL_V1_BLOCKER_FIXES.md` §9 on `fix/v1-blockers` / `integration/warm-editorial-v2` @ `3e8c5f0`.
+
+| | Value |
+|---|---|
+| Git | `3e8c5f0e3b76fd177e408838957ec66dbec4dc05`, fast-forwarded into `integration/warm-editorial-v2` and `deploy/c2-preview`; `main` untouched |
+| Database | Alembic `0005 (head)` (RLS: products and images of hidden categories are not public), project `cbda20f5bbaa` |
+| Backend | Render on `3e8c5f0`; rollback `fa76152` |
+| Worker | N `8ac62f3e-e21a-47f2-b124-7ed027441bef`; rollback P′ `94d6b512-a9c8-4a36-9ca9-bb1203a9d79a` |
+
+Status of the audit findings:
+
+| Item | Before | Now |
+|---|---|---|
+| V1-SEC-01 contact clicks (P1) | FAIL | **FIXED, live**: body and product validated (422); 10/min per client (`CF-Connecting-IP`, spoof-tested) and 300/h global; 0 rows on reject |
+| V1-BUG-01 image removal race (P1) | FAIL | **FIXED, live** (code + fixture e2e; production write test blocked, owner smoke suggested) |
+| V1-SEC-03 hidden category via Data API | FAIL | **FIXED, live** (migration `0005`, rehearsed with rollback) |
+| V1-SEC-04 security headers | FAIL | **FIXED, live**: web, admin, assets, API |
+| V1-UX-01 404 page | FAIL | **FIXED, live**: Vietnamese, header/footer, HTTP 404, not cached |
+| V1-CONTENT-01 Messenger URL (P1) | CONTENT_INCOMPLETE | **still open**: `https://m.me/` placeholder; owner action |
+| V1-SEC-02 DB password | open | **still open**: owner to confirm a random rotated value |
+| V1-SEC-05 global contact quota exhaustible by one client (new, P3) | — | ACCEPTED_RISK: under-counting only, Messenger unaffected |
+
+Production smoke after the release:
+- backend 17/17;
+- browser smoke on desktop and mobile Chromium and WebKit: RSC, gallery, fonts, Messenger opens 0–1 ms after the click, 404, framing;
+- Workers Cache MISS→HIT, with admin and 404 BYPASS;
+- 147/147 assets 200 with the right MIME;
+- no 1102, 1027 or 5xx seen.
+
+Blocked for lack of staging: admin login/logout with the real account, product/news/banner/logo/favicon writes, the RLS deny matrix with a real hidden category, and the 10 `staging-cms` tests.
