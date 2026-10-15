@@ -204,6 +204,7 @@ Codex independent review (backend, DB, security):
   - The guard lowercased literals: fixed by keeping case.
   - The race test did not prove the taker waited: fixed by checking the taker's PID.
   - Both fixes are in `f2c4df4`, checked in the rate-limit review. Its follow-ups on the race-test cleanup are fixed in `a96b2b9` and `fd29879`.
+- **Final review** (`fd29879`, HEAD `54adb1a`): **APPROVE, P0 0, P1 0, P2 0, P3 0.** `git diff 503ec9b HEAD` over the slug, migration, web and worker code is empty; only the contact-click handler changed in `public.py` (`V1_1_FINAL_REVIEW.md`).
 
 Files: `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md`.
 

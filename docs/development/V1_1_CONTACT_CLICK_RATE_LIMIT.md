@@ -107,4 +107,4 @@ Backend total: **137 passed**, 0 failed. Ruff and mypy are clean.
 - Round 2 (`a96b2b9`): **APPROVE**, P0 0, P1 0, P2 0, P3 2.
   - P3 refund after a rollover used the give-back time instead of the admission window: fixed in `fd29879` with exact window tokens.
   - P3 PG test timeout could still wait at executor shutdown: fixed.
-- Round 3 (`fd29879`, the two P3 follow-ups only): **not yet run**. Codex reached its usage limit on 2026-10-15, usable again from 18:12. The request is in `c21-release-validation/v1.1-slug/RL3_REQUEST.md`; run it before the backend deploy.
+- Final review (`fd29879`, HEAD `54adb1a`): **APPROVE, P0 0, P1 0, P2 0, P3 0**, run on 2026-10-15 after the Codex usage limit reset. It also confirms that the slug and migration code approved in slug round 4 is unchanged at HEAD (`V1_1_FINAL_REVIEW.md`).
