@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     admin_rate_limit_per_minute: int = Field(default=120, ge=10, le=10_000)
     contact_click_limit_per_minute: int = Field(default=10, ge=1, le=1000)
     contact_click_global_limit_per_hour: int = Field(default=300, ge=1, le=100_000)
+    # Stored clicks per visitor per hour: a visitor alone can use at most this share of the
+    # site-wide hourly cap (20 of 300), and a click repeated within contact_click_repeat_seconds
+    # (same visitor, product and button) is stored once.
+    contact_click_client_limit_per_hour: int = Field(default=20, ge=1, le=10_000)
+    contact_click_repeat_seconds: int = Field(default=30, ge=0, le=3600)
     # Visitor IP for the contact-click limit: a header the edge in front of the API sets and
     # overwrites. onrender.com is served through Cloudflare, so CF-Connecting-IP: measured
     # 2026-10-14, Cloudflare sets it to the real client and rejects a client-sent one with 403

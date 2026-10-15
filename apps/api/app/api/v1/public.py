@@ -9,7 +9,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import Settings, get_settings
-from app.core.rate_limit import contact_client_rate_limiter, contact_global_rate_limiter
+from app.core.rate_limit import (
+    contact_client_rate_limiter,
+    release_contact_quota,
+    take_contact_quota,
+)
 from app.db.session import get_db
 from app.models import Banner, ContactClick, Post, Product, PublishStatus, SiteSettings
 from app.repositories.catalog import (
@@ -168,6 +172,14 @@ def _client_key(request: Request, header: str) -> str:
     return str(address)
 
 
+def _too_many_contact_clicks(retry_after: int) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail="Too many contact clicks",
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
 @router.post(
     "/contact-clicks", response_model=ContactClickOut, status_code=status.HTTP_202_ACCEPTED
 )
@@ -177,19 +189,15 @@ def track_contact(
     db: Session = Depends(get_db),
     config: Settings = Depends(get_settings),
 ) -> ContactClickOut:
-    # ponytail: in-process limits; correct for the single Render worker, reset on restart.
-    # A shared store (Redis/DB) is needed before running more than one worker.
+    # ponytail: in-process limits; correct for the single Render worker, reset on restart or
+    # spin-down. A shared store (Redis/DB) is needed before running more than one worker.
+    client = _client_key(request, config.client_ip_header)
+    # Request rate first: cheap, and it bounds the database lookups below.
     retry_after = contact_client_rate_limiter.retry_after(
-        _client_key(request, config.client_ip_header), config.contact_click_limit_per_minute
-    ) or contact_global_rate_limiter.retry_after(
-        "global", config.contact_click_global_limit_per_hour, window_seconds=3600
+        client, config.contact_click_limit_per_minute
     )
     if retry_after is not None:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many contact clicks",
-            headers={"Retry-After": str(retry_after)},
-        )
+        raise _too_many_contact_clicks(retry_after)
     settings = db.scalar(select(SiteSettings).limit(1))
     if settings is not None and not settings.contact_tracking_enabled:
         return ContactClickOut(accepted=False)
@@ -197,6 +205,19 @@ def track_contact(
         select(Product.id).where(Product.id == payload.product_id, *public_product_conditions())
     ) is None:
         raise HTTPException(status_code=422, detail="Unknown product")
+    # Only a click that will be stored takes from the hourly caps (V1-SEC-05).
+    click = f"{client}|{payload.product_id}|{payload.source}"
+    taken = take_contact_quota(
+        client,
+        click,
+        per_hour=config.contact_click_client_limit_per_hour,
+        global_per_hour=config.contact_click_global_limit_per_hour,
+        repeat_seconds=config.contact_click_repeat_seconds,
+    )
+    if taken == "repeat":
+        return ContactClickOut(accepted=False)  # the same click was just counted
+    if taken is not None:
+        raise _too_many_contact_clicks(taken)
     # No IP or IP hash is stored: the count is all the dashboard needs.
     db.add(
         ContactClick(
@@ -210,5 +231,6 @@ def track_contact(
     except IntegrityError:
         # The product was deleted between the check and the insert.
         db.rollback()
+        release_contact_quota(client, click)
         raise HTTPException(status_code=422, detail="Unknown product") from None
     return ContactClickOut()

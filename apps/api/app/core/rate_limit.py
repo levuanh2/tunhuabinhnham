@@ -1,6 +1,7 @@
 import math
 import threading
 import time
+from typing import Literal
 
 
 class FixedWindowRateLimiter:
@@ -44,9 +45,49 @@ class FixedWindowRateLimiter:
                 return None
             return max(1, math.ceil(window_seconds - (now - started)))
 
+    def release(self, key: str) -> None:
+        """Give back one use taken by retry_after for a request that was not served."""
+        # ponytail: if the window rolled over meanwhile, the new window is credited instead
+        # (at most one extra use per refused request); tracking the window start would fix it.
+        with self._lock:
+            entry = self._entries.get(key)
+            if entry is not None and entry[1] > 0:
+                self._entries[key] = (entry[0], entry[1] - 1)
+
 
 admin_rate_limiter = FixedWindowRateLimiter()
 # Separate instances: pruning uses the caller's window, so keys with different windows
 # must not share one.
-contact_client_rate_limiter = FixedWindowRateLimiter()
-contact_global_rate_limiter = FixedWindowRateLimiter()
+contact_client_rate_limiter = FixedWindowRateLimiter()  # requests per visitor per minute
+contact_client_hourly_rate_limiter = FixedWindowRateLimiter()  # stored clicks per visitor
+contact_repeat_rate_limiter = FixedWindowRateLimiter()  # the same click, once per few seconds
+contact_global_rate_limiter = FixedWindowRateLimiter()  # stored clicks, whole site
+
+
+def take_contact_quota(
+    client: str, click: str, *, per_hour: int, global_per_hour: int, repeat_seconds: int
+) -> int | Literal["repeat"] | None:
+    """Reserve what storing one contact click uses: None = store it, "repeat" = the same click
+    was just stored (keep nothing), a number = Retry-After seconds.
+
+    Only a click that will be stored takes from the per-visitor hourly cap and the site-wide
+    cap, so one visitor gets at most per_hour of the global quota and refused or repeated
+    requests use none of it. Each step is atomic; a refused later step gives the earlier ones
+    back. Call release_contact_quota if storing then fails.
+    """
+    if contact_repeat_rate_limiter.retry_after(click, 1, max(repeat_seconds, 1)) is not None:
+        return "repeat"
+    retry = contact_client_hourly_rate_limiter.retry_after(client, per_hour, 3600)
+    if retry is None:
+        retry = contact_global_rate_limiter.retry_after("global", global_per_hour, 3600)
+        if retry is not None:
+            contact_client_hourly_rate_limiter.release(client)
+    if retry is not None:
+        contact_repeat_rate_limiter.release(click)
+    return retry
+
+
+def release_contact_quota(client: str, click: str) -> None:
+    contact_repeat_rate_limiter.release(click)
+    contact_client_hourly_rate_limiter.release(client)
+    contact_global_rate_limiter.release("global")
