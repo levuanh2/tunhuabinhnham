@@ -62,7 +62,8 @@ SLUG_MIGRATION = ROOT / "supabase" / "migrations" / "20261015090000_product_slug
 SLUG_WRAPPER = ROOT / "apps" / "api" / "alembic" / "versions" / "0006_product_slug_history.py"
 
 
-# The reviewed shape of migration 0006, statement by statement (lowercase, whitespace collapsed).
+# The reviewed shape of migration 0006, statement by statement (whitespace collapsed, case kept:
+# string literals such as 'UPDATE' and 'products_slug_key' are case-sensitive).
 # Exact matches, not keyword scans: any other statement or clause (UPDATE ONLY, DISABLE TRIGGER,
 # CALL, a data-changing CTE, SECURITY DEFINER, ...) fails here until it is reviewed and listed.
 SLUG_STATEMENTS = [
@@ -84,7 +85,7 @@ SLUG_STATEMENTS = [
 # The trigger only records slugs in product_slugs and refuses another product's; reported as
 # products_slug_key so older backends answer their usual "Slug already exists".
 SLUG_TRIGGER_BODY = (
-    "begin if tg_op = 'update' then insert into public.product_slugs (product_id, slug) "
+    "begin if tg_op = 'UPDATE' then insert into public.product_slugs (product_id, slug) "
     "values (old.id, old.slug) on conflict (slug) do nothing; end if; "
     "insert into public.product_slugs (product_id, slug) values (new.id, new.slug) "
     "on conflict (slug) do nothing; if exists ( select 1 from public.product_slugs s "
@@ -99,7 +100,7 @@ def _normalized(text: str) -> str:
 
 
 def test_slug_history_migration_is_exactly_the_reviewed_one() -> None:
-    sql = SLUG_MIGRATION.read_text(encoding="utf-8").lower()
+    sql = SLUG_MIGRATION.read_text(encoding="utf-8")
     # Comments only as whole lines, so nothing (a string, an inline comment) can hide text.
     code = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
     assert "--" not in code and "/*" not in code

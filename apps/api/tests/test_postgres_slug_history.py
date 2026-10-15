@@ -280,27 +280,32 @@ def test_mixed_writers_racing_for_a_url_whose_history_is_missing(api: TestClient
     mover.begin()
     mover.execute(text("update public.products set slug = :slug where id = :id"), {"slug": b, "id": p1["id"]})
 
+    taker = engine.connect()
+    taker_pid = taker.execute(text("select pg_backend_pid()")).scalar_one()
+
     def take_a() -> str:
-        with engine.connect() as taker:
-            try:
-                taker.execute(text("update public.products set slug = :slug where id = :id"), {"slug": a, "id": p2["id"]})
-                taker.commit()
-                return "taken"
-            except IntegrityError as exc:
-                return str(exc.orig.diag.constraint_name)
+        try:
+            taker.execute(text("update public.products set slug = :slug where id = :id"), {"slug": a, "id": p2["id"]})
+            taker.commit()
+            return "taken"
+        except IntegrityError as exc:
+            return str(exc.orig.diag.constraint_name)
 
     with ThreadPoolExecutor(1) as pool:
         taken = pool.submit(take_a)
-        with engine.connect() as watcher:  # wait until the taker is blocked behind the mover
-            for _ in range(100):
-                if watcher.execute(text(
-                    "select count(*) from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()"
-                )).scalar_one():
+        with engine.connect() as watcher:  # the taker itself must be blocked behind the mover
+            for _ in range(200):
+                waiting = watcher.execute(text(
+                    "select wait_event_type = 'Lock' from pg_stat_activity where pid = :pid"
+                ), {"pid": taker_pid}).scalar()
+                if waiting:
                     break
                 watcher.execute(text("select pg_sleep(0.05)"))
+        assert waiting, "the taker never waited on the mover's lock"
         mover.commit()
         mover.close()
         assert taken.result() == "products_slug_key"
+    taker.close()
     assert get(api, a) == (301, f"/api/v1/products/{b}")
     assert history(engine, p1["id"]) == sorted([a, b])
 
