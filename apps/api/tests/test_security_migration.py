@@ -77,11 +77,20 @@ def test_slug_history_migration_is_additive_and_private() -> None:
     assert "constraint = 'products_slug_key'" in sql  # older backends map it to "Slug already exists"
     assert "set search_path = ''" in sql
     assert "revoke all on function public.product_slug_not_owned_elsewhere() from public, anon, authenticated" in sql
-    # No statement writes product data, grants privileges, changes policies or ends the transaction.
-    statements = re.sub(r"\$\$.*?\$\$", "", re.sub(r"--[^\n]*", "", sql), flags=re.S)
-    for forbidden in ("grant", "drop", "truncate", "delete", "update", "alter policy",
-                      "create policy", "begin", "commit", "rollback"):
-        assert not re.search(rf"(^|;)\s*{forbidden}\b", statements, flags=re.M), forbidden
+    code = re.sub(r"--[^\n]*", "", sql)
+    bodies = re.findall(r"\$\$(.*?)\$\$", code, flags=re.S)
+    assert len(bodies) == 1
+    # The trigger body only reads: no write, DDL, dynamic SQL or privilege change, wherever it sits.
+    for word in ("insert", "update", "delete", "merge", "truncate", "drop", "alter", "create",
+                 "grant", "revoke", "execute", "perform", "copy", "set "):
+        assert not re.search(rf"\b{word}", bodies[0]), word
+    outside = re.sub(r"\$\$.*?\$\$", "", code, flags=re.S)
+    # Outside it: nothing destructive in any position (ALTER ... DROP, data-changing CTEs, ...).
+    for pattern in (r"\bdrop\b", r"\btruncate\b", r"\bdelete\s+from\b", r"\bupdate\s+[\w.]+\s+set\b",
+                    r"\bmerge\b", r"\bgrant\b", r"\b(alter|create|drop)\s+policy\b",
+                    r"\binsert\s+into\s+(?!public\.product_slugs\b)", r"(^|;)\s*(begin|commit|rollback)\b",
+                    r"\bdisable\s+row\s+level\s+security\b", r"\bsecurity\s+definer\b"):
+        assert not re.search(pattern, outside, flags=re.M), pattern
 
 
 def test_alembic_wrapper_executes_only_the_canonical_0006_sql() -> None:

@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -10,11 +10,6 @@ from app.core.conflicts import integrity_conflict
 from app.models import AuditLog, Category, Product, ProductImage, ProductSlug, PublishStatus
 from app.repositories.catalog import CategoryRepository, ProductRepository
 from app.schemas.catalog import CategoryCreate, CategoryUpdate, ProductCreate, ProductUpdate
-
-
-def _aware(value: datetime) -> datetime:
-    """SQLite returns naive datetimes; PostgreSQL timestamptz values are already aware."""
-    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 class CatalogService:
@@ -150,17 +145,6 @@ class CatalogService:
         changes = data.model_dump(exclude_unset=True, exclude={"images"})
         # Re-read under a row lock: another admin may have published it since this form loaded.
         self.db.refresh(item, with_for_update=True)
-        now = datetime.now(UTC)
-        # A past published_at is the record that the URL has been public (it is set when a
-        # product is published and kept when it is unpublished); a future one is only a schedule.
-        # ponytail: a product hidden the whole time still counts as public; its old URL is kept.
-        was_public = item.published_at is not None and _aware(item.published_at) <= now
-        if was_public and "published_at" in changes and (
-            changes["published_at"] is None or _aware(changes["published_at"]) > now
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Published date cannot be cleared"
-            )
         previous_slug = item.slug
         new_slug = changes.get("slug", previous_slug)
         # Checked before anything changes, so a refused rename leaves the product as it was.
@@ -174,17 +158,12 @@ class CatalogService:
             and item.publish_status == PublishStatus.published
             and item.published_at is None
         ):
-            item.published_at = now
+            item.published_at = datetime.now(UTC)
         try:
             if new_slug != previous_slug:
-                if not was_public:
-                    # Never public, so nobody can have the old URL: free it (typos in drafts).
-                    self.db.execute(
-                        delete(ProductSlug).where(
-                            ProductSlug.slug == previous_slug, ProductSlug.product_id == item.id
-                        )
-                    )
-                elif not self._require_free_slug(previous_slug, item.id):
+                # Every slug a product has had stays its own for good, public or not: whether
+                # anyone has seen a URL cannot be told for sure (schedules, clocks, other writers).
+                if not self._require_free_slug(previous_slug, item.id):
                     # Products created before product_slugs existed are backfilled by the
                     # migration; this keeps any other writer's product redirectable too.
                     self.db.add(ProductSlug(product_id=item.id, slug=previous_slug))

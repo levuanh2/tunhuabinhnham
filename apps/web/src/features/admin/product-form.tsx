@@ -49,8 +49,8 @@ export function ProductForm({ product }: { product?: Product }) {
   const { register, handleSubmit, setValue, setError, setFocus, control, formState: { errors, isSubmitting } } = useForm<Values>({ resolver: zodResolver(schema), mode: "onTouched", defaultValues: { name: product?.name ?? "", slug: product?.slug ?? "", sku: product?.sku ?? "", category_id: product?.category_id ?? product?.category?.id ?? "", price: product?.price?.replace(/\.0+$/, "") ?? "", description: product?.description ?? "", stock_status: product?.stock_status ?? "contact", publish_status: product?.publish_status ?? "draft", is_visible: product?.is_visible ?? true } });
   const [slugMode, setSlugMode] = useState<SlugMode>(product ? "fixed" : "auto");
   // Once public, a URL may still change: the old one then redirects to the new one (product_slugs).
-  // Same rule as the API: a past published date means customers may have the URL; a future one is only a schedule.
-  const wasPublic = Boolean(product?.published_at && Date.parse(product.published_at) <= Date.now());
+  // Customers may have this URL: confirm before moving it. (The API keeps every old URL either way.)
+  const wasPublic = Boolean(product && (product.publish_status === "published" || (product.published_at && Date.parse(product.published_at) <= Date.now())));
   const [savedSlug, setSavedSlug] = useState(product?.slug ?? "");
   const [moved, setMoved] = useState<{ from: string; to: string } | null>(null);
   const [confirming, setConfirming] = useState<{ from: string; to: string } | null>(null);
@@ -172,9 +172,9 @@ export function ProductForm({ product }: { product?: Product }) {
           {slugMode === "edit"
             ? <label className="label">Đường dẫn sản phẩm<span className="flex items-center gap-1"><span className="text-sm font-normal text-ink-soft" aria-hidden="true">/san-pham/</span><input className="field min-w-0 flex-1" aria-invalid={errors.slug ? true : undefined} aria-describedby="duong-dan-goi-y" autoCapitalize="none" spellCheck={false} {...register("slug")} /></span></label>
             : <><span className="label" id="duong-dan-nhan">Đường dẫn sản phẩm</span>
-                <p className="flex flex-wrap items-center gap-x-3 text-sm"><output aria-labelledby="duong-dan-nhan" aria-describedby="duong-dan-goi-y" className="min-w-0 break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{slug || "…"}</output><button type="button" className="link min-h-11 font-medium" onClick={editSlug}>Chỉnh sửa đường dẫn</button></p></>}
+                <p className="flex flex-wrap items-center gap-x-3 text-sm"><output aria-labelledby="duong-dan-nhan" aria-describedby="duong-dan-goi-y" className="min-w-0 [overflow-wrap:anywhere] rounded-md bg-muted px-2.5 py-1.5">/san-pham/{slug || "…"}</output><button type="button" className="link min-h-11 font-medium" onClick={editSlug}>Chỉnh sửa đường dẫn</button></p></>}
           {fieldError(errors.slug?.message)}
-          {moved && <p role="status" className="grid gap-1 rounded-lg bg-success-soft px-3 py-2.5 text-sm"><span className="font-semibold">Đã đổi đường dẫn</span><span className="break-all text-ink-soft">Khách mở /san-pham/{moved.from} sẽ được tự động chuyển sang /san-pham/{moved.to}.</span><a className="link w-fit font-medium" href={`/san-pham/${moved.to}`} target="_blank" rel="noopener">Mở trang sản phẩm<span className="sr-only"> (mở tab mới)</span></a></p>}
+          {moved && <p role="status" className="grid gap-1 rounded-lg bg-success-soft px-3 py-2.5 text-sm"><span className="font-semibold">Đã đổi đường dẫn</span><span className="[overflow-wrap:anywhere] text-ink-soft">Khách mở /san-pham/{moved.from} sẽ được tự động chuyển sang /san-pham/{moved.to}.</span><a className="link w-fit font-medium" href={`/san-pham/${moved.to}`} target="_blank" rel="noopener">Mở trang sản phẩm<span className="sr-only"> (mở tab mới)</span></a></p>}
           <span id="duong-dan-goi-y" className="hint">{
             slugMode === "auto" ? "Tự tạo từ tên sản phẩm."
             : slugMode === "fixed" ? "Đổi tên sản phẩm không làm thay đổi đường dẫn."
@@ -227,7 +227,7 @@ export function ProductForm({ product }: { product?: Product }) {
       <label className="label">Tình trạng hàng<select className="field" {...register("stock_status")}><option value="in_stock">Còn hàng</option><option value="out_of_stock">Hết hàng</option><option value="contact">Liên hệ</option></select></label>
       <div className="grid gap-1"><label className="flex min-h-11 items-center gap-3 text-sm font-medium"><input type="checkbox" className="size-5" {...register("is_visible")} />Hiển thị trên website</label><span className="hint">Bỏ chọn để tạm ẩn sản phẩm mà không cần gỡ đăng.</span></div>
       <p className="rounded-lg bg-muted px-3 py-2.5 text-sm" aria-live="polite">{publishStatus === "draft" ? "Chưa đăng: khách chưa thấy sản phẩm này." : !isVisible ? "Đã đăng nhưng đang ẩn: khách chưa thấy sản phẩm này." : hiddenCategory ? `Loại “${hiddenCategory.name}” đang ẩn: khách chưa thấy sản phẩm này.` : "Khách xem được sản phẩm này trên website."}</p>
-      {firstPublish && <div role="note" className="grid gap-1 rounded-lg border border-line-strong px-3 py-2.5 text-sm"><span className="font-semibold">Kiểm tra đường dẫn trước khi đăng</span><span className="break-all font-medium text-primary">/san-pham/{slug || "…"}</span><span className="text-ink-soft">Đây là địa chỉ khách sẽ lưu và chia sẻ. Nếu sau này đổi, đường dẫn cũ sẽ tự chuyển sang đường dẫn mới.</span></div>}
+      {firstPublish && <div role="note" className="grid gap-1 rounded-lg border border-line-strong px-3 py-2.5 text-sm"><span className="font-semibold">Kiểm tra đường dẫn trước khi đăng</span><span className="[overflow-wrap:anywhere] font-medium text-primary">/san-pham/{slug || "…"}</span><span className="text-ink-soft">Đây là địa chỉ khách sẽ lưu và chia sẻ. Nếu sau này đổi, đường dẫn cũ sẽ tự chuyển sang đường dẫn mới.</span></div>}
       <button className="button w-full" aria-busy={isSubmitting || undefined} disabled={isSubmitting || isUploading}>{isSubmitting ? "Đang lưu…" : publishStatus === "draft" ? "Lưu bản nháp" : product?.publish_status === "published" ? "Lưu thay đổi" : "Đăng sản phẩm"}</button>
     </aside>
 
@@ -235,9 +235,9 @@ export function ProductForm({ product }: { product?: Product }) {
       {confirming && <div className="grid gap-4 p-5 sm:p-6">
         <h2 id="xac-nhan-duong-dan" className="text-lg font-semibold">Đổi đường dẫn sản phẩm?</h2>
         <dl className="grid gap-3 text-sm">
-          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn cũ</dt><dd className="break-all rounded-md bg-muted px-2.5 py-1.5">/san-pham/{confirming.from}</dd></div>
-          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn mới</dt><dd className="break-all rounded-md bg-muted px-2.5 py-1.5 font-medium text-primary">/san-pham/{confirming.to}</dd></div>
-          <div className="grid gap-1"><dt className="text-ink-soft">Khách sẽ thấy địa chỉ</dt><dd className="break-all">{siteUrl}/san-pham/{confirming.to}</dd></div>
+          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn cũ</dt><dd className="[overflow-wrap:anywhere] rounded-md bg-muted px-2.5 py-1.5">/san-pham/{confirming.from}</dd></div>
+          <div className="grid gap-1"><dt className="text-ink-soft">Đường dẫn mới</dt><dd className="[overflow-wrap:anywhere] rounded-md bg-muted px-2.5 py-1.5 font-medium text-primary">/san-pham/{confirming.to}</dd></div>
+          <div className="grid gap-1"><dt className="text-ink-soft">Khách sẽ thấy địa chỉ</dt><dd className="[overflow-wrap:anywhere]">{siteUrl}/san-pham/{confirming.to}</dd></div>
         </dl>
         <p className="rounded-lg border border-line-strong px-3 py-2.5 text-sm">Khách mở đường dẫn cũ (link đã lưu, đã chia sẻ hoặc tìm trên Google) sẽ được tự động chuyển sang đường dẫn mới. Đường dẫn cũ sẽ không dùng được cho sản phẩm khác.</p>
         <div className="flex flex-wrap justify-end gap-3">

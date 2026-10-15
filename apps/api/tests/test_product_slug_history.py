@@ -113,13 +113,40 @@ def test_editing_the_name_keeps_the_url(admin_client: TestClient, db: Session) -
     assert history(db, product) == ["giu-url"]
 
 
-def test_draft_urls_never_public_are_not_kept(admin_client: TestClient, db: Session) -> None:
-    draft = create(admin_client, "go-nham", "draft")
-    assert rename(admin_client, draft, "dung-roi").status_code == 200
-    assert history(db, draft) == ["dung-roi"]
-    # The typo is free again for any product, and it never redirects.
-    assert admin_client.get("/api/v1/products/go-nham").status_code == 404
-    assert admin_client.post(ADMIN, json={"name": "y", "slug": "go-nham", "sku": "Y-1"}).status_code == 201
+LATER = (datetime.now(UTC) + timedelta(days=3)).isoformat()
+
+
+@pytest.mark.parametrize(
+    ("publish_status", "published_at"),
+    [("draft", None), ("draft", LATER), ("published", LATER), ("published", "null-in-db")],
+    ids=["draft", "draft-scheduled", "published-scheduled", "published-without-date"],
+)
+def test_every_old_url_is_kept_whether_or_not_it_was_public(
+    admin_client: TestClient, db: Session, publish_status: str, published_at: str | None
+) -> None:
+    # Whether a URL has been seen cannot be proven (schedules, clocks, older rows), so none is freed.
+    body = {"name": "h", "slug": "go-nham", "sku": "GO-NHAM", "publish_status": publish_status}
+    if published_at not in (None, "null-in-db"):
+        body["published_at"] = published_at
+    product = admin_client.post(ADMIN, json=body).json()
+    if published_at == "null-in-db":  # a published row with no date, as an import or older writer may leave
+        stored = db.get(Product, uuid.UUID(product["id"]))
+        assert stored is not None
+        stored.published_at = None
+        db.commit()
+    assert rename(admin_client, product, "dung-roi").status_code == 200
+    assert history(db, product) == ["dung-roi", "go-nham"]
+    assert admin_client.post(ADMIN, json={"name": "y", "slug": "go-nham", "sku": "Y-1"}).status_code == 409
+    admin_client.patch(f"{ADMIN}/{product['id']}", json={"publish_status": "published", "published_at": datetime.now(UTC).isoformat()})
+    assert admin_client.get("/api/v1/products/go-nham", follow_redirects=False).headers["location"] == "/api/v1/products/dung-roi"
+
+
+def test_changing_the_published_date_never_frees_a_url(admin_client: TestClient) -> None:
+    product = create(admin_client, "da-dang")
+    rename(admin_client, product, "da-dang-moi")
+    for published_at in (None, LATER):
+        assert admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": published_at}).status_code == 200
+        assert admin_client.post(ADMIN, json={"name": "z", "slug": "da-dang", "sku": "Z-1"}).status_code == 409
 
 
 def test_old_urls_never_reveal_a_product_that_is_not_public(admin_client: TestClient, db: Session) -> None:
@@ -157,38 +184,6 @@ def test_old_urls_never_reveal_a_product_that_is_not_public(admin_client: TestCl
     admin_client.patch(f"/api/v1/admin/categories/{category['id']}", json={"is_visible": True})
     assert admin_client.delete(f"{ADMIN}/{product['id']}").status_code == 204
     assert both() == (404, 404)
-
-
-def test_published_date_cannot_be_cleared(admin_client: TestClient) -> None:
-    # published_at marks a URL as having been public, which is what keeps it as a redirect.
-    product = create(admin_client, "da-dang")
-    cleared = admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": None})
-    assert cleared.status_code == 409
-    assert cleared.json()["error"]["message"] == "Published date cannot be cleared"
-
-
-def test_published_date_cannot_move_to_the_future(admin_client: TestClient) -> None:
-    # Otherwise the product would look never-public and a rename would free a URL customers have.
-    product = create(admin_client, "da-dang-2")
-    later = (datetime.now(UTC) + timedelta(days=3)).isoformat()
-    moved = admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": later})
-    assert moved.status_code == 409
-
-
-@pytest.mark.parametrize("publish_status", ["draft", "published"])
-def test_a_scheduled_product_that_was_never_public_frees_its_old_slug(
-    admin_client: TestClient, publish_status: str
-) -> None:
-    later = (datetime.now(UTC) + timedelta(days=3)).isoformat()
-    product = admin_client.post(
-        ADMIN,
-        json={"name": "h", "slug": "hen-gio", "sku": "HEN-GIO", "publish_status": publish_status, "published_at": later},
-    ).json()
-    assert admin_client.patch(f"{ADMIN}/{product['id']}", json={"slug": "hen-gio-moi"}).status_code == 200
-    assert admin_client.get("/api/v1/products/hen-gio", follow_redirects=False).status_code == 404
-    assert admin_client.post(ADMIN, json={"name": "k", "slug": "hen-gio", "sku": "K-1"}).status_code == 201
-    # Its schedule can still be cleared or moved: nobody has seen the URL yet.
-    assert admin_client.patch(f"{ADMIN}/{product['id']}", json={"published_at": None}).status_code == 200
 
 
 def test_rename_is_audited(admin_client: TestClient, db: Session) -> None:
