@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -63,34 +62,51 @@ SLUG_MIGRATION = ROOT / "supabase" / "migrations" / "20261015090000_product_slug
 SLUG_WRAPPER = ROOT / "apps" / "api" / "alembic" / "versions" / "0006_product_slug_history.py"
 
 
-def test_slug_history_migration_is_additive_and_private() -> None:
-    sql = SLUG_MIGRATION.read_text(encoding="utf-8").lower()
+# The reviewed shape of migration 0006, statement by statement (lowercase, whitespace collapsed).
+# Exact matches, not keyword scans: any other statement or clause (UPDATE ONLY, DISABLE TRIGGER,
+# CALL, a data-changing CTE, SECURITY DEFINER, ...) fails here until it is reviewed and listed.
+SLUG_STATEMENTS = [
+    "set local lock_timeout = '5s'",  # never queue for long behind product writes
+    "create table public.product_slugs ( id uuid primary key default gen_random_uuid(), "
+    "product_id uuid not null references public.products(id) on delete cascade, "
+    "slug varchar(260) not null unique, created_at timestamptz not null default now() )",
+    "create index ix_product_slugs_product_id on public.product_slugs(product_id)",
+    "alter table public.product_slugs enable row level security",
+    "revoke all privileges on table public.product_slugs from anon, authenticated",
+    "insert into public.product_slugs (product_id, slug, created_at) "
+    "select id, slug, created_at from public.products",
+    "create function public.record_product_slug() returns trigger language plpgsql "
+    "set search_path = '' as $$body$$",
+    "revoke all on function public.record_product_slug() from public, anon, authenticated",
+    "create trigger record_product_slug after insert or update of slug on public.products "
+    "for each row execute function public.record_product_slug()",
+]
+# The trigger only records slugs in product_slugs and refuses another product's; reported as
+# products_slug_key so older backends answer their usual "Slug already exists".
+SLUG_TRIGGER_BODY = (
+    "begin if tg_op = 'update' then insert into public.product_slugs (product_id, slug) "
+    "values (old.id, old.slug) on conflict (slug) do nothing; end if; "
+    "insert into public.product_slugs (product_id, slug) values (new.id, new.slug) "
+    "on conflict (slug) do nothing; if exists ( select 1 from public.product_slugs s "
+    "where s.slug = new.slug and s.product_id <> new.id ) then raise exception "
+    "'slug belongs to another product' using errcode = 'unique_violation', "
+    "constraint = 'products_slug_key'; end if; return null; end"
+)
 
-    assert "create table public.product_slugs" in sql
-    assert "slug varchar(260) not null unique" in sql
-    assert "references public.products(id) on delete cascade" in sql
-    assert "alter table public.product_slugs enable row level security" in sql
-    assert "revoke all privileges on table public.product_slugs from anon, authenticated" in sql
-    assert "set local lock_timeout" in sql  # never queue for long behind product writes
-    # The guard keeps a historical slug with its product even for writers that ignore the table.
-    assert "before insert or update of slug on public.products" in sql
-    assert "constraint = 'products_slug_key'" in sql  # older backends map it to "Slug already exists"
-    assert "set search_path = ''" in sql
-    assert "revoke all on function public.product_slug_not_owned_elsewhere() from public, anon, authenticated" in sql
-    code = re.sub(r"--[^\n]*", "", sql)
-    bodies = re.findall(r"\$\$(.*?)\$\$", code, flags=re.S)
-    assert len(bodies) == 1
-    # The trigger body only reads: no write, DDL, dynamic SQL or privilege change, wherever it sits.
-    for word in ("insert", "update", "delete", "merge", "truncate", "drop", "alter", "create",
-                 "grant", "revoke", "execute", "perform", "copy", "set "):
-        assert not re.search(rf"\b{word}", bodies[0]), word
-    outside = re.sub(r"\$\$.*?\$\$", "", code, flags=re.S)
-    # Outside it: nothing destructive in any position (ALTER ... DROP, data-changing CTEs, ...).
-    for pattern in (r"\bdrop\b", r"\btruncate\b", r"\bdelete\s+from\b", r"\bupdate\s+[\w.]+\s+set\b",
-                    r"\bmerge\b", r"\bgrant\b", r"\b(alter|create|drop)\s+policy\b",
-                    r"\binsert\s+into\s+(?!public\.product_slugs\b)", r"(^|;)\s*(begin|commit|rollback)\b",
-                    r"\bdisable\s+row\s+level\s+security\b", r"\bsecurity\s+definer\b"):
-        assert not re.search(pattern, outside, flags=re.M), pattern
+
+def _normalized(text: str) -> str:
+    return " ".join(text.split())
+
+
+def test_slug_history_migration_is_exactly_the_reviewed_one() -> None:
+    sql = SLUG_MIGRATION.read_text(encoding="utf-8").lower()
+    # Comments only as whole lines, so nothing (a string, an inline comment) can hide text.
+    code = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+    assert "--" not in code and "/*" not in code
+    head, body, tail = code.split("$$")  # exactly one dollar-quoted body
+    assert _normalized(body) == SLUG_TRIGGER_BODY
+    statements = [_normalized(part) for part in f"{head}$$body$${tail}".split(";") if part.strip()]
+    assert statements == SLUG_STATEMENTS
 
 
 def test_alembic_wrapper_executes_only_the_canonical_0006_sql() -> None:

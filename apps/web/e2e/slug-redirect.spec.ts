@@ -118,6 +118,31 @@ test.describe("product URL change", () => {
     await expect(page.locator("output")).toHaveText("/san-pham/tu-ao-3-canh");
   });
 
+  test("S4. any product customers may have seen asks first; every old URL stays reserved, drafts included", async ({ page }) => {
+    writesFixture();
+    const past = new Date(Date.now() - 86_400_000).toISOString(), future = new Date(Date.now() + 3 * 86_400_000).toISOString();
+    const cases = [
+      { slug: "s4-dang-khong-ngay", publish_status: "published", published_at: null, asks: true },
+      { slug: "s4-dang-hen-gio", publish_status: "published", published_at: future, asks: true },
+      { slug: "s4-nhap-da-dang", publish_status: "draft", published_at: past, asks: true },
+      { slug: "s4-nhap", publish_status: "draft", published_at: null, asks: false },
+    ];
+    for (const { asks, ...state } of cases) {
+      const product = await (await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: state.slug, sku: state.slug.toUpperCase(), category_id: "c1", images: [], ...state } })).json();
+      await gotoReady(page, `/admin/san-pham/${product.id}`);
+      await page.getByRole("button", { name: "Chỉnh sửa đường dẫn" }).click();
+      await page.getByLabel("Đường dẫn sản phẩm").fill(`${state.slug}-moi`);
+      await page.getByRole("button", { name: state.publish_status === "draft" ? "Lưu bản nháp" : "Lưu thay đổi" }).click();
+      const dialog = page.getByRole("dialog", { name: "Đổi đường dẫn sản phẩm?" });
+      if (asks) { await expect(dialog, state.slug).toBeVisible(); await dialog.getByRole("button", { name: "Đổi đường dẫn và lưu" }).click(); }
+      await expect.poll(async () => (await (await page.request.get(`${mock}/api/v1/admin/products/${product.id}`)).json()).slug, state.slug).toBe(`${state.slug}-moi`);
+      if (!asks) await expect(dialog).toBeHidden();
+      // The old URL can never be given to another product.
+      const taken = await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: "khac", slug: state.slug, sku: `${state.slug}-K`.toUpperCase(), category_id: "c1", images: [] } });
+      expect(taken.status(), state.slug).toBe(409);
+    }
+  });
+
   test("S3. the confirmation fits the screen on desktop and phone", async ({ page }) => {
     await startEditingUrl(page, "tu-ao-3-canh-moi");
     const dialog = page.getByRole("dialog", { name: "Đổi đường dẫn sản phẩm?" });

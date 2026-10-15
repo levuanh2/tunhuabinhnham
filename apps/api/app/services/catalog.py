@@ -114,6 +114,15 @@ class CatalogService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
         return owner is not None
 
+    def _record_slug(self, slug: str, product_id: uuid.UUID) -> None:
+        """Keep the slug as this product's, after the product row is flushed.
+
+        On PostgreSQL the record_product_slug trigger (migration 0006) has already recorded it
+        for every writer; this covers databases without the trigger (the SQLite test suite).
+        """
+        if not self._require_free_slug(slug, product_id):
+            self.db.add(ProductSlug(product_id=product_id, slug=slug))
+
     def create_product(self, data: ProductCreate, admin_id: uuid.UUID) -> Product:
         values = data.model_dump(exclude={"images"})
         self._require_live_category(data.category_id)
@@ -125,7 +134,7 @@ class CatalogService:
         self.db.add(item)
         try:
             self.db.flush()
-            self.db.add(ProductSlug(product_id=item.id, slug=item.slug))
+            self._record_slug(item.slug, item.id)
             self.db.add(
                 AuditLog(
                     admin_user_id=admin_id,
@@ -148,7 +157,8 @@ class CatalogService:
         previous_slug = item.slug
         new_slug = changes.get("slug", previous_slug)
         # Checked before anything changes, so a refused rename leaves the product as it was.
-        new_slug_owned = new_slug != previous_slug and self._require_free_slug(new_slug, item.id)
+        if new_slug != previous_slug:
+            self._require_free_slug(new_slug, item.id)
         if "category_id" in changes:
             self._require_live_category(changes["category_id"])
         for key, value in changes.items():
@@ -163,12 +173,9 @@ class CatalogService:
             if new_slug != previous_slug:
                 # Every slug a product has had stays its own for good, public or not: whether
                 # anyone has seen a URL cannot be told for sure (schedules, clocks, other writers).
-                if not self._require_free_slug(previous_slug, item.id):
-                    # Products created before product_slugs existed are backfilled by the
-                    # migration; this keeps any other writer's product redirectable too.
-                    self.db.add(ProductSlug(product_id=item.id, slug=previous_slug))
-                if not new_slug_owned:
-                    self.db.add(ProductSlug(product_id=item.id, slug=new_slug))
+                self.db.flush()
+                self._record_slug(previous_slug, item.id)
+                self._record_slug(new_slug, item.id)
             if data.images is not None:
                 existing = {image.storage_key: image for image in item.images}
                 current_max = max((image.sort_order for image in item.images), default=-1)

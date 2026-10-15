@@ -246,6 +246,65 @@ def test_a_writer_that_ignores_the_history_cannot_take_an_old_slug(api: TestClie
     assert get(api, new) == (301, f"/api/v1/products/{old}")
 
 
+def history(engine: Engine, product_id: object) -> list[str]:
+    with engine.connect() as connection:
+        return sorted(connection.execute(text(
+            "select slug from public.product_slugs where product_id = :id"
+        ), {"id": product_id}).scalars())
+
+
+def test_an_older_writer_still_records_every_slug(engine: Engine) -> None:
+    # 3e8c5f0 never writes product_slugs: the trigger records for it, drafts included.
+    first, second = unique("cu-nhap"), unique("moi-nhap")
+    with engine.begin() as connection:
+        product = connection.execute(text(
+            "insert into public.products (name, slug, sku) values ('nhap', :slug, :sku) returning id"
+        ), {"slug": first, "sku": unique("NHAP")}).scalar_one()
+        connection.execute(text("update public.products set slug = :slug where id = :id"), {"slug": second, "id": product})
+    assert history(engine, product) == sorted([first, second])
+    with engine.connect() as connection, pytest.raises(IntegrityError) as refused:
+        connection.execute(text(
+            "insert into public.products (name, slug, sku) values ('khac', :slug, :sku)"
+        ), {"slug": first, "sku": unique("KHAC")})
+    assert refused.value.orig.diag.constraint_name == "products_slug_key"
+
+
+def test_mixed_writers_racing_for_a_url_whose_history_is_missing(api: TestClient, engine: Engine) -> None:
+    # Codex R3: P1 is public at `a` with no history row (as a pre-trigger writer could leave).
+    # One writer moves P1 to `b` while another gives `a` to P2. P2 must never get P1's old URL.
+    a, b = unique("dua-a"), unique("dua-b")
+    p1, p2 = create(api, a), create(api, unique("dua-p2"))
+    with engine.begin() as connection:
+        connection.execute(text("delete from public.product_slugs where slug = :slug"), {"slug": a})
+    mover = engine.connect()
+    mover.begin()
+    mover.execute(text("update public.products set slug = :slug where id = :id"), {"slug": b, "id": p1["id"]})
+
+    def take_a() -> str:
+        with engine.connect() as taker:
+            try:
+                taker.execute(text("update public.products set slug = :slug where id = :id"), {"slug": a, "id": p2["id"]})
+                taker.commit()
+                return "taken"
+            except IntegrityError as exc:
+                return str(exc.orig.diag.constraint_name)
+
+    with ThreadPoolExecutor(1) as pool:
+        taken = pool.submit(take_a)
+        with engine.connect() as watcher:  # wait until the taker is blocked behind the mover
+            for _ in range(100):
+                if watcher.execute(text(
+                    "select count(*) from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()"
+                )).scalar_one():
+                    break
+                watcher.execute(text("select pg_sleep(0.05)"))
+        mover.commit()
+        mover.close()
+        assert taken.result() == "products_slug_key"
+    assert get(api, a) == (301, f"/api/v1/products/{b}")
+    assert history(engine, p1["id"]) == sorted([a, b])
+
+
 def test_downgrade_is_refused(engine: Engine) -> None:
     with pytest.raises(subprocess.CalledProcessError):
         alembic("downgrade", "0005")
