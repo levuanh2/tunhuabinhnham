@@ -118,7 +118,7 @@ test.describe("product URL change", () => {
     await expect(page.locator("output")).toHaveText("/san-pham/tu-ao-3-canh");
   });
 
-  test("S4. any product customers may have seen asks first; every old URL stays reserved, drafts included", async ({ page }) => {
+  test("S4. any product customers may have seen asks first; every old URL stays reserved, drafts included", async ({ page: shared }) => {
     writesFixture();
     const past = new Date(Date.now() - 86_400_000).toISOString(), future = new Date(Date.now() + 3 * 86_400_000).toISOString();
     const cases = [
@@ -128,6 +128,8 @@ test.describe("product URL change", () => {
       { slug: "s4-nhap", publish_status: "draft", published_at: null, asks: false },
     ];
     for (const { asks, ...state } of cases) {
+      // A fresh tab per case: the form's post-save router.refresh must not race the next goto.
+      const page = await shared.context().newPage();
       const product = await (await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: state.slug, sku: state.slug.toUpperCase(), category_id: "c1", images: [], ...state } })).json();
       await gotoReady(page, `/admin/san-pham/${product.id}`);
       await page.getByRole("button", { name: "Chỉnh sửa đường dẫn" }).click();
@@ -140,6 +142,7 @@ test.describe("product URL change", () => {
       // The old URL can never be given to another product.
       const taken = await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: "khac", slug: state.slug, sku: `${state.slug}-K`.toUpperCase(), category_id: "c1", images: [] } });
       expect(taken.status(), state.slug).toBe(409);
+      await page.close();
     }
   });
 
