@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import (
+    ContactClickRepeated,
+    ContactQuotaExceeded,
+    contact_click_quota,
     contact_client_rate_limiter,
-    release_contact_quota,
-    take_contact_quota,
 )
 from app.db.session import get_db
 from app.models import Banner, ContactClick, Post, Product, PublishStatus, SiteSettings
@@ -205,32 +206,32 @@ def track_contact(
         select(Product.id).where(Product.id == payload.product_id, *public_product_conditions())
     ) is None:
         raise HTTPException(status_code=422, detail="Unknown product")
-    # Only a click that will be stored takes from the hourly caps (V1-SEC-05).
-    click = f"{client}|{payload.product_id}|{payload.source}"
-    taken = take_contact_quota(
-        client,
-        click,
-        per_hour=config.contact_click_client_limit_per_hour,
-        global_per_hour=config.contact_click_global_limit_per_hour,
-        repeat_seconds=config.contact_click_repeat_seconds,
-    )
-    if taken == "repeat":
-        return ContactClickOut(accepted=False)  # the same click was just counted
-    if taken is not None:
-        raise _too_many_contact_clicks(taken)
-    # No IP or IP hash is stored: the count is all the dashboard needs.
-    db.add(
-        ContactClick(
-            product_id=payload.product_id,
-            source=payload.source,
-            user_agent=(request.headers.get("user-agent") or "")[:500],
-        )
-    )
+    # Only a click that will be stored takes from the hourly caps (V1-SEC-05); any failure to
+    # store it gives back exactly what it took.
     try:
-        db.commit()
-    except IntegrityError:
-        # The product was deleted between the check and the insert.
-        db.rollback()
-        release_contact_quota(client, click)
-        raise HTTPException(status_code=422, detail="Unknown product") from None
+        with contact_click_quota(
+            client,
+            f"{client}|{payload.product_id}|{payload.source}",
+            per_hour=config.contact_click_client_limit_per_hour,
+            global_per_hour=config.contact_click_global_limit_per_hour,
+            repeat_seconds=config.contact_click_repeat_seconds,
+        ):
+            # No IP or IP hash is stored: the count is all the dashboard needs.
+            db.add(
+                ContactClick(
+                    product_id=payload.product_id,
+                    source=payload.source,
+                    user_agent=(request.headers.get("user-agent") or "")[:500],
+                )
+            )
+            try:
+                db.commit()
+            except IntegrityError:
+                # The product was deleted between the check and the insert.
+                db.rollback()
+                raise HTTPException(status_code=422, detail="Unknown product") from None
+    except ContactClickRepeated:
+        return ContactClickOut(accepted=False)  # the same click was just counted
+    except ContactQuotaExceeded as exc:
+        raise _too_many_contact_clicks(exc.retry_after) from None
     return ContactClickOut()

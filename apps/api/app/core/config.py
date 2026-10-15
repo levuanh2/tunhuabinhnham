@@ -64,6 +64,15 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
+    def keep_contact_quota_fair(self) -> "Settings":
+        # One visitor must never be allowed the whole site-wide hourly quota (V1-SEC-05).
+        if self.contact_click_client_limit_per_hour >= self.contact_click_global_limit_per_hour:
+            raise ValueError(
+                "CONTACT_CLICK_CLIENT_LIMIT_PER_HOUR must be below CONTACT_CLICK_GLOBAL_LIMIT_PER_HOUR"
+            )
+        return self
+
+    @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
         if self.app_env != "production":
             return self

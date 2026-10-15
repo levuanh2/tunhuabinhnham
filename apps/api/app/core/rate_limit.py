@@ -1,7 +1,8 @@
 import math
 import threading
 import time
-from typing import Literal
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 
 class FixedWindowRateLimiter:
@@ -39,19 +40,18 @@ class FixedWindowRateLimiter:
             started, count = self._entries.get(key, (now, 0))
             if now - started >= window_seconds:
                 started, count = now, 0
-            count += 1
-            self._entries[key] = (started, count)
-            if count <= limit:
-                return None
-            return max(1, math.ceil(window_seconds - (now - started)))
+            if count >= limit:
+                # Refused: nothing is counted, so a refusal never uses up a later admission.
+                return max(1, math.ceil(window_seconds - (now - started)))
+            self._entries[key] = (started, count + 1)
+            return None
 
-    def release(self, key: str) -> None:
-        """Give back one use taken by retry_after for a request that was not served."""
-        # ponytail: if the window rolled over meanwhile, the new window is credited instead
-        # (at most one extra use per refused request); tracking the window start would fix it.
+    def release(self, key: str, admitted_at: float) -> None:
+        """Give back one use admitted at or before admitted_at (time.monotonic) by retry_after,
+        for a request that was not served. A window started since then is left alone."""
         with self._lock:
             entry = self._entries.get(key)
-            if entry is not None and entry[1] > 0:
+            if entry is not None and entry[0] <= admitted_at and entry[1] > 0:
                 self._entries[key] = (entry[0], entry[1] - 1)
 
 
@@ -64,30 +64,50 @@ contact_repeat_rate_limiter = FixedWindowRateLimiter()  # the same click, once p
 contact_global_rate_limiter = FixedWindowRateLimiter()  # stored clicks, whole site
 
 
-def take_contact_quota(
+class ContactClickRepeated(Exception):
+    """The same click (visitor, product, button) was just counted."""
+
+
+class ContactQuotaExceeded(Exception):
+    def __init__(self, retry_after: int) -> None:
+        super().__init__(retry_after)
+        self.retry_after = retry_after
+
+
+@contextmanager
+def contact_click_quota(
     client: str, click: str, *, per_hour: int, global_per_hour: int, repeat_seconds: int
-) -> int | Literal["repeat"] | None:
-    """Reserve what storing one contact click uses: None = store it, "repeat" = the same click
-    was just stored (keep nothing), a number = Retry-After seconds.
+) -> Iterator[None]:
+    """Hold what storing one contact click uses while the block stores it.
 
-    Only a click that will be stored takes from the per-visitor hourly cap and the site-wide
-    cap, so one visitor gets at most per_hour of the global quota and refused or repeated
-    requests use none of it. Each step is atomic; a refused later step gives the earlier ones
-    back. Call release_contact_quota if storing then fails.
+    Raises ContactClickRepeated or ContactQuotaExceeded before the block runs. Only a click
+    that will be stored takes from the per-visitor hourly cap and the site-wide cap, so one
+    visitor gets at most per_hour of the global quota and refused or repeated requests use none
+    of it. If a later step is refused, or the block raises (any storage failure), exactly what
+    was taken is given back.
     """
-    if contact_repeat_rate_limiter.retry_after(click, 1, max(repeat_seconds, 1)) is not None:
-        return "repeat"
-    retry = contact_client_hourly_rate_limiter.retry_after(client, per_hour, 3600)
-    if retry is None:
-        retry = contact_global_rate_limiter.retry_after("global", global_per_hour, 3600)
+    steps = (
+        (contact_repeat_rate_limiter, click, 1, max(repeat_seconds, 1)),
+        (contact_client_hourly_rate_limiter, client, per_hour, 3600),
+        (contact_global_rate_limiter, "global", global_per_hour, 3600),
+    )
+    taken: list[tuple[FixedWindowRateLimiter, str]] = []
+
+    def give_back() -> None:
+        admitted_at = time.monotonic()
+        for limiter, key in taken:
+            limiter.release(key, admitted_at)
+
+    for limiter, key, limit, window in steps:
+        retry = limiter.retry_after(key, limit, window)
         if retry is not None:
-            contact_client_hourly_rate_limiter.release(client)
-    if retry is not None:
-        contact_repeat_rate_limiter.release(click)
-    return retry
-
-
-def release_contact_quota(client: str, click: str) -> None:
-    contact_repeat_rate_limiter.release(click)
-    contact_client_hourly_rate_limiter.release(client)
-    contact_global_rate_limiter.release("global")
+            give_back()
+            if limiter is contact_repeat_rate_limiter:
+                raise ContactClickRepeated
+            raise ContactQuotaExceeded(retry)
+        taken.append((limiter, key))
+    try:
+        yield
+    except BaseException:
+        give_back()
+        raise

@@ -342,9 +342,12 @@ def test_concurrent_visitors_never_exceed_the_caps() -> None:
     def visit(n: int) -> None:
         barrier.wait()
         visitor = f"v{n % 6}"  # 6 visitors x 10 distinct clicks, all at once
-        if rate_limit.take_contact_quota(visitor, f"{visitor}|{n}", per_hour=4, global_per_hour=15,
-                                         repeat_seconds=30) is None:
-            stored.append(visitor)
+        try:
+            with rate_limit.contact_click_quota(visitor, f"{visitor}|{n}", per_hour=4,
+                                                global_per_hour=15, repeat_seconds=30):
+                stored.append(visitor)
+        except rate_limit.ContactQuotaExceeded:
+            pass
 
     threads = [threading.Thread(target=visit, args=(n,)) for n in range(60)]
     for thread in threads:
@@ -359,3 +362,71 @@ def test_contact_limiters_are_bounded() -> None:
     limiters = [value for value in vars(rate_limit).values()
                 if isinstance(value, rate_limit.FixedWindowRateLimiter)]
     assert len(limiters) >= 4 and all(limiter._max_keys <= 10_000 for limiter in limiters)
+
+
+def quota(client: str, click: str, **limits: int):  # type: ignore[no-untyped-def]
+    return rate_limit.contact_click_quota(
+        client, click, **{"per_hour": 20, "global_per_hour": 1, "repeat_seconds": 30, **limits}
+    )
+
+
+def test_a_refusal_during_a_failed_store_leaves_the_quota_free(clock: list[float]) -> None:
+    # Codex: A holds the only global slot, B is refused meanwhile, A's insert fails, then C.
+    with pytest.raises(RuntimeError), quota("a", "a|1"):
+        with pytest.raises(rate_limit.ContactQuotaExceeded), quota("b", "b|1"):
+            pass
+        raise RuntimeError("insert failed")
+    with quota("c", "c|1"):  # the slot is free again: nothing was stored
+        pass
+
+
+def test_any_storage_failure_gives_the_quota_back(
+    client: TestClient, db: Session, clock: list[float], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    configure(client_ip_header="cf-connecting-ip", contact_click_global_limit_per_hour=1)
+    real_commit = type(db).commit
+    failures = [OperationalError("commit", {}, Exception("connection lost"))]
+
+    def flaky_commit(self: Session) -> None:
+        if failures:
+            raise failures.pop()
+        real_commit(self)
+
+    monkeypatch.setattr(type(db), "commit", flaky_commit)
+    assert click(client, "203.0.113.4") == 500  # not an IntegrityError: a server error
+    db.rollback()
+    # Same visitor, same click, at once: neither a repeat nor over any cap.
+    assert client.post(URL, json={}, headers={"cf-connecting-ip": "203.0.113.4"}).json() == {"accepted": True}
+    assert rows(db) == 1
+
+
+def test_a_late_give_back_never_credits_a_newer_window(clock: list[float]) -> None:
+    limiter = rate_limit.FixedWindowRateLimiter()
+    assert limiter.retry_after("k", 1, 60) is None
+    admitted_at = rate_limit.time.monotonic()
+    clock[0] += 61
+    assert limiter.retry_after("k", 1, 60) is None  # new window, its one use taken
+    limiter.release("k", admitted_at)  # the old window's use comes back too late
+    assert limiter.retry_after("k", 1, 60) is not None  # the new window is still full
+
+
+def test_refused_requests_are_not_counted(clock: list[float]) -> None:
+    limiter = rate_limit.FixedWindowRateLimiter()
+    assert limiter.retry_after("k", 1, 60) is None
+    admitted_at = rate_limit.time.monotonic()
+    for _ in range(5):
+        assert limiter.retry_after("k", 1, 60) is not None
+    limiter.release("k", admitted_at)
+    assert limiter.retry_after("k", 1, 60) is None
+
+
+def test_a_visitor_can_never_be_allowed_the_whole_site_quota() -> None:
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError, match="must be below"):
+        Settings(contact_click_client_limit_per_hour=300, contact_click_global_limit_per_hour=300)
+    assert Settings().contact_click_client_limit_per_hour < Settings().contact_click_global_limit_per_hour
