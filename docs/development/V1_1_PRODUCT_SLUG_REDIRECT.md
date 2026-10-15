@@ -10,7 +10,7 @@ Branch `feat/v1.1-slug-redirect`, from integration `0ff735b`. Commits:
 - `3d57780` V1-SEC-05 contact-click rate limit (separate report: `V1_1_CONTACT_CLICK_RATE_LIMIT.md`);
 - `693730e` e2e S4 timing;
 - `f2c4df4` Codex round 4 test fixes;
-- `a96b2b9` Codex rate-limit review fixes;
+- `a96b2b9` and `fd29879` Codex rate-limit review fixes;
 - docs commit (this file).
 
 Not pushed, not deployed. No production migration has been run.
@@ -203,11 +203,11 @@ Codex independent review (backend, DB, security):
 - **Round 4** (`503ec9b`): **APPROVE, P0 0, P1 0, P2 0, P3 2.**
   - The guard lowercased literals: fixed by keeping case.
   - The race test did not prove the taker waited: fixed by checking the taker's PID.
-  - Both fixes are in `f2c4df4`, checked in the rate-limit review. Its one follow-up (race-test cleanup could hang on failure) is fixed in `a96b2b9`.
+  - Both fixes are in `f2c4df4`, checked in the rate-limit review. Its follow-ups on the race-test cleanup are fixed in `a96b2b9` and `fd29879`.
 
 Files: `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md`.
 
-## 9. Tests (final code `a96b2b9`)
+## 9. Tests (final code `fd29879`)
 
 Fail-before (tests written before the code they check, run on the code before the fix):
 - feature tests on the V1.0 code: 11 of 12 failed (the 401 test passes on both);

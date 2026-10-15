@@ -14,7 +14,7 @@ Design and test results:
 | Backend (Render) | `3e8c5f0` | GitHub deployments of `levuanh2/tunhuabinhnham` |
 | Worker | `8ac62f3e-e21a-47f2-b124-7ed027441bef` (N of V1.0), built from `3e8c5f0` | `npx wrangler deployments status` |
 | Render auto-deploy | OFF (owner said "có thể đang OFF") | the owner checks Dashboard → Settings → Auto-Deploy; this machine has no Render API key for this workspace |
-| Branch | `feat/v1.1-slug-redirect` at the reviewed commit (≥ `a96b2b9`), Codex APPROVE (slug R4, rate limit) | `git log`, `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md` |
+| Branch | `feat/v1.1-slug-redirect` at the reviewed commit (≥ `fd29879`), Codex APPROVE (slug R4, rate limit) | `git log`, `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md` |
 
 Order: **migration → backend → frontend.** Each version stays compatible with its neighbours; see §6.
 

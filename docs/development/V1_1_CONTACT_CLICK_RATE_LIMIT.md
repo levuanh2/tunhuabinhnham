@@ -2,7 +2,8 @@
 
 Branch `feat/v1.1-slug-redirect`. Commits:
 - `3d57780`: the fix;
-- `a96b2b9`: Codex review fixes.
+- `a96b2b9`: Codex round 1 fixes;
+- `fd29879`: Codex round 2 fixes.
 
 No migration, no new service, no paid plan. Not deployed.
 
@@ -39,7 +40,8 @@ Order in `track_contact` (`apps/api/app/api/v1/public.py`):
 How the quota is held and returned:
 - Steps 5–8 run in `contact_click_quota()`, a context manager in `apps/api/app/core/rate_limit.py`. A refused step gives back the earlier ones.
 - **Any** storage failure gives back exactly what was taken. An `IntegrityError` (product deleted meanwhile) still answers 422; other failures answer 500.
-- A refused check counts nothing. A give-back only credits the window the use was taken in (Codex rate-limit review).
+- A refused check counts nothing.
+- Each admission returns its window start, read under the limiter lock, as a token. A give-back only credits that exact window, never a newer one (Codex rate-limit rounds 1–2).
 - Settings refuse a per-visitor hourly cap at or above the site-wide one.
 
 New settings, with safe defaults:
@@ -75,7 +77,7 @@ This protects a small analytics quota from cheap starvation. It is **not spam-pr
 
 `apps/api/tests/test_contact_clicks.py`: 31 tests (25 functions, some parametrized).
 
-Fail-before: 8 new tests failed on `503ec9b` (one visitor stored 300/300; refused requests turned 422 into 429; tracking off used quota; repeats were stored; no hourly cap; no concurrency guarantee; unbounded limiter set). 2 more failed on `3d57780`: a non-`IntegrityError` storage failure kept the quota, and the configuration accepted an unfair cap.
+Fail-before: 8 new tests failed on `503ec9b` (one visitor stored 300/300; refused requests turned 422 into 429; tracking off used quota; repeats were stored; no hourly cap; no concurrency guarantee; unbounded limiter set). 2 more failed on `3d57780`: a non-`IntegrityError` storage failure kept the quota, and the configuration accepted an unfair cap. 1 more failed on `a96b2b9`: a give-back after a window rollover credited the newer window.
 
 | Required case | Test |
 |---|---|
@@ -102,4 +104,7 @@ Backend total: **137 passed**, 0 failed. Ruff and mypy are clean.
   - P2 reservation accounting under contention or on other failures: fixed in `a96b2b9`.
   - P3 unfair configuration: fixed by the validator.
   - P3 race-test cleanup: fixed with `finally`.
-- Round 2 (`a96b2b9`): see `c21-release-validation/v1.1-slug/V1_1_RATE_LIMIT_REVIEW_R2.md`.
+- Round 2 (`a96b2b9`): **APPROVE**, P0 0, P1 0, P2 0, P3 2.
+  - P3 refund after a rollover used the give-back time instead of the admission window: fixed in `fd29879` with exact window tokens.
+  - P3 PG test timeout could still wait at executor shutdown: fixed.
+- Round 3 (`fd29879`, the two P3 follow-ups only): **not yet run**. Codex reached its usage limit on 2026-10-15, usable again from 18:12. The request is in `c21-release-validation/v1.1-slug/RL3_REQUEST.md`; run it before the backend deploy.
