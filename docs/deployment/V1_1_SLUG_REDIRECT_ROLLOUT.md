@@ -1,8 +1,10 @@
-# V1.1 product slug redirect: production rollout plan
+# V1.1 product slug redirect and contact-click rate limit: production rollout plan
 
 Status: **plan only.** Nothing in this document has been run against production. Every production step needs the owner's separate approval: the migration, the backend deploy, the frontend deploy, and any test data.
 
-Design and test results: `docs/development/V1_1_PRODUCT_SLUG_REDIRECT.md`.
+Design and test results:
+- `docs/development/V1_1_PRODUCT_SLUG_REDIRECT.md`;
+- `docs/development/V1_1_CONTACT_CLICK_RATE_LIMIT.md` (V1-SEC-05: backend only, no migration, ships with the same backend deploy).
 
 ## 0. Starting point (verify, do not assume)
 
@@ -12,13 +14,13 @@ Design and test results: `docs/development/V1_1_PRODUCT_SLUG_REDIRECT.md`.
 | Backend (Render) | `3e8c5f0` | GitHub deployments of `levuanh2/tunhuabinhnham` |
 | Worker | `8ac62f3e-e21a-47f2-b124-7ed027441bef` (N of V1.0), built from `3e8c5f0` | `npx wrangler deployments status` |
 | Render auto-deploy | OFF (owner said "có thể đang OFF") | the owner checks Dashboard → Settings → Auto-Deploy; this machine has no Render API key for this workspace |
-| Branch | `feat/v1.1-slug-redirect` at the reviewed commit (≥ `9595774`), Codex APPROVE | `git log`, `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md` |
+| Branch | `feat/v1.1-slug-redirect` at the reviewed commit (≥ `a96b2b9`), Codex APPROVE (slug R4, rate limit) | `git log`, `c21-release-validation/v1.1-slug/V1_1_SLUG_REDIRECT_REVIEW*.md` |
 
 Order: **migration → backend → frontend.** Each version stays compatible with its neighbours; see §6.
 
 ## 1. Backup and pre-check
 
-- The migration is **additive**: one new table, one index, a backfill and one read-only trigger on `products`. It never changes a product row.
+- The migration is **additive**: one new table, one index, a backfill, and one trigger on `products` that writes only `product_slugs`. It never changes a product row.
 - It sets `lock_timeout = 5s`. If product writes hold a lock, it gives up and rolls back completely (tested: revision stays `0005`, no table, no trigger); simply rerun it. Run it in a quiet moment and ask that nobody saves products in Admin for those few seconds.
 - Supabase Free has no automatic backups. Before applying, the owner takes a logical dump of schema `public` (`pg_dump --schema=public --format=custom`) and keeps it off this machine. The agent's tool may not run `pg_dump` against production.
 - Read-only pre-check:
@@ -39,7 +41,7 @@ Read-only checks afterwards:
 - `product_slugs` exists with `relrowsecurity = true`;
 - `has_table_privilege` is false for `anon` and `authenticated` (select, insert, update, delete);
 - backfill row count equals the `products` row count, and every slug matches its product;
-- trigger `product_slug_not_owned_elsewhere` exists on `public.products` (`select tgname from pg_trigger where tgrelid = 'public.products'::regclass and not tgisinternal`);
+- trigger `record_product_slug` exists on `public.products` (`select tgname from pg_trigger where tgrelid = 'public.products'::regclass and not tgisinternal`);
 - `products` md5 is unchanged; the `0005` policies are unchanged;
 - anon Data API: `GET /rest/v1/product_slugs` is refused (401/403).
 
@@ -53,6 +55,10 @@ Stop if any check fails. The table can stay in place: neither backend version br
   - `/health/live` and `/health/ready` 200;
   - a current product slug 200, an unknown slug 404;
   - admin endpoints anonymous 401;
+- contact clicks (V1-SEC-05):
+  - one `POST /api/v1/contact-clicks` with `{}` returns `202 {"accepted": true}`;
+  - the same request again at once returns `202 {"accepted": false}` (a repeat, not stored);
+  - this writes **one** analytics row, so it needs the owner's OK, or skip it and watch the dashboard after real clicks.
   - CORS and security headers unchanged.
 - A 301 exists only after a rename, so it cannot be checked without a write (§5).
 
@@ -107,7 +113,7 @@ The redirect itself needs a rename, which is a write. **Real products must not b
 | What | Target | Effect and caveats |
 |---|---|---|
 | Frontend | P′ (after step B), P (before step B) | Old URLs then render with 200 and a canonical to the new URL (row 2 of §6). No link breaks. |
-| Backend | redeploy `3e8c5f0` | Works with the table present (it never reads it). **Old URLs of products renamed in the meantime return 404 until a roll-forward.** Product writes stay safe: the database trigger refuses any slug another product has had, and `3e8c5f0` answers its usual 409 "Slug already exists" (PG test `test_a_writer_that_ignores_the_history_cannot_take_an_old_slug`). |
+| Backend | redeploy `3e8c5f0` | Works with the table and trigger present (it never reads the table). **Old URLs of products renamed in the meantime return 404 until a roll-forward.** Product writes stay safe: the trigger records every slug the old backend writes and refuses any slug another product has had, including in a race. `3e8c5f0` answers its usual 409 "Slug already exists" (PG tests `test_an_older_writer_still_records_every_slug`, `test_mixed_writers_racing_for_a_url_whose_history_is_missing`). The contact-click limits go back to the V1.0 behaviour (V1-SEC-05 open again) |
 | Database | **no downgrade** (the wrapper raises) | Dropping `product_slugs` would break every old link already shared. A rollback is a roll-forward migration `0007` that fixes forward; the table stays. |
 
 **Data preservation:**

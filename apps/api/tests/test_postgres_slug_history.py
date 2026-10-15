@@ -282,6 +282,8 @@ def test_mixed_writers_racing_for_a_url_whose_history_is_missing(api: TestClient
 
     taker = engine.connect()
     taker_pid = taker.execute(text("select pg_backend_pid()")).scalar_one()
+    taker.execute(text("set statement_timeout = '20s'"))  # the worker always ends
+    taker.commit()
 
     def take_a() -> str:
         try:
@@ -292,24 +294,30 @@ def test_mixed_writers_racing_for_a_url_whose_history_is_missing(api: TestClient
             return str(exc.orig.diag.constraint_name)
 
     waiting = False
-    with ThreadPoolExecutor(1) as pool:
-        taken = pool.submit(take_a)
+    pool = ThreadPoolExecutor(1)
+    taken = pool.submit(take_a)
+    try:
+        with engine.connect() as watcher:  # the taker itself must be blocked behind the mover
+            for _ in range(200):
+                waiting = bool(watcher.execute(text(
+                    "select wait_event_type = 'Lock' from pg_stat_activity where pid = :pid"
+                ), {"pid": taker_pid}).scalar())
+                if waiting:
+                    break
+                watcher.execute(text("select pg_sleep(0.05)"))
+    finally:
+        # Each cleanup step runs even if an earlier one fails; nothing waits without a bound.
         try:
-            with engine.connect() as watcher:  # the taker itself must be blocked behind the mover
-                for _ in range(200):
-                    waiting = bool(watcher.execute(text(
-                        "select wait_event_type = 'Lock' from pg_stat_activity where pid = :pid"
-                    ), {"pid": taker_pid}).scalar())
-                    if waiting:
-                        break
-                    watcher.execute(text("select pg_sleep(0.05)"))
-        finally:
-            # Always end the mover, so the taker (and the pool) can finish even if the wait
-            # was never seen; a rollback then, so a failing run changes nothing.
             mover.commit() if waiting else mover.rollback()
-            mover.close()
-            outcome = taken.result(timeout=30)
-            taker.close()
+        finally:
+            try:
+                mover.close()
+            finally:
+                try:
+                    outcome = taken.result(timeout=30)
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
+                    taker.close()
     assert waiting, "the taker never waited on the mover's lock"
     assert outcome == "products_slug_key"
     assert get(api, a) == (301, f"/api/v1/products/{b}")

@@ -403,22 +403,24 @@ def test_any_storage_failure_gives_the_quota_back(
 
 
 def test_a_late_give_back_never_credits_a_newer_window(clock: list[float]) -> None:
-    limiter = rate_limit.FixedWindowRateLimiter()
-    assert limiter.retry_after("k", 1, 60) is None
-    admitted_at = rate_limit.time.monotonic()
-    clock[0] += 61
-    assert limiter.retry_after("k", 1, 60) is None  # new window, its one use taken
-    limiter.release("k", admitted_at)  # the old window's use comes back too late
-    assert limiter.retry_after("k", 1, 60) is not None  # the new window is still full
+    # Codex rate-limit R2, through the real path: A holds a click past its 30 s repeat window,
+    # B stores the same click in the new window, then A fails. A third one is still a repeat.
+    with pytest.raises(RuntimeError), quota("v", "v|1", global_per_hour=100):
+        clock[0] += 31
+        with quota("v", "v|1", global_per_hour=100):
+            pass
+        raise RuntimeError("A's insert failed")
+    with pytest.raises(rate_limit.ContactClickRepeated), quota("v", "v|1", global_per_hour=100):
+        pass
 
 
 def test_refused_requests_are_not_counted(clock: list[float]) -> None:
     limiter = rate_limit.FixedWindowRateLimiter()
-    assert limiter.retry_after("k", 1, 60) is None
-    admitted_at = rate_limit.time.monotonic()
+    retry, window_start = limiter.take("k", 1, 60)
+    assert retry is None
     for _ in range(5):
         assert limiter.retry_after("k", 1, 60) is not None
-    limiter.release("k", admitted_at)
+    limiter.release("k", window_start)
     assert limiter.retry_after("k", 1, 60) is None
 
 
