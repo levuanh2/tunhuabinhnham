@@ -16,7 +16,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
 export const publicApi = {
   products: (query = "") => apiFetch<Page<Product>>(`/products${query ? `?${query}` : ""}`),
-  product: (slug: string) => apiFetch<Product>(`/products/${slug}`),
+  // The API answers an old slug with a 301 to the current one; fetch follows it.
+  product: (slug: string) => apiFetch<Product>(`/products/${encodeURIComponent(slug)}`),
   categories: () => apiFetch<Category[]>("/categories"),
   posts: () => apiFetch<Page<Post>>("/posts"),
   banners: () => apiFetch<Banner[]>("/banners"),

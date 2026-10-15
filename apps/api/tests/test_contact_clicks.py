@@ -18,8 +18,9 @@ URL = "/api/v1/contact-clicks"
 
 @pytest.fixture(autouse=True)
 def fresh_limits() -> Generator[None, None, None]:
-    rate_limit.contact_client_rate_limiter._entries.clear()
-    rate_limit.contact_global_rate_limiter._entries.clear()
+    for limiter in vars(rate_limit).values():
+        if isinstance(limiter, rate_limit.FixedWindowRateLimiter):
+            limiter._entries.clear()
     yield
     app.dependency_overrides.pop(get_settings, None)
 
@@ -104,13 +105,14 @@ def test_rapid_repeats_get_429_then_recover(
     configure(contact_click_limit_per_minute=3)
     clock = [1000.0]
     monkeypatch.setattr(rate_limit.time, "monotonic", lambda: clock[0])
-    assert [client.post(URL, json={}).status_code for _ in range(3)] == [202, 202, 202]
-    limited = client.post(URL, json={})
+    sources = ["product_detail", "product_card", "contact_page", "unknown"]
+    assert [client.post(URL, json={"source": s}).status_code for s in sources[:3]] == [202] * 3
+    limited = client.post(URL, json={"source": "unknown"})
     assert limited.status_code == 429
     assert 1 <= int(limited.headers["retry-after"]) <= 60
     assert rows(db) == 3
     clock[0] += 61
-    assert client.post(URL, json={}).status_code == 202
+    assert client.post(URL, json={"source": "unknown"}).status_code == 202
     assert rows(db) == 4
 
 
@@ -216,3 +218,217 @@ def test_limiter_memory_is_bounded_and_recovers(monkeypatch: pytest.MonkeyPatch)
     clock[0] += 61  # windows expired: pruned, new keys accepted again
     assert limiter.retry_after("ip-new", limit=5) is None
     assert len(limiter._entries) == 1
+
+
+# V1-SEC-05: one visitor must not use up the site-wide hourly quota, and only clicks that are
+# stored may count against it.
+
+
+@pytest.fixture
+def clock(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    now = [10_000.0]
+    monkeypatch.setattr(rate_limit.time, "monotonic", lambda: now[0])
+    return now
+
+
+def click(client: TestClient, ip: str, body: dict[str, object] | None = None) -> int:
+    response = client.post(URL, json=body or {}, headers={"cf-connecting-ip": ip})
+    return response.status_code
+
+
+def test_one_spamming_visitor_cannot_starve_the_others(
+    client: TestClient, db: Session, clock: list[float]
+) -> None:
+    configure(client_ip_header="cf-connecting-ip")  # production defaults: 10/min, 20/h, 300/h site
+    item = product(db)
+    for minute in range(60):  # a full hour at the per-minute limit, distinct clicks
+        for i in range(10):
+            click(client, "203.0.113.66", {"product_id": str(item.id) if i % 2 else None,
+                                           "source": ["product_detail", "product_card",
+                                                      "contact_page", "unknown"][i % 4]})
+        clock[0] += 61 if minute % 2 else 1
+    spam = rows(db)
+    assert spam == 20  # contact_click_client_limit_per_hour: 20 of the site's 300 per hour
+    assert click(client, "198.51.100.7") == 202  # another visitor is still counted
+    assert rows(db) == spam + 1
+
+
+def test_refused_and_invalid_requests_use_no_site_wide_quota(
+    client: TestClient, db: Session, clock: list[float]
+) -> None:
+    configure(client_ip_header="cf-connecting-ip", contact_click_limit_per_minute=1000,
+              contact_click_global_limit_per_hour=2)
+    hidden = product(db, is_visible=False)
+    for i in range(20):  # unknown and non-public products are refused before any quota
+        assert click(client, f"192.0.2.{i}", {"product_id": str(uuid.uuid4())}) == 422
+        assert click(client, f"192.0.2.{i}", {"product_id": str(hidden.id)}) == 422
+    assert [click(client, "203.0.113.1"), click(client, "203.0.113.2")] == [202, 202]
+    assert rows(db) == 2
+
+
+def test_disabled_tracking_uses_no_quota(client: TestClient, db: Session, clock: list[float]) -> None:
+    from app.models import SiteSettings
+
+    configure(client_ip_header="cf-connecting-ip", contact_click_global_limit_per_hour=1)
+    settings = db.scalar(select(SiteSettings)) or SiteSettings()
+    settings.contact_tracking_enabled = False
+    db.add(settings)
+    db.commit()
+    for i in range(5):
+        response = client.post(URL, json={}, headers={"cf-connecting-ip": f"192.0.2.{i}"})
+        assert response.json() == {"accepted": False}
+    settings.contact_tracking_enabled = True
+    db.commit()
+    assert click(client, "203.0.113.9") == 202
+    assert rows(db) == 1
+
+
+def test_the_same_click_repeated_quickly_is_stored_once(
+    client: TestClient, db: Session, clock: list[float]
+) -> None:
+    configure(client_ip_header="cf-connecting-ip")
+    item = product(db)
+    body = {"product_id": str(item.id), "source": "product_detail"}
+    answers = [client.post(URL, json=body, headers={"cf-connecting-ip": "203.0.113.5"}).json()
+               for _ in range(4)]
+    assert answers == [{"accepted": True}] + [{"accepted": False}] * 3
+    assert rows(db) == 1
+    other = {"product_id": str(item.id), "source": "product_card"}
+    assert client.post(URL, json=other, headers={"cf-connecting-ip": "203.0.113.5"}).json() == {"accepted": True}
+    assert client.post(URL, json=body, headers={"cf-connecting-ip": "198.51.100.5"}).json() == {"accepted": True}
+    clock[0] += 31  # a later click on the same button counts again
+    assert client.post(URL, json=body, headers={"cf-connecting-ip": "203.0.113.5"}).json() == {"accepted": True}
+    assert rows(db) == 4
+
+
+def test_rotating_forged_forwarding_headers_does_not_lift_the_hourly_cap(
+    client: TestClient, db: Session, clock: list[float]
+) -> None:
+    # Only CF-Connecting-IP is trusted (Cloudflare overwrites it); X-Forwarded-For is ignored.
+    configure(contact_click_limit_per_minute=1000)
+    sources = ["product_detail", "product_card", "contact_page", "unknown"]
+    for i in range(40):
+        client.post(URL, json={"source": sources[i % 4]},
+                    headers={"cf-connecting-ip": "203.0.113.77", "x-forwarded-for": f"198.51.100.{i}"})
+        clock[0] += 31  # never a repeat
+    assert rows(db) == get_settings().contact_click_client_limit_per_hour
+
+
+def test_hourly_caps_recover_after_an_hour(client: TestClient, db: Session, clock: list[float]) -> None:
+    configure(client_ip_header="cf-connecting-ip", contact_click_client_limit_per_hour=2)
+    sources = ["product_detail", "product_card", "contact_page"]
+    codes = [click(client, "203.0.113.8", {"source": source}) for source in sources]
+    assert codes == [202, 202, 429]
+    clock[0] += 3601
+    assert click(client, "203.0.113.8", {"source": "contact_page"}) == 202
+
+
+def test_a_restart_forgets_every_count(client: TestClient, db: Session, clock: list[float]) -> None:
+    # In-memory limits (one Render worker): a restart or spin-down starts every window afresh.
+    # Accepted: at most one more hourly quota per restart; stored clicks are unaffected.
+    configure(client_ip_header="cf-connecting-ip", contact_click_global_limit_per_hour=1)
+    assert [click(client, "203.0.113.1"), click(client, "203.0.113.2")] == [202, 429]
+    for limiter in vars(rate_limit).values():
+        if isinstance(limiter, rate_limit.FixedWindowRateLimiter):
+            limiter._entries.clear()  # what a new process starts with
+    assert click(client, "203.0.113.2") == 202
+    assert rows(db) == 2
+
+
+def test_concurrent_visitors_never_exceed_the_caps() -> None:
+    stored: list[str] = []
+    barrier = threading.Barrier(60)
+
+    def visit(n: int) -> None:
+        barrier.wait()
+        visitor = f"v{n % 6}"  # 6 visitors x 10 distinct clicks, all at once
+        try:
+            with rate_limit.contact_click_quota(visitor, f"{visitor}|{n}", per_hour=4,
+                                                global_per_hour=15, repeat_seconds=30):
+                stored.append(visitor)
+        except rate_limit.ContactQuotaExceeded:
+            pass
+
+    threads = [threading.Thread(target=visit, args=(n,)) for n in range(60)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(stored) == 15  # the site-wide cap, never more
+    assert max(stored.count(f"v{i}") for i in range(6)) <= 4  # nobody over their own cap
+
+
+def test_contact_limiters_are_bounded() -> None:
+    limiters = [value for value in vars(rate_limit).values()
+                if isinstance(value, rate_limit.FixedWindowRateLimiter)]
+    assert len(limiters) >= 4 and all(limiter._max_keys <= 10_000 for limiter in limiters)
+
+
+def quota(client: str, click: str, **limits: int):  # type: ignore[no-untyped-def]
+    return rate_limit.contact_click_quota(
+        client, click, **{"per_hour": 20, "global_per_hour": 1, "repeat_seconds": 30, **limits}
+    )
+
+
+def test_a_refusal_during_a_failed_store_leaves_the_quota_free(clock: list[float]) -> None:
+    # Codex: A holds the only global slot, B is refused meanwhile, A's insert fails, then C.
+    with pytest.raises(RuntimeError), quota("a", "a|1"):
+        with pytest.raises(rate_limit.ContactQuotaExceeded), quota("b", "b|1"):
+            pass
+        raise RuntimeError("insert failed")
+    with quota("c", "c|1"):  # the slot is free again: nothing was stored
+        pass
+
+
+def test_any_storage_failure_gives_the_quota_back(
+    client: TestClient, db: Session, clock: list[float], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    configure(client_ip_header="cf-connecting-ip", contact_click_global_limit_per_hour=1)
+    real_commit = type(db).commit
+    failures = [OperationalError("commit", {}, Exception("connection lost"))]
+
+    def flaky_commit(self: Session) -> None:
+        if failures:
+            raise failures.pop()
+        real_commit(self)
+
+    monkeypatch.setattr(type(db), "commit", flaky_commit)
+    assert click(client, "203.0.113.4") == 500  # not an IntegrityError: a server error
+    db.rollback()
+    # Same visitor, same click, at once: neither a repeat nor over any cap.
+    assert client.post(URL, json={}, headers={"cf-connecting-ip": "203.0.113.4"}).json() == {"accepted": True}
+    assert rows(db) == 1
+
+
+def test_a_late_give_back_never_credits_a_newer_window(clock: list[float]) -> None:
+    # Codex rate-limit R2, through the real path: A holds a click past its 30 s repeat window,
+    # B stores the same click in the new window, then A fails. A third one is still a repeat.
+    with pytest.raises(RuntimeError), quota("v", "v|1", global_per_hour=100):
+        clock[0] += 31
+        with quota("v", "v|1", global_per_hour=100):
+            pass
+        raise RuntimeError("A's insert failed")
+    with pytest.raises(rate_limit.ContactClickRepeated), quota("v", "v|1", global_per_hour=100):
+        pass
+
+
+def test_refused_requests_are_not_counted(clock: list[float]) -> None:
+    limiter = rate_limit.FixedWindowRateLimiter()
+    retry, window_start = limiter.take("k", 1, 60)
+    assert retry is None
+    for _ in range(5):
+        assert limiter.retry_after("k", 1, 60) is not None
+    limiter.release("k", window_start)
+    assert limiter.retry_after("k", 1, 60) is None
+
+
+def test_a_visitor_can_never_be_allowed_the_whole_site_quota() -> None:
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError, match="must be below"):
+        Settings(contact_click_client_limit_per_hour=300, contact_click_global_limit_per_hour=300)
+    assert Settings().contact_click_client_limit_per_hour < Settings().contact_click_global_limit_per_hour

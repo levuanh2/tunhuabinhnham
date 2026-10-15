@@ -75,11 +75,11 @@ test.describe("product form", () => {
       if (round === 2) {
         await page.getByLabel("Trạng thái đăng bán").selectOption("published");
         await expect(page.getByText("Khách xem được sản phẩm này trên website.")).toBeVisible();
-        // First publish: the URL is fixed from now on, so it is shown for a last check.
+        // First publish: the URL customers will save is shown for a last check (it can still move later, with a redirect).
         const note = page.getByRole("note");
         await expect(note).toContainText("Kiểm tra đường dẫn trước khi đăng");
         await expect(note).toContainText("/san-pham/tu-da-nang-4-tang");
-        await expect(page.getByText("Kiểm tra kỹ: sau khi đăng, đường dẫn này sẽ không đổi được.")).toBeVisible();
+        await expect(note).toContainText("đường dẫn cũ sẽ tự chuyển sang đường dẫn mới");
       }
       const revalidated = page.waitForResponse(response => response.url().endsWith("/api/revalidate") && response.request().method() === "POST");
       await page.getByRole("button", { name: round === 1 ? "Lưu bản nháp" : "Đăng sản phẩm" }).click();
@@ -110,7 +110,7 @@ test.describe("product form", () => {
     await page.getByRole("button", { name: "Chỉnh sửa đường dẫn" }).click();
     await page.getByLabel("Đường dẫn sản phẩm").fill("tu-5-tang");
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
-    await expect(page.getByText("Đường dẫn này đã có sản phẩm khác dùng")).toBeVisible();
+    await expect(page.getByText("Đường dẫn này đang hoặc đã từng được sản phẩm khác dùng")).toBeVisible();
     await expect(page.getByLabel("Đường dẫn sản phẩm")).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByLabel("Tên sản phẩm")).toHaveValue("Tủ thử trùng");
     await expect(page.getByLabel("Mô tả", { exact: true })).toHaveValue("Mô tả không được mất");
@@ -154,7 +154,7 @@ test.describe("product form", () => {
     expect((await savedProducts(page)).filter(p => p.name === "Tủ cache lỗi")).toHaveLength(1);
   });
 
-  test("P6. a draft published by someone else meanwhile keeps its URL when a stale form changes it", async ({ page }) => {
+  test("P6. a draft published by someone else meanwhile: a stale form may still move it, and the URL that went public redirects", async ({ page }) => {
     writesFixture();
     const draft = await (await page.request.post(`${mock}/api/v1/admin/products`, { data: { name: "Tủ nháp", slug: "tu-nhap", sku: "TU-NHAP", publish_status: "draft", images: [] } })).json();
     await page.goto(`/admin/san-pham/${draft.id}`);
@@ -162,9 +162,11 @@ test.describe("product form", () => {
     await page.request.patch(`${mock}/api/v1/admin/products/${draft.id}`, { data: { publish_status: "published" } }); // another admin
     await page.getByLabel("Đường dẫn sản phẩm").fill("tu-nhap-moi");
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
-    await expect(page.getByText("Sản phẩm này đã được đăng nên giữ đường dẫn cũ.")).toBeVisible();
-    await expect(page.locator("output")).toHaveText("/san-pham/tu-nhap");
-    expect((await savedProducts(page)).find(p => p.id === draft.id)?.slug).toBe("tu-nhap");
+    await expect(page).toHaveURL(/\/admin\/san-pham$/);
+    expect((await savedProducts(page)).find(p => p.id === draft.id)?.slug).toBe("tu-nhap-moi");
+    // The server knew it was public, so the old URL is kept as a redirect: no link breaks.
+    const old = await page.request.get("/san-pham/tu-nhap", { maxRedirects: 0 });
+    expect([old.status(), old.headers().location]).toEqual([301, "/san-pham/tu-nhap-moi"]);
   });
 
   test("P4. editing a published product keeps its URL and category; hiding removes it from the site", async ({ page }) => {
@@ -173,8 +175,8 @@ test.describe("product form", () => {
     await expect(page.getByLabel("Loại sản phẩm")).toHaveValue("c2");
     await page.getByLabel("Tên sản phẩm").fill("Tủ nhựa 5 tầng nắp trắng (mẫu mới)");
     await expect(page.locator("output")).toHaveText("/san-pham/tu-5-tang");
-    await expect(page.getByRole("button", { name: "Chỉnh sửa đường dẫn" })).toHaveCount(0);
-    await expect(page.getByText("Sản phẩm đã đăng nên giữ nguyên đường dẫn")).toBeVisible();
+    // Editing the name never changes the URL; changing it is a separate, confirmed action (slug-redirect.spec.ts).
+    await expect(page.getByText("Đổi tên sản phẩm không làm thay đổi đường dẫn.")).toBeVisible();
     await expect(page.getByRole("note")).toHaveCount(0); // already published: no first-publish warning
     await page.getByRole("button", { name: "Lưu thay đổi" }).click();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);

@@ -123,6 +123,22 @@ class Product(Base, TimestampMixin, SoftDeleteMixin):
     )
 
 
+class ProductSlug(Base):
+    """Every URL slug a product has had since it was first public, including the current one.
+
+    The unique slug is what keeps an old URL pointing at one product forever.
+    """
+
+    __tablename__ = "product_slugs"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
+    slug: Mapped[str] = mapped_column(String(260), unique=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    __table_args__ = (Index("ix_product_slugs_product_id", "product_id"),)
+
+
 class ProductImage(Base, TimestampMixin):
     __tablename__ = "product_images"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

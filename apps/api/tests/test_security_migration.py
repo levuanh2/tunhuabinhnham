@@ -56,3 +56,64 @@ def test_alembic_wrapper_executes_only_the_canonical_0005_sql() -> None:
     assert 'down_revision = "0004"' in wrapper
     assert '"20261014090000_rls_hidden_categories.sql"' in wrapper
     assert "op.execute(sql_path.read_text" in wrapper
+
+
+SLUG_MIGRATION = ROOT / "supabase" / "migrations" / "20261015090000_product_slug_history.sql"
+SLUG_WRAPPER = ROOT / "apps" / "api" / "alembic" / "versions" / "0006_product_slug_history.py"
+
+
+# The reviewed shape of migration 0006, statement by statement (whitespace collapsed, case kept:
+# string literals such as 'UPDATE' and 'products_slug_key' are case-sensitive).
+# Exact matches, not keyword scans: any other statement or clause (UPDATE ONLY, DISABLE TRIGGER,
+# CALL, a data-changing CTE, SECURITY DEFINER, ...) fails here until it is reviewed and listed.
+SLUG_STATEMENTS = [
+    "set local lock_timeout = '5s'",  # never queue for long behind product writes
+    "create table public.product_slugs ( id uuid primary key default gen_random_uuid(), "
+    "product_id uuid not null references public.products(id) on delete cascade, "
+    "slug varchar(260) not null unique, created_at timestamptz not null default now() )",
+    "create index ix_product_slugs_product_id on public.product_slugs(product_id)",
+    "alter table public.product_slugs enable row level security",
+    "revoke all privileges on table public.product_slugs from anon, authenticated",
+    "insert into public.product_slugs (product_id, slug, created_at) "
+    "select id, slug, created_at from public.products",
+    "create function public.record_product_slug() returns trigger language plpgsql "
+    "set search_path = '' as $$body$$",
+    "revoke all on function public.record_product_slug() from public, anon, authenticated",
+    "create trigger record_product_slug after insert or update of slug on public.products "
+    "for each row execute function public.record_product_slug()",
+]
+# The trigger only records slugs in product_slugs and refuses another product's; reported as
+# products_slug_key so older backends answer their usual "Slug already exists".
+SLUG_TRIGGER_BODY = (
+    "begin if tg_op = 'UPDATE' then insert into public.product_slugs (product_id, slug) "
+    "values (old.id, old.slug) on conflict (slug) do nothing; end if; "
+    "insert into public.product_slugs (product_id, slug) values (new.id, new.slug) "
+    "on conflict (slug) do nothing; if exists ( select 1 from public.product_slugs s "
+    "where s.slug = new.slug and s.product_id <> new.id ) then raise exception "
+    "'slug belongs to another product' using errcode = 'unique_violation', "
+    "constraint = 'products_slug_key'; end if; return null; end"
+)
+
+
+def _normalized(text: str) -> str:
+    return " ".join(text.split())
+
+
+def test_slug_history_migration_is_exactly_the_reviewed_one() -> None:
+    sql = SLUG_MIGRATION.read_text(encoding="utf-8")
+    # Comments only as whole lines, so nothing (a string, an inline comment) can hide text.
+    code = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+    assert "--" not in code and "/*" not in code
+    head, body, tail = code.split("$$")  # exactly one dollar-quoted body
+    assert _normalized(body) == SLUG_TRIGGER_BODY
+    statements = [_normalized(part) for part in f"{head}$$body$${tail}".split(";") if part.strip()]
+    assert statements == SLUG_STATEMENTS
+
+
+def test_alembic_wrapper_executes_only_the_canonical_0006_sql() -> None:
+    wrapper = SLUG_WRAPPER.read_text(encoding="utf-8")
+
+    assert 'revision = "0006"' in wrapper
+    assert 'down_revision = "0005"' in wrapper
+    assert '"20261015090000_product_slug_history.sql"' in wrapper
+    assert "raise RuntimeError" in wrapper  # no downgrade: dropping the table breaks old links

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
+import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, isProductMove, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
 
 const req = (path: string, init: RequestInit = {}) => new Request(`https://tunhuabinhnham.com${path}`, init);
 const html = (init: ResponseInit = {}) => new Response("<html></html>", { status: 200, ...init, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", vary: "rsc, next-router-state-tree", ...init.headers } });
@@ -103,5 +103,25 @@ describe("public pages are identical for every visitor", () => {
     walk("src/app/(public)");
     files.push("src/app/layout.tsx", "src/lib/api.ts", "src/lib/brand.ts", "src/components/site-header.tsx", "src/components/site-footer.tsx", "src/components/site-nav.tsx");
     for (const file of files) expect(readFileSync(file, "utf8"), file).not.toMatch(/next\/headers|cookies\(|draftMode|@\/lib\/supabase/);
+  });
+});
+
+describe("isProductMove", () => {
+  const moved = (location: string | null, status = 308) => new Response(null, { status, headers: location ? { location } : {} });
+  it("is the product page's GET/HEAD redirect from an old URL to the current one", () => {
+    expect(isProductMove(req("/san-pham/cu?a=1"), moved("/san-pham/moi?a=1"))).toBe(true);
+    expect(isProductMove(req("/san-pham/cu", { method: "HEAD" }), moved("https://tunhuabinhnham.com/san-pham/moi"))).toBe(true);
+  });
+  it("leaves every other 308 alone, so method-preserving redirects stay 308", () => {
+    expect(isProductMove(req("/san-pham/cu", { method: "POST" }), moved("/san-pham/moi"))).toBe(false);
+    expect(isProductMove(req("/san-pham/cu/"), moved("/san-pham/cu"))).toBe(false); // trailing-slash redirect
+    expect(isProductMove(req("/san-pham/cu"), moved("/san-pham/cu/"))).toBe(false);
+    expect(isProductMove(req("/san-pham/cu"), moved("/san-pham/cu"))).toBe(false);
+    expect(isProductMove(req("/san-pham/cu"), moved("/tin-tuc/bai"))).toBe(false);
+    expect(isProductMove(req("/san-pham/cu"), moved("https://evil.example/san-pham/moi"))).toBe(false);
+    expect(isProductMove(req("/san-pham/cu"), moved(null))).toBe(false);
+    expect(isProductMove(req("/tin-tuc/cu"), moved("/tin-tuc/moi"))).toBe(false);
+    expect(isProductMove(req("/admin/san-pham"), moved("/admin/san-pham/"))).toBe(false);
+    for (const status of [301, 302, 307]) expect(isProductMove(req("/san-pham/cu"), moved("/san-pham/moi", status)), String(status)).toBe(false);
   });
 });

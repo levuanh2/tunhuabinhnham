@@ -2,13 +2,19 @@ import ipaddress
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import Settings, get_settings
-from app.core.rate_limit import contact_client_rate_limiter, contact_global_rate_limiter
+from app.core.rate_limit import (
+    ContactClickRepeated,
+    ContactQuotaExceeded,
+    contact_click_quota,
+    contact_client_rate_limiter,
+)
 from app.db.session import get_db
 from app.models import Banner, ContactClick, Post, Product, PublishStatus, SiteSettings
 from app.repositories.catalog import (
@@ -51,12 +57,27 @@ def products(
     )
 
 
-@router.get("/products/{slug}", response_model=ProductOut)
-def product(slug: str, db: Session = Depends(get_db)) -> ProductOut:
-    item = ProductRepository(db).by_slug(slug)
-    if item is None:
+@router.get(
+    "/products/{slug}",
+    response_model=ProductOut,
+    responses={301: {"description": "Old URL: Location is the product's current URL"}},
+)
+def product(slug: str, request: Request, db: Session = Depends(get_db)) -> ProductOut | Response:
+    repository = ProductRepository(db)
+    item = repository.by_slug(slug)
+    if item is not None:
+        return ProductOut.model_validate(item)
+    moved = repository.public_by_old_slug(slug)
+    if moved is None:
         raise HTTPException(status_code=404, detail="Product not found")
-    return ProductOut.model_validate(item)
+    # The target comes from the database only (a validated slug on a fixed path), never from the
+    # request; the query string is carried over as is. Not cached: the product may move again.
+    location = request.app.url_path_for("product", slug=moved.slug)
+    if request.url.query:
+        location += f"?{request.url.query}"
+    return RedirectResponse(
+        location, status_code=status.HTTP_301_MOVED_PERMANENTLY, headers={"Cache-Control": "no-store"}
+    )
 
 
 @router.get("/categories", response_model=list[CategoryOut])
@@ -152,6 +173,14 @@ def _client_key(request: Request, header: str) -> str:
     return str(address)
 
 
+def _too_many_contact_clicks(retry_after: int) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail="Too many contact clicks",
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
 @router.post(
     "/contact-clicks", response_model=ContactClickOut, status_code=status.HTTP_202_ACCEPTED
 )
@@ -161,19 +190,15 @@ def track_contact(
     db: Session = Depends(get_db),
     config: Settings = Depends(get_settings),
 ) -> ContactClickOut:
-    # ponytail: in-process limits; correct for the single Render worker, reset on restart.
-    # A shared store (Redis/DB) is needed before running more than one worker.
+    # ponytail: in-process limits; correct for the single Render worker, reset on restart or
+    # spin-down. A shared store (Redis/DB) is needed before running more than one worker.
+    client = _client_key(request, config.client_ip_header)
+    # Request rate first: cheap, and it bounds the database lookups below.
     retry_after = contact_client_rate_limiter.retry_after(
-        _client_key(request, config.client_ip_header), config.contact_click_limit_per_minute
-    ) or contact_global_rate_limiter.retry_after(
-        "global", config.contact_click_global_limit_per_hour, window_seconds=3600
+        client, config.contact_click_limit_per_minute
     )
     if retry_after is not None:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many contact clicks",
-            headers={"Retry-After": str(retry_after)},
-        )
+        raise _too_many_contact_clicks(retry_after)
     settings = db.scalar(select(SiteSettings).limit(1))
     if settings is not None and not settings.contact_tracking_enabled:
         return ContactClickOut(accepted=False)
@@ -181,18 +206,32 @@ def track_contact(
         select(Product.id).where(Product.id == payload.product_id, *public_product_conditions())
     ) is None:
         raise HTTPException(status_code=422, detail="Unknown product")
-    # No IP or IP hash is stored: the count is all the dashboard needs.
-    db.add(
-        ContactClick(
-            product_id=payload.product_id,
-            source=payload.source,
-            user_agent=(request.headers.get("user-agent") or "")[:500],
-        )
-    )
+    # Only a click that will be stored takes from the hourly caps (V1-SEC-05); any failure to
+    # store it gives back exactly what it took.
     try:
-        db.commit()
-    except IntegrityError:
-        # The product was deleted between the check and the insert.
-        db.rollback()
-        raise HTTPException(status_code=422, detail="Unknown product") from None
+        with contact_click_quota(
+            client,
+            f"{client}|{payload.product_id}|{payload.source}",
+            per_hour=config.contact_click_client_limit_per_hour,
+            global_per_hour=config.contact_click_global_limit_per_hour,
+            repeat_seconds=config.contact_click_repeat_seconds,
+        ):
+            # No IP or IP hash is stored: the count is all the dashboard needs.
+            db.add(
+                ContactClick(
+                    product_id=payload.product_id,
+                    source=payload.source,
+                    user_agent=(request.headers.get("user-agent") or "")[:500],
+                )
+            )
+            try:
+                db.commit()
+            except IntegrityError:
+                # The product was deleted between the check and the insert.
+                db.rollback()
+                raise HTTPException(status_code=422, detail="Unknown product") from None
+    except ContactClickRepeated:
+        return ContactClickOut(accepted=False)  # the same click was just counted
+    except ContactQuotaExceeded as exc:
+        raise _too_many_contact_clicks(exc.retry_after) from None
     return ContactClickOut()

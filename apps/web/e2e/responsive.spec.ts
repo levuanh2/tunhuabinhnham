@@ -99,15 +99,23 @@ test("6. Messenger CTA opens an allowed Facebook/Messenger URL; sticky CTA appea
   }
 });
 
-test("6b. Messenger opens at once even when contact tracking is slow or rate limited", async ({ page }) => {
-  let tracked = 0;
-  await page.route("**/contact-clicks", async route => { tracked++; await new Promise(r => setTimeout(r, 5000)); await route.fulfill({ status: 429, headers: { "Retry-After": "60" }, body: "{}" }); });
-  await page.goto("/san-pham/tu-5-tang");
-  await page.evaluate(() => { window.open = ((url?: string | URL) => { sessionStorage.setItem("opened", String(url)); return null; }) as typeof window.open; });
-  await page.getByRole("button", { name: "Nhắn tin để mua" }).first().click();
-  // Well under the 5 s the tracking call takes: opening does not wait for it.
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("opened")), { timeout: 1500 }).toMatch(/^https:\/\/(m\.me|(www\.)?facebook\.com)/);
-  await expect.poll(() => tracked).toBe(1);
+test("6b. Messenger opens at once whatever the tracking call does: slow 429, 500 or timeout", async ({ page }) => {
+  for (const outcome of ["429", "500", "timeout"] as const) {
+    let tracked = 0;
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await page.route("**/contact-clicks", async route => {
+      tracked++;
+      await new Promise(r => setTimeout(r, 5000));
+      if (outcome === "timeout") return route.abort("timedout");
+      await route.fulfill(outcome === "429" ? { status: 429, headers: { "Retry-After": "60" }, body: "{}" } : { status: 500, body: "{}" });
+    });
+    await page.goto("/san-pham/tu-5-tang");
+    await page.evaluate(() => { sessionStorage.removeItem("opened"); window.open = ((url?: string | URL) => { sessionStorage.setItem("opened", String(url)); return null; }) as typeof window.open; });
+    await page.getByRole("button", { name: "Nhắn tin để mua" }).first().click();
+    // Well under the 5 s the tracking call takes: opening does not wait for it.
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem("opened")), { timeout: 1500, message: outcome }).toMatch(/^https:\/\/(m\.me|(www\.)?facebook\.com)/);
+    await expect.poll(() => tracked, { message: outcome }).toBe(1);
+  }
 });
 
 test("7. article body stays within a readable measure without overflow", async ({ page }) => {
