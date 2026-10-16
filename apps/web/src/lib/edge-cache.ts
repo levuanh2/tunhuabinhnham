@@ -12,7 +12,7 @@ export const EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=300";
 
 const PUBLIC_PATH = /^\/(?:|san-pham(?:\/[^/]+)?|tin-tuc(?:\/[^/]+)?|lien-he|gioi-thieu)$/;
 const RSC_HEADERS = ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"];
-const SESSION_COOKIE = /(?:^|;\s*)sb-[^=;]*-auth-token/;
+const SESSION_COOKIE = /(?:^|;\s*)(?:__Host-|__Secure-)?sb-[^=;\s]+-auth-token(?:\.(?:0|[1-9]\d*))?=/;
 
 type RenderState = { degraded: boolean };
 // One instance shared by worker.ts and the Next server bundle (they are bundled separately).
@@ -30,15 +30,21 @@ export function markRenderDegraded() {
  * so the URL alone identifies the variant and a forged combination is never stored. */
 export const isRscRequest = (request: Request) => request.headers.get("rsc") === "1" && new URL(request.url).searchParams.has("_rsc");
 
+/** Credentials must be detected by the uncached gateway before it calls the cached entrypoint. */
+export function hasRequestCredentials(request: Request): boolean {
+  const headers = request.headers;
+  return headers.has("authorization") || SESSION_COOKIE.test(headers.get("cookie") ?? "");
+}
+
 export function isEdgeCacheableRequest(request: Request): boolean {
+  if (hasRequestCredentials(request)) return false;
   if (request.method !== "GET" && request.method !== "HEAD") return false;
   const url = new URL(request.url);
   if (!PUBLIC_PATH.test(url.pathname)) return false;
   const headers = request.headers;
   const rsc = isRscRequest(request);
   if (!rsc && (url.searchParams.has("_rsc") || RSC_HEADERS.some(name => headers.has(name)))) return false;
-  if (headers.has("authorization")) return false;
-  return !SESSION_COOKIE.test(headers.get("cookie") ?? "");
+  return true;
 }
 
 /** Headers that make the response edge-cacheable, or null to keep Next's private/no-store headers. */
@@ -68,12 +74,13 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   return headers;
 }
 
-type CachePurger = { cache?: { purge(options: { tags: string[] }): Promise<unknown> } };
+type CachePurgeResult = { success: boolean };
+type CachePurger = { cache?: { purge(options: { tags: string[] }): Promise<CachePurgeResult> } };
 
 /** Purges every cached public page. Returns false when the Worker has no cache API (local dev, cache disabled). */
 export async function purgeEdgeCache(ctx: unknown): Promise<boolean> {
   const cache = (ctx as CachePurger | undefined)?.cache;
   if (!cache) return false;
-  await cache.purge({ tags: [EDGE_CACHE_TAG] });
-  return true;
+  const result = await cache.purge({ tags: [EDGE_CACHE_TAG] });
+  return result.success;
 }

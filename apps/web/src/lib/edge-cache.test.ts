@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, isProductMove, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
+import { EDGE_CACHE_TAG, edgeCacheHeaders, hasRequestCredentials, isEdgeCacheableRequest, isProductMove, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
 
 const req = (path: string, init: RequestInit = {}) => new Request(`https://tunhuabinhnham.com${path}`, init);
 const html = (init: ResponseInit = {}) => new Response("<html></html>", { status: 200, ...init, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", vary: "rsc, next-router-state-tree", ...init.headers } });
@@ -28,7 +28,26 @@ describe("isEdgeCacheableRequest", () => {
     expect(isEdgeCacheableRequest(req("/", { headers: { authorization: "Bearer x" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "a=1; sb-fyaourksnjeldsvuedox-auth-token=eyJ" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "sb-x-auth-token.0=chunk" } }))).toBe(false);
+    expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "__Host-sb-x-auth-token.1=chunk" } }))).toBe(false);
+    expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "__Secure-sb-x-auth-token=token" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "theme=dark" } }))).toBe(true);
+  });
+
+  it("recognizes Authorization and Supabase base, chunked and security-prefixed cookies", () => {
+    const credentialHeaders: Record<string, string>[] = [
+      { authorization: "Bearer x" },
+      { cookie: "sb-project-auth-token=token" },
+      { cookie: "a=1; sb-project-auth-token.0=chunk" },
+      { cookie: "__Host-sb-project-auth-token.12=chunk" },
+      { cookie: "__Secure-sb-project-auth-token=token" },
+    ];
+    for (const headers of credentialHeaders) expect(hasRequestCredentials(req("/", { headers })), JSON.stringify(headers)).toBe(true);
+    for (const cookie of [
+      "theme=dark",
+      "sb-project-auth-token-extra=value",
+      "sb-project-auth-token.01=chunk",
+      "prefix-sb-project-auth-token=token",
+    ]) expect(hasRequestCredentials(req("/", { headers: { cookie } })), cookie).toBe(false);
   });
 });
 
@@ -84,17 +103,18 @@ describe("render state", () => {
 });
 
 describe("purgeEdgeCache", () => {
-  it("purges the public tag when the Worker exposes ctx.cache, and is a no-op otherwise", async () => {
-    const purge = vi.fn().mockResolvedValue(undefined);
+  it("purges the public tag only when Workers Cache accepts the request", async () => {
+    const purge = vi.fn().mockResolvedValue({ success: true });
     expect(await purgeEdgeCache({ cache: { purge } })).toBe(true);
     expect(purge).toHaveBeenCalledWith({ tags: [EDGE_CACHE_TAG] });
     expect(await purgeEdgeCache({})).toBe(false);
+    expect(await purgeEdgeCache({ cache: { purge: vi.fn().mockResolvedValue({ success: false }) } })).toBe(false);
     await expect(purgeEdgeCache({ cache: { purge: vi.fn().mockRejectedValue(new Error("rate limited")) } })).rejects.toThrow();
   });
 });
 
 describe("public pages are identical for every visitor", () => {
-  // A cache HIT is served without running the Worker, cookie or not, so no public page may personalise.
+  // The inner cache serves anonymous requests without rendering again, so public pages may not personalise.
   it("no public route or root layout reads cookies, headers, draft mode or the Supabase session", async () => {
     const { readFileSync, readdirSync, statSync } = await import("node:fs");
     const { join } = await import("node:path");
