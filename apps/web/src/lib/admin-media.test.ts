@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupMediaUrls, deleteAdminMedia, uploadAdminMedia } from "./admin-media";
 
+const toast = vi.hoisted(() => ({ warning: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: "t" } } }), signOut: async () => {} } }),
 }));
@@ -34,8 +36,18 @@ describe("admin media and the public image cache", () => {
     expect(calls.some(call => call.endsWith("/api/revalidate"))).toBe(false);
   });
 
-  it("counts a deleted file as cleaned up even when the purge fails (the edge copy expires within a day)", async () => {
+  it("counts a deleted file as cleaned up when the purge fails, but warns the admin once", async () => {
     stubFetch(502);
-    expect(await cleanupMediaUrls(["https://x.supabase.co/storage/v1/object/public/b/a.jpg"])).toEqual([]);
+    toast.warning.mockClear();
+    expect(await cleanupMediaUrls(["https://x.supabase.co/storage/v1/object/public/b/a.jpg", "https://x.supabase.co/storage/v1/object/public/b/b.jpg"])).toEqual([]);
+    expect(toast.warning).toHaveBeenCalledOnce();
+    expect(toast.warning.mock.calls[0][0]).toContain("1 ngày");
+  });
+
+  it("stays silent when the purge succeeds", async () => {
+    stubFetch();
+    toast.warning.mockClear();
+    await cleanupMediaUrls(["https://x.supabase.co/storage/v1/object/public/b/a.jpg"]);
+    expect(toast.warning).not.toHaveBeenCalled();
   });
 });
