@@ -1,0 +1,193 @@
+{
+ "verdict": "AUTH_PURGE_PREVIEW_FAIL",
+ "preview": "https://ace736be-tunhuabinhnham-web.tunhuabinhnham.workers.dev",
+ "production": "https://tunhuabinhnham.com",
+ "run": "mvkpp4by",
+ "purgeAt": 1792744425134,
+ "steps": [
+  {
+   "name": "preview image cold",
+   "status": 200,
+   "cache": "MISS",
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "age": null,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744355243,
+   "pass": true
+  },
+  {
+   "name": "preview image warm",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "age": 6,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744359798,
+   "pass": true,
+   "note": "HIT colos HKG"
+  },
+  {
+   "name": "preview page cold",
+   "status": 200,
+   "cache": "MISS",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": null,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744362747,
+   "pass": true
+  },
+  {
+   "name": "preview page warm",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": 0,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744363834,
+   "pass": true,
+   "note": "HIT colos HKG"
+  },
+  {
+   "name": "production page cold (isolation key)",
+   "status": 200,
+   "cache": "MISS",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": null,
+   "colo": "KIX",
+   "tries": 1,
+   "at": 1792744369896,
+   "pass": true
+  },
+  {
+   "name": "production page warm",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": 1,
+   "colo": "KIX",
+   "tries": 1,
+   "at": 1792744371556,
+   "pass": true,
+   "note": "HIT colos KIX"
+  },
+  {
+   "name": "purge without token",
+   "status": 401,
+   "cache": null,
+   "cc": "private, no-store, max-age=0",
+   "age": null,
+   "colo": "FRA",
+   "tries": 1,
+   "at": 1792744377642,
+   "pass": true
+  },
+  {
+   "name": "purge with invalid token",
+   "status": 401,
+   "cache": null,
+   "cc": "private, no-store, max-age=0",
+   "age": null,
+   "colo": "MAD",
+   "tries": 1,
+   "at": 1792744385054,
+   "pass": true
+  },
+  {
+   "name": "preview image still HIT after rejected purges",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "age": 25,
+   "colo": "FRA",
+   "tries": 1,
+   "at": 1792744418106,
+   "pass": false,
+   "note": "never landed on a pre-purge colo HKG"
+  },
+  {
+   "name": "admin login",
+   "status": 200,
+   "pass": true
+  },
+  {
+   "name": "authenticated purge (preview only)",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0",
+   "age": null,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744425134,
+   "pass": true
+  },
+  {
+   "name": "production page untouched by preview purge",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": 8,
+   "colo": "FRA",
+   "tries": 1,
+   "at": 1792744455531,
+   "pass": false,
+   "note": "never landed on a pre-purge colo KIX"
+  },
+  {
+   "name": "preview image after purge",
+   "status": 200,
+   "cache": "MISS",
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "age": null,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744478631,
+   "landings": 3,
+   "pass": true
+  },
+  {
+   "name": "preview page after purge",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=0, s-maxage=300",
+   "age": 6,
+   "colo": "MAD",
+   "tries": 1,
+   "at": 1792744510358,
+   "pass": false,
+   "note": "never landed on a pre-purge colo HKG"
+  },
+  {
+   "name": "preview image refill",
+   "status": 200,
+   "cache": "HIT",
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "age": 43,
+   "colo": "HKG",
+   "tries": 1,
+   "at": 1792744522273,
+   "landings": 3,
+   "pass": true
+  },
+  {
+   "name": "logout (session revoked)",
+   "status": 204,
+   "pass": true
+  },
+  {
+   "name": "purge with revoked token",
+   "status": 401,
+   "cache": null,
+   "cc": "private, no-store, max-age=0",
+   "age": null,
+   "colo": "MAD",
+   "tries": 1,
+   "at": 1792744540115,
+   "pass": true
+  }
+ ],
+ "credentials": "process environment only; no token recorded"
+}
