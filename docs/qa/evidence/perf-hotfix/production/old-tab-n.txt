@@ -1,0 +1,3 @@
+PASS chromium routed=72 rsc=18 steps=/san-pham?category=do-dung:true /san-pham?category=qua-tang:true /san-pham:true /san-pham/tu-nhua-4-canh-4:true back:true problems=[]
+PASS webkit-mobile routed=43 rsc=8 steps=/san-pham?category=do-dung:true /san-pham?category=qua-tang:true /san-pham:true /san-pham/tu-nhua-4-canh-4:true back:true problems=[]
+OLD_TAB_PASS

@@ -134,3 +134,55 @@ P′ `b2d3421d-5d82-47e7-b7eb-fa427f4872dc` deployed by the owner at 2026-10-23T
 Network note: the test machine's connection was degraded during the gate (1–8 s connects, timeouts, routing via LAX/LHR). The gate tools retry read-only GETs on network errors only and record them as unverified, never as PASS.
 
 Next: step B, N `ace736be-c3d6-443e-a454-d7bae8c69681`. Rollback target from now on: P′ `b2d3421d`.
+
+## Step B — N production QA: PERF_HOTFIX_PRODUCTION_PASS_WITH_ACCEPTED_RISKS
+
+N `ace736be-c3d6-443e-a454-d7bae8c69681` (source `0cfcd7d`) deployed by the owner at 2026-10-23T14:37:11Z; `wrangler deployments status`: 100% `ace736be`. QA 14:38–14:55Z, read-only, single client; no stress test on production. Evidence: `docs/qa/evidence/perf-hotfix/production/`.
+
+| Check | Result |
+|---|---|
+| Soak (`soak-n-production.json`, apex, N + P assets) | SOAK_PASS: 52/52, 305 s continuous clean, 32/32 rounds clean, 0 asset failures, 0 unverified (HKG) |
+| Asset bytes (`asset-hash-n.txt`) | 52/52 SHA-256 identical to `.deploy-assets/{0cfcd7d,e681cca}` |
+| Old tab (`old-tab-n.txt`) | OLD_TAB_PASS: page loaded from P′ `b2d3421d`, later assets and RSC from N; category tabs, all products, product, Back stay styled, 0 asset errors (Chromium, WebKit mobile) |
+| Images (`image-cache-probe.json`) | IMAGE_CACHE_PROBE_PASS (40/40): product, large product, banner, post: cold MISS 0.8–1.3 s → HIT ×2 73–202 ms, identical WebP, `public, max-age=3600, s-maxage=86400`; widths 384/640/1080 distinct; cookie / chunked cookie / Authorization / both: never HIT, `private, no-store`; Authorization-first does not seed; non-WebP and `webp;q=0` bypass; other project / signed / authenticated / arbitrary / http sources 400, no redirect; missing source 400 not cached; HEAD HIT; rejected purge evicts nothing |
+| HTTP smoke (`n-smoke.json`) | SMOKE_PASS (29/29): `/`, catalogue, category, news, contact, about 200 and reference only N assets; product (gallery) and article 200; HSTS `max-age=15552000` as configured, CSP, nosniff, DENY; HTML MISS → HIT; cookie / Authorization / both `private, no-store`; `/admin`, `/admin/login`, `/auth/callback`, `/api/revalidate`, RSC private; purge without token 401; www → apex 301, http → https 301, trailing slash stays 308; unknown product 404 not cached; backend `/health/live` and `/health/ready` 200; API CORS exact apex, preflight with Authorization 200 + credentials, unknown origin 400 without ACAO; contact clicks for a random unknown product 422 ×10 then 429 with `Retry-After` and CORS (nothing stored) |
+| Browser (`n-browser.json`, Chromium/WebKit × desktop/mobile) | 0 prefetch requests, 0 image request failures, 0 fallback redirects, 0 HTTP ≥ 400, 0 console errors, no 1102/1027. Chromium PASS. WebKit reported not-loaded gallery slides; `webkit-lazy-check.txt`: every one is `loading="lazy"` inside `aria-hidden` and loads when shown (LAZY_CHECK_PASS); the one homepage image pending in the first run loaded on the recheck |
+| Tail (`tail-n-summary.json`, 381 events 14:38:51–14:53:27Z, all `ace736be`; CPU p50 1 ms, p90 33 ms) | outcome ok 381/381, 0 exceptions, 0 × 5xx, 0 `/_next/static` 404, 0 log lines with 9523 / 9422 / IMAGES_TRANSFORM / 1102 / 1027; images 210 × 200, 7 × 400 (the probe's deliberate rejections) |
+
+Slug redirect: the 301 logic (`isProductMove`) is unchanged since `e681cca`; production still has no historical slug, so the real old-slug 301 stays deferred to the first owner rename (V1.1 accepted risk).
+
+### Performance (Phase 5)
+
+Single session, production, `nav-probe.mjs` (same tool and route as the baseline; `nav-prod-N-*.txt`):
+
+| | P `e681cca` cold | N cold | P warm | N warm (run 1 / run 2) |
+|---|---|---|---|---|
+| `/san-pham` load / LCP | 6.9 / 2.5 s | 7.2 / 6.0 s ¹ | 2.3 / 0.6 s | 1.5 / 0.63 s, 1.4 / 0.59 s |
+| tab click to idle p50 / max | 106 / 1,657 ms | 136 / 2,907 ms ¹ | 110 / 126 ms | 129 / 1,695 ms, 119 / 150 ms |
+| RSC requests per session | 28 | 10 | 30 | 10 / 10 |
+| image TTFB p50 | 875 ms (private, transformed each time) | 238 ms (edge HIT) | 695 ms | 118 / 112 ms |
+
+¹ N cold ran after the HTML entries expired (`EXPIRED`): the Worker served the document in 2.0 s wall (tail), the client measured 5.5 s TTFB, the rest is the test machine's connection; cold RSC 1.4–2.3 s Worker wall while the backend answered `/products` in 1.4 s and `/categories` in 0.7–0.9 s. Cold clicks are bound by Render ↔ Supabase latency, which the hotfix does not change.
+
+Worker per request (`tail-compare.json`; P = production tail 07:57Z on `f4fd8f1a`, N = this window; traffic mixes differ, P includes real visitors):
+
+| | P CPU p50 / p90 | N CPU p50 / p90 | P wall p50 / p90 | N wall p50 / p90 |
+|---|---|---|---|---|
+| all | 7 / 37 ms | 1 / 32 ms | 350 / 2,096 ms | 111 / 1,351 ms |
+| HTML renders (CPU ≥ 20 ms) | — | — | 2,586 / 3,461 ms | 1,298 / 2,110 ms |
+| RSC | 8 / 253 ms | 1 / 35 ms | 657 / 1,720 ms | 19 / 1,570 ms |
+| image | 7 / 16 ms | 1 / 17 ms | 339 / 1,230 ms | 144 / 666 ms |
+
+Concurrency (5 / 10 sessions) is measured only in the test environment (Gate D, local workerd, Render-like API limits): click p95 8.0 → 2.9 s at 5 sessions, 20.0 → 6.9 s at 10, image failures 8 → 0 and 15 → 0, API calls per session 43 → 21. Not repeated on production by design.
+
+### Accepted risks
+
+1. HTML tag purge on the release version: INCONCLUSIVE (owner accepted, PURGE_ISOLATION_ACCEPTED_RISK); HTML still expires within 300 s.
+2. Deleted image: browser copy up to 1 h; edge copy up to 1 day if a purge fails (admin is warned).
+3. Backend latency Render Singapore ↔ Supabase Sydney unchanged; it bounds cold navigation (1.4–2.3 s Worker wall).
+4. OpenNext's 7 s source-fetch timeout is upstream; a failure falls back to a private 302 to the Supabase original (no 9523 seen in this window).
+5. No concurrency benchmark on production; 5/10-session results are from the test environment.
+6. Historical-slug 301 not replayed on production (no historical slug exists).
+7. Tail covered 14:38:51Z onward; the first 100 s after the switch and the dashboard metrics (Errors, CPU vs 69.6 / 247 ms, Images transformations) are for the owner to read in the Cloudflare dashboard, version `ace736be`.
+
+Rollback: `npx wrangler versions deploy b2d3421d-5d82-47e7-b7eb-fa427f4872dc@100% --yes --message "rollback to P-prime b2d3421d"` (never to P `f4fd8f1a`: it lacks N's assets for open tabs). Keep `.deploy-assets/{0cfcd7d,e681cca,1ab6f7c}`.

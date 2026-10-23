@@ -1,0 +1,35 @@
+{
+ "events": 381,
+ "versions": {
+  "ace736be": 381
+ },
+ "outcomes": {
+  "ok": 381
+ },
+ "exceptions": [],
+ "status": {
+  "200": 358,
+  "307": 4,
+  "308": 1,
+  "400": 7,
+  "401": 2,
+  "404": 7,
+  "405": 2
+ },
+ "static404": [],
+ "s5xx": [],
+ "imageStatus": {
+  "200": 210,
+  "400": 7
+ },
+ "transformErrors": [],
+ "from": "2026-10-23T14:38:51.805Z",
+ "to": "2026-10-23T14:53:27.801Z",
+ "cpuP50": 1,
+ "cpuP90": 33,
+ "cpuP99": 459,
+ "cpuMax": 798,
+ "imageRequests": 217,
+ "imageCpuP50": 1,
+ "imageCpuP90": 17
+}

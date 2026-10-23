@@ -1,0 +1,41 @@
+initial /san-pham load=1387ms LCP=592ms
+┌─────────┬───────┬─────────────────────────────────┬───────────────┬─────────────────────────┐
+│ (index) │ round │ href                            │ clickToIdleMs │ aboveFoldImagesComplete │
+├─────────┼───────┼─────────────────────────────────┼───────────────┼─────────────────────────┤
+│ 0       │ 0     │ '/san-pham'                     │ 69            │ true                    │
+│ 1       │ 0     │ '/san-pham?category=do-dung'    │ 107           │ true                    │
+│ 2       │ 0     │ '/san-pham?category=qua-tang'   │ 112           │ true                    │
+│ 3       │ 0     │ '/san-pham?category=tu-quan-ao' │ 128           │ true                    │
+│ 4       │ 0     │ '/san-pham?category=tu-4-canh'  │ 107           │ true                    │
+│ 5       │ 1     │ '/san-pham'                     │ 146           │ true                    │
+│ 6       │ 1     │ '/san-pham?category=do-dung'    │ 137           │ true                    │
+│ 7       │ 1     │ '/san-pham?category=qua-tang'   │ 150           │ true                    │
+│ 8       │ 1     │ '/san-pham?category=tu-quan-ao' │ 115           │ true                    │
+│ 9       │ 1     │ '/san-pham?category=tu-4-canh'  │ 119           │ true                    │
+└─────────┴───────┴─────────────────────────────────┴───────────────┴─────────────────────────┘
+┌─────────┬────────────┬─────────────────────────────────┬────────┬───────┬────────────────────────────────────────┬───────────┬──────┬───────┐
+│ (index) │ kind       │ path                            │ status │ cache │ cc                                     │ fromCache │ ttfb │ total │
+├─────────┼────────────┼─────────────────────────────────┼────────┼───────┼────────────────────────────────────────┼───────────┼──────┼───────┤
+│ 0       │ 'document' │ '/san-pham'                     │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '202'     │ 284  │ 287   │
+│ 1       │ 'img'      │ '/_next/image?fc1b6871 w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '140'     │ 128  │ 263   │
+│ 2       │ 'img'      │ '/_next/image?d9aaf304 w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '140'     │ 130  │ 263   │
+│ 3       │ 'img'      │ '/_next/image?8b284f6f w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '141'     │ 71   │ 74    │
+│ 4       │ 'img'      │ '/_next/image?e4a9ba5f w=48'    │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '141'     │ 76   │ 77    │
+│ 5       │ 'img'      │ '/_next/image?c6e0f2d8 w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '141'     │ 80   │ 97    │
+│ 6       │ 'img'      │ '/_next/image?968783db w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '140'     │ 95   │ 104   │
+│ 7       │ 'img'      │ '/_next/image?d960fa95 w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '141'     │ 112  │ 126   │
+│ 8       │ 'img'      │ '/_next/image?9fe5584e w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '140'     │ 270  │ 274   │
+│ 9       │ 'img'      │ '/_next/image?3efa78bc w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '138'     │ 280  │ 284   │
+│ 10      │ 'img'      │ '/_next/image?87768717 w=384'   │ 200    │ 'HIT' │ 'public, max-age=3600, s-maxage=86400' │ '141'     │ 285  │ 293   │
+│ 11      │ 'rsc'      │ '/san-pham?'                    │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '127'     │ 60   │ 66    │
+│ 12      │ 'rsc'      │ '/san-pham?category=do-dung'    │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '131'     │ 69   │ 71    │
+│ 13      │ 'rsc'      │ '/san-pham?category=qua-tang'   │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '128'     │ 74   │ 76    │
+│ 14      │ 'rsc'      │ '/san-pham?category=tu-quan-ao' │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '124'     │ 64   │ 65    │
+│ 15      │ 'rsc'      │ '/san-pham?category=tu-4-canh'  │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '3'       │ 62   │ 63    │
+│ 16      │ 'rsc'      │ '/san-pham?'                    │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '127'     │ 88   │ 93    │
+│ 17      │ 'rsc'      │ '/san-pham?category=do-dung'    │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '132'     │ 82   │ 84    │
+│ 18      │ 'rsc'      │ '/san-pham?category=qua-tang'   │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '129'     │ 110  │ 111   │
+│ 19      │ 'rsc'      │ '/san-pham?category=tu-quan-ao' │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '125'     │ 57   │ 58    │
+│ 20      │ 'rsc'      │ '/san-pham?category=tu-4-canh'  │ 200    │ 'HIT' │ 'public, max-age=0, s-maxage=300'      │ '4'       │ 63   │ 65    │
+└─────────┴────────────┴─────────────────────────────────┴────────┴───────┴────────────────────────────────────────┴───────────┴──────┴───────┘
+image requests=10 unique=10 non200=0
