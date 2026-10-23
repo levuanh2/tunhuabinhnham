@@ -1,6 +1,6 @@
 # GitHub sync and backup plan (after N)
 
-Status: **step 2 (push) done 2026-10-23 15:06Z: GITHUB_SOURCE_SYNC_PASS** (results at the end). Step 3 (`.deploy-assets` backup): ASSET_BACKUP_LOCAL_PASS 2026-10-23 15:13Z; the off-machine copy is pending the owner. Steps 4–5 not executed; each needs the owner's separate approval. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
+Status: **step 2 (push) done 2026-10-23 15:06Z: GITHUB_SOURCE_SYNC_PASS** (results at the end). Step 3 (`.deploy-assets` backup): ASSET_BACKUP_LOCAL_PASS 2026-10-23 15:13Z. Off-device copy and encrypted environment backup: **ACCEPTED RISK — OWNER DEFERRED** (2026-10-23, release closure; not verified, not PASS). Step 5 not executed. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
 
 ## Current state (2026-10-23, read-only checks)
 
@@ -151,3 +151,12 @@ Inventory (names only; values never printed):
 - OneDrive: client installed but **no account signed in** and not running; `C:\Users\Vu Anh\OneDrive` is a plain local folder on the internal disk. The step-3 archive copied there has not reached the cloud.
 
 Recovery checklist: `docs/deployment/PRODUCTION_RECOVERY_CHECKLIST.md`.
+
+## Closure (2026-10-23): ACCEPTED RISK — OWNER DEFERRED
+
+The owner closed the backup work for this release. Not verified and **not PASS**:
+
+- Encrypted environment backup: not created (the owner-run script was never run; no `.gpg` exists).
+- Off-device copy: not verified. OneDrive had no signed-in account, so the copy in `C:\Users\Vu Anh\OneDrive\Tunhuabinhnham-backups` is a second local copy on the internal disk only.
+
+Kept as is: `E:\Tunhuabinhnham-backups\deploy-assets-20261023T151345Z.*` (verified 227/227), the local copy under `C:\Users\Vu Anh\OneDrive\Tunhuabinhnham-backups`, `apps/web/.deploy-assets/`, all earlier backups, the GitHub branches and `worker-*` tags.
