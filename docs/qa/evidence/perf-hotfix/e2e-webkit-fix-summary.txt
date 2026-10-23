@@ -1,0 +1,84 @@
+    Error: expect(locator).toBeVisible() failed
+[9/65] [desktop] › e2e\audit-v1.spec.ts:55:5 › A3. settings: hotline and Messenger saved in admin drive the public contact CTAs
+[10/65] [desktop] › e2e\audit-v1.spec.ts:73:5 › A4. a session that expires mid-session is reported in Vietnamese and leads back to login
+[11/65] [desktop] › e2e\catalog-admin.spec.ts:208:7 › product categories › C1. create from a suggestion, reject duplicates, rename, reorder, hide and delete safely
+[12/65] [desktop] › e2e\audit-v1.spec.ts:86:5 › A5. product images: upload two, make the second primary, remove the first, save; the stored order is consistent
+[13/65] [desktop] › e2e\audit-v1.spec.ts:130:5 › A6. V1-BUG-01: removing an image and saving at once keeps only the remaining image; the file is deleted after the save
+[14/65] [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save
+  4) [desktop] › e2e\catalog-admin.spec.ts:208:7 › product categories › C1. create from a suggestion, reject duplicates, rename, reorder, hide and delete safely 
+    Error: expect(locator).toBeVisible() failed
+[15/65] [desktop] › e2e\catalog-admin.spec.ts:274:7 › product categories › C3. hidden categories never filter public products, even when every category is hidden
+[16/65] [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them
+  5) [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+[17/65] [desktop] › e2e\catalog-admin.spec.ts:334:7 › product categories › C5. without product counts (older API) the page never offers an unchecked delete
+[18/65] [desktop] › e2e\catalog-admin.spec.ts:354:7 › product categories › C2. the product form links to category management and shows hidden categories as such
+[19/65] [desktop] › e2e\catalog-admin.spec.ts:366:5 › F1. category filter is shareable, survives reload and is touch friendly
+[20/65] [desktop] › e2e\catalog-admin.spec.ts:384:5 › F2. admin category management requires a session
+  6) [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+[21/65] [desktop] › e2e\product-gallery.spec.ts:33:7 › product gallery › G1. a single image fills the gallery column at every width (was 72x90)
+[22/65] [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved
+[23/65] [desktop] › e2e\product-gallery.spec.ts:51:7 › product gallery › G2. several images: thumbnails below, selection, swipe track, lightbox with keyboard
+[24/65] [desktop] › e2e\product-gallery.spec.ts:97:7 › product gallery › G3. broken and missing images show a clear state; the frame is reserved before images load
+[25/65] [desktop] › e2e\public.spec.ts:3:5 › public navigation is usable
+[26/65] [desktop] › e2e\public.spec.ts:10:5 › mobile page does not overflow
+[27/65] [desktop] › e2e\public.spec.ts:17:5 › canonical, sitemap and robots point at the site origin
+[28/65] [desktop] › e2e\responsive.spec.ts:30:5 › 1. no horizontal overflow on public pages across target viewports
+  7) [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+[29/65] [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one
+  8) [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+    Error: expect(locator).toContainText(expected) failed
+[30/65] [desktop] › e2e\slug-redirect.spec.ts:97:7 › product URL change › S2. invalid or taken URLs are refused at the field and keep what was typed
+[31/65] [desktop] › e2e\responsive.spec.ts:41:5 › 2. mobile navigation opens as a modal sheet, locks scroll and closes with Escape
+[32/65] [desktop] › e2e\responsive.spec.ts:59:5 › 3. product grid uses 1 column under 340px, 2 on phones, 4 on desktop
+[33/65] [desktop] › e2e\responsive.spec.ts:68:5 › 4. product search and filters work on every layout
+[34/65] [desktop] › e2e\slug-redirect.spec.ts:121:7 › product URL change › S4. any product customers may have seen asks first; every old URL stays reserved, drafts included
+[35/65] [desktop] › e2e\responsive.spec.ts:82:5 › 5. product gallery: thumbnails select and touch track scrolls
+[36/65] [desktop] › e2e\responsive.spec.ts:90:5 › 6. Messenger CTA opens an allowed Facebook/Messenger URL; sticky CTA appears on phones
+[37/65] [desktop] › e2e\responsive.spec.ts:102:5 › 6b. Messenger opens at once whatever the tracking call does: slow 429, 500 or timeout
+[38/65] [desktop] › e2e\responsive.spec.ts:121:5 › 7. article body stays within a readable measure without overflow
+[39/65] [desktop] › e2e\responsive.spec.ts:129:5 › 8. admin navigation: drawer on phones, sidebar on desktop
+[40/65] [desktop] › e2e\responsive.spec.ts:144:5 › 9. admin product form shows validation next to the field
+[41/65] [desktop] › e2e\slug-redirect.spec.ts:149:7 › product URL change › S3. the confirmation fits the screen on desktop and phone
+[42/65] [desktop] › e2e\responsive.spec.ts:153:5 › 10. media upload controls are reachable and touch sized
+[43/65] [desktop] › e2e\responsive.spec.ts:166:5 › 11. Vietnamese text renders in the real web fonts, not a Georgia/system fallback
+[44/65] [desktop] › e2e\staging-cms.spec.ts:40:7 › real Supabase CMS workflow › admin can publish and hide catalogue content
+[45/65] [desktop] › e2e\staging-cms.spec.ts:116:7 › real Supabase CMS workflow › admin can publish article, banner and branding media
+[46/65] [desktop] › e2e\staging-cms.spec.ts:209:7 › real Supabase CMS workflow › draft → publish keeps category, persists image order and primary, invalidates cache
+[47/65] [desktop] › e2e\staging-cms.spec.ts:279:7 › real Supabase CMS workflow › Supabase SSR session survives reload, invalid session is rejected, logout clears cookies
+[48/65] [desktop] › e2e\staging-cms.spec.ts:329:7 › real Supabase CMS workflow › mobile admin workflow: drawer navigation and draft product creation
+[49/65] [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers
+[50/65] [desktop] › e2e\responsive.spec.ts:197:5 › 12. saving one field keeps category and persists image order after reload (fixture round-trip)
+  9) [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+[51/65] [desktop] › e2e\v1-fixes.spec.ts:22:5 › H2. static assets are served with nosniff and their immutable cache header
+[52/65] [desktop] › e2e\v1-fixes.spec.ts:30:5 › H3. admin cannot be framed by another origin; the site still hydrates
+[53/65] [desktop] › e2e\responsive.spec.ts:221:5 › 13. login shows a Vietnamese inline error for wrong credentials
+[54/65] [desktop] › e2e\responsive.spec.ts:230:5 › 14. browser title and og:site_name follow the CMS store name
+[55/65] [desktop] › e2e\responsive.spec.ts:240:5 › 15. saving the store name in Admin → Cài đặt updates public pages and admin chrome at once
+[56/65] [desktop] › e2e\responsive.spec.ts:272:5 › 16. product and article pages expose title, description, canonical and Open Graph with the CMS store name
+[57/65] [desktop] › e2e\v1-fixes.spec.ts:44:7 › N1. /khong-co-trang-nay is a real 404 in Vietnamese, with the site header, footer and a way back
+[58/65] [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected
+[59/65] [desktop] › e2e\v1-fixes.spec.ts:44:7 › N1. /san-pham/khong-co-san-pham-nay is a real 404 in Vietnamese, with the site header, footer and a way back
+[60/65] [desktop] › e2e\v1-fixes.spec.ts:44:7 › N1. /tin-tuc/khong-co-bai-nay is a real 404 in Vietnamese, with the site header, footer and a way back
+  10) [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+    Error: expect(page).toHaveURL(expected) failed
+[61/65] [desktop] › e2e\responsive.spec.ts:314:5 › 18. only anonymous public HTML is edge-cacheable; admin, API, RSC and redirects stay private
+[62/65] [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable
+  11) [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+    Error: expect(page).toHaveURL(expected) failed
+[63/65] [desktop] › e2e\responsive.spec.ts:363:5 › 20. a page rendered while the API is failing is served but never marked cacheable
+[64/65] [desktop] › e2e\responsive.spec.ts:379:5 › 21. public links never prefetch; real router navigations are edge-cacheable; forged _rsc is not
+[65/65] [desktop] › e2e\responsive.spec.ts:420:5 › 22. a corrupted Supabase session cookie redirects to login instead of failing
+  11 failed
+    [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+    [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+    [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+    [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+    [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+    [desktop] › e2e\catalog-admin.spec.ts:208:7 › product categories › C1. create from a suggestion, reject duplicates, rename, reorder, hide and delete safely 
+    [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+    [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+    [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+    [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+    [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+  8 skipped
+  46 passed (3.0m)

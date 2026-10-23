@@ -36,6 +36,13 @@ export function hasRequestCredentials(request: Request): boolean {
   return headers.has("authorization") || SESSION_COOKIE.test(headers.get("cookie") ?? "");
 }
 
+/** An explicit `image/webp` media range with q > 0 (not `image/webp;q=0`, not `image/webp2`). */
+const acceptsWebp = (accept: string) => accept.split(",").some(range => {
+  const [type, ...params] = range.split(";").map(part => part.trim().toLowerCase());
+  const q = params.find(param => param.startsWith("q="));
+  return type === "image/webp" && (q === undefined || Number(q.slice(2)) > 0);
+});
+
 export const isImageRequest = (request: Request) => new URL(request.url).pathname === "/_next/image";
 
 export function isEdgeCacheableRequest(request: Request): boolean {
@@ -44,7 +51,7 @@ export function isEdgeCacheableRequest(request: Request): boolean {
   const url = new URL(request.url);
   const headers = request.headers;
   // The cache key ignores Accept and images.formats is WebP-only, so only WebP-capable clients share an entry.
-  if (isImageRequest(request)) return (headers.get("accept") ?? "").includes("image/webp");
+  if (isImageRequest(request)) return acceptsWebp(headers.get("accept") ?? "");
   if (!PUBLIC_PATH.test(url.pathname)) return false;
   const rsc = isRscRequest(request);
   if (!rsc && (url.searchParams.has("_rsc") || RSC_HEADERS.some(name => headers.has(name)))) return false;
@@ -78,13 +85,13 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   return headers;
 }
 
-/** A transformed upload never changes: uploads get a fresh UUID path and are never overwritten. The purge tag
- * still lets an admin save evict it from the edge. */
+/** Uploads get a fresh UUID path and are never overwritten, but an image can stop being public (deleted,
+ * unpublished), so lifetimes stay bounded: 1 h in browsers, 1 day at the edge, and admin saves purge the tag. */
 export function imageCacheHeaders(response: Response): Headers | null {
   if (response.status !== 200 || response.headers.has("set-cookie")) return null;
   if (!(response.headers.get("content-type") ?? "").startsWith("image/")) return null;
   const headers = new Headers(response.headers);
-  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
   headers.set("Cache-Tag", EDGE_CACHE_TAG);
   return headers;
 }

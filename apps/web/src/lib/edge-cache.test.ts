@@ -102,15 +102,18 @@ describe("transformed images (/_next/image)", () => {
     expect(isEdgeCacheableRequest(img(src, { accept: "image/webp" }, { method: "HEAD" }))).toBe(true);
     expect(isEdgeCacheableRequest(img(src, { accept: "image/png,*/*" }))).toBe(false);
     expect(isEdgeCacheableRequest(img(src, {}))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/png, image/webp;q=0" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp2" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/png, IMAGE/WEBP; q=0.8" }))).toBe(true);
     expect(isEdgeCacheableRequest(img(src, { accept: "image/webp", cookie: "sb-x-auth-token=1" }))).toBe(false);
     expect(isEdgeCacheableRequest(img(src, { accept: "image/webp", authorization: "Bearer x" }))).toBe(false);
     expect(isEdgeCacheableRequest(img(src, { accept: "image/webp" }, { method: "POST" }))).toBe(false);
     expect(isImageRequest(req("/_next/image/x"))).toBe(false);
   });
 
-  it("store only a 200 image, as immutable with the purge tag", () => {
+  it("store only a 200 image, for a bounded time, with the purge tag", () => {
     const headers = imageCacheHeaders(webp())!;
-    expect(headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    expect(headers.get("cache-control")).toBe("public, max-age=3600, s-maxage=86400");
     expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
     expect(headers.get("vary")).toBe("Accept");
     for (const status of [400, 404, 500, 504, 508]) expect(imageCacheHeaders(webp({ status })), String(status)).toBeNull();
