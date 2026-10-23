@@ -1,6 +1,6 @@
 # GitHub sync and backup plan (after N)
 
-Status: **plan only, not executed.** Every step below needs the owner's separate approval. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
+Status: **step 2 (push) done 2026-10-23 15:06Z: GITHUB_SOURCE_SYNC_PASS** (results at the end). Steps 3–5 not executed; each needs the owner's separate approval. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
 
 ## Current state (2026-10-23, read-only checks)
 
@@ -83,3 +83,34 @@ After the push:
 2. In a fresh clone: `git merge-base --is-ancestor 0cfcd7d origin/fix/perf-image-cache` succeeds and `git rev-parse 0cfcd7d^{tree}` = `2f38428cc351ede0b603f2dcbe7819c8bf28b76c`; `git rev-parse e681cca^{tree}` = `e2afc919506bfc3756bbb20f1c6c97a7e048444f`.
 3. `npx wrangler versions view ace736be-c3d6-443e-a454-d7bae8c69681` shows tag `perf-n-0cfcd7d`.
 4. Optional reproducibility check: in the fresh clone at `0cfcd7d`, restore `.env.production.local` from the encrypted backup, `npm ci`, `npm --workspace apps/web run build:cloudflare`, then compare `_next/static` file names and SHA-256 with `.deploy-assets/0cfcd7d` and the live site (`node docs/qa/evidence/perf-hotfix/soak/soak-gate.mjs` / `asset-hash` check). Build only; no upload.
+
+## Result — step 2: GITHUB_SOURCE_SYNC_PASS (2026-10-23)
+
+Owner approval: push exactly `hotfix/v1.1-cache-isolation` and `fix/perf-image-cache`, tags `worker-f4fd8f1a` → `e681cca`, `worker-ace736be` → `0cfcd7d`; no force, no `main`, no `deploy/c2-preview`.
+
+Before the push (15:00–15:06Z):
+
+| Check | Result |
+|---|---|
+| Repository / origin | `origin` = `https://github.com/levuanh2/tunhuabinhnham.git` (fetch and push), gh account `levuanh2` |
+| Visibility / access | PRIVATE; collaborators: `levuanh2` (admin) only; 0 pending invitations, 0 deploy keys, 0 webhooks |
+| Secrets in the 16 commits to push (93 files) | no `.env*`/key/dump/`.deploy-assets`/`.open-next` file; no `sb_secret_`, `sbp_`, JWT, private key, connection string with password, GitHub/AWS/Slack token, assigned password/secret/api key; only `127.0.0.1` as IP; the four `tail*` files are aggregate summaries (no IPs, headers, cookies or tokens) |
+| GitHub Actions | only `.github/workflows/ci.yml` (blob `dc27f5c7`, identical to `origin/deploy/c2-preview`): `pull_request`, push to `main`, `workflow_dispatch`; no tag or other-branch trigger, no deploy step |
+| Render / Cloudflare | `render.yaml`: branch `deploy/c2-preview`, `autoDeployTrigger: "off"`; Worker uploaded by wrangler (no Git integration); `deploy/c2-preview` not pushed |
+| Ancestry | `hotfix/v1.1-cache-isolation` = `e681cca99361cf5d435ec6198591e0ac4ab5f151`; `origin/deploy/c2-preview` `1ab6f7c` → `e681cca` → `0cfcd7d90c0532fb5ae3b51c037835eb99b2f9a4` → `fix/perf-image-cache` `fb9f875`; `apps/`, `supabase/`, `render.yaml`, `.github/` identical between `0cfcd7d` and `fb9f875` |
+| Baseline | Cloudflare last deployment 14:37:11Z (100% `ace736be`); GitHub deployments latest `7135798550` (2026-10-17, `1ab6f7c`); Actions runs total 1 |
+
+Push: `git push origin` of the two branch refs and the two annotated tags, all `[new branch]` / `[new tag]`, no force.
+
+After the push (15:06–15:08Z):
+
+| Check | Result |
+|---|---|
+| Remote refs (`git ls-remote` after fetch) | `hotfix/v1.1-cache-isolation` `e681cca9…`; `fix/perf-image-cache` `fb9f8751…`; `worker-f4fd8f1a` (tag `dd92e91a`) → `e681cca9…`; `worker-ace736be` (tag `fe67b4b6`) → `0cfcd7d9…` |
+| SHA and tree, remote = local | `e681cca` tree `e2afc919506bfc3756bbb20f1c6c97a7e048444f`; `0cfcd7d` tree `2f38428cc351ede0b603f2dcbe7819c8bf28b76c`; `fb9f875` tree `6e47043a1bff95d4fbe98e2179d34c028869e695` |
+| Restore from GitHub (fresh clone) | checkout `worker-ace736be` = `0cfcd7d`, 868 files, clean; checkout `worker-f4fd8f1a` = `e681cca`, 849 files, clean; no tracked `.env` (only 3 `.env.example`) and no `.deploy-assets` |
+| Unintended deployments | Cloudflare: last deployment still 14:37:11Z, 100% `ace736be`, no new version; GitHub deployments (Render) latest still `7135798550`; Actions runs total still 1; 0 check runs / statuses on the pushed commits; API `/health/ready` 200 |
+
+Incident during verification (no remote or production effect): the first restore check cloned into a path the shell did not resolve, so two `git checkout` of the tags ran in the main checkout (`E:\Tunhuabinhnham`) and left it detached at `e681cca`. The tree was clean (only untracked `.worktrees/`, `c21-security-worktree/`), nothing was lost; it was put back on `fix/perf-image-cache` at once and the check repeated in the session scratchpad. The stray clone (`E:	mp	mp.UaJYAyUztG`) was removed.
+
+This result commit is local only (made after the verified push).
