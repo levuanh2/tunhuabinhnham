@@ -1,0 +1,121 @@
+{
+ "verdict": "SMOKE_PASS",
+ "origin": "https://tunhuabinhnham.com",
+ "at": "2026-10-23T12:19:18.357Z",
+ "results": [
+  {
+   "name": "asset bytes match archived builds (52)",
+   "result": "PASS",
+   "status": 200,
+   "mismatches": 0,
+   "unverified": 0
+  },
+  {
+   "name": "page / 200, same assets as P",
+   "result": "PASS",
+   "status": 200,
+   "set": "b28565cc"
+  },
+  {
+   "name": "page /san-pham 200, same assets as P",
+   "result": "PASS",
+   "status": 200,
+   "set": "d5f68504"
+  },
+  {
+   "name": "page /tin-tuc 200, same assets as P",
+   "result": "PASS",
+   "status": 200,
+   "set": "b28565cc"
+  },
+  {
+   "name": "page /lien-he 200, same assets as P",
+   "result": "PASS",
+   "status": 200,
+   "set": "b28565cc"
+  },
+  {
+   "name": "security headers",
+   "result": "PASS",
+   "status": 200
+  },
+  {
+   "name": "product page /san-pham/tu-nhua-4-canh-4",
+   "result": "PASS",
+   "status": 200,
+   "gallery": 160
+  },
+  {
+   "name": "anonymous HTML MISS -> HIT",
+   "result": "PASS",
+   "status": 200,
+   "states": [
+    "MISS@HKG",
+    "HIT@HKG",
+    "HIT@HKG"
+   ]
+  },
+  {
+   "name": "isolation: cookie never served from cache",
+   "result": "PASS",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "isolation: authorization never served from cache",
+   "result": "PASS",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "isolation: both never served from cache",
+   "result": "PASS",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /admin",
+   "result": "PASS",
+   "status": 307,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /admin/login",
+   "result": "PASS",
+   "status": 200,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /api/revalidate",
+   "result": "PASS",
+   "status": 405,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "forged RSC private",
+   "result": "PASS",
+   "status": 307,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "purge without token refused",
+   "result": "PASS",
+   "status": 401
+  },
+  {
+   "name": "image optimizer (P behaviour: private, no-store)",
+   "result": "PASS",
+   "status": 200,
+   "type": "image/webp",
+   "cc": "private, no-store"
+  },
+  {
+   "name": "backend health",
+   "result": "PASS",
+   "status": 200
+  }
+ ]
+}

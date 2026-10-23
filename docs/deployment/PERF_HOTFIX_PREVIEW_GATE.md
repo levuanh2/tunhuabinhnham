@@ -116,3 +116,21 @@ Runner verdict `AUTH_PURGE_PREVIEW_INCONCLUSIVE` (`docs/qa/evidence/perf-hotfix/
 | Logout revokes the session; revoked token cannot purge | PASS | 204; 401 |
 
 Accepted risk: tag purge of HTML on the release version is shown only indirectly (same tag and entrypoint as the image, which was proven purged; no stale HTML observed). If an admin save ever failed to refresh public HTML, the edge copy still expires within `s-maxage=300` s.
+
+## Step A — P′ production soak: P_PRIME_PRODUCTION_SOAK_PASS
+
+P′ `b2d3421d-5d82-47e7-b7eb-fa427f4872dc` deployed by the owner at 2026-10-23T09:58:17Z; `wrangler deployments status`: 100% `b2d3421d` (checked at start and end). Evidence: `docs/qa/evidence/perf-hotfix/soak/`.
+
+| Check | Result |
+|---|---|
+| Soak (`soak-gate.mjs`, apex, P + N assets) | SOAK_PASS: 52/52, 306 s continuous clean; 38 clean rounds, 0 asset failures, 1 round unverified by the test machine's network (not counted as clean), 10:05–10:26Z, colos HKG/KIX/SIN |
+| Asset bytes | 52/52 SHA-256 identical to `.deploy-assets/{0cfcd7d,e681cca}` |
+| HTML | `/`, `/san-pham`, `/tin-tuc`, `/lien-he` reference exactly P's asset set |
+| HTTP smoke (`pprime-smoke.json`) | SMOKE_PASS: pages, product + gallery, security headers, Workers Cache MISS → HIT, cookie / Authorization / both never cached, `/admin`, `/admin/login`, `/api/revalidate`, forged RSC private, unauthenticated purge 401, image optimizer (P behaviour, private), backend health 200 |
+| Browser (`pprime-browser.json`, Chromium/WebKit × desktop/mobile) | 0 image request failures, 0 HTTP ≥ 400, no 1102/1027. WebKit: lazy gallery slides off-screen (same as P, load on swipe). One intermittent WebKit console error: blocked prefetch of the footer `/admin/login` link (P code; not reproduced on retry on P, P′ or N) |
+| Old tab (`old-tab.mjs`) | OLD_TAB_PASS: page loaded from P `f4fd8f1a`, all later assets and RSC served by P′; category tabs, all products, product, Back stay styled, 0 asset errors (Chromium, WebKit mobile) |
+| Tail (two windows, 738 events, all `b2d3421d`) | 0 × 5xx, 0 `/_next/static` 404, CPU p50 3–9 ms / p90 46–55 ms. 4 exceptions `Network connection lost.`: all RSC prefetches of `/admin/login` from the smoke browsers, aborted by the client before the response (P code behaviour; N removes this prefetch) |
+
+Network note: the test machine's connection was degraded during the gate (1–8 s connects, timeouts, routing via LAX/LHR). The gate tools retry read-only GETs on network errors only and record them as unverified, never as PASS.
+
+Next: step B, N `ace736be-c3d6-443e-a454-d7bae8c69681`. Rollback target from now on: P′ `b2d3421d`.

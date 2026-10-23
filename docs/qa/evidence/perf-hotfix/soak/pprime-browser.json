@@ -1,0 +1,359 @@
+[
+ {
+  "name": "chromium",
+  "ok": true,
+  "pages": [
+   {
+    "path": "/",
+    "status": 200,
+    "images": 12,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham",
+    "status": 200,
+    "images": 10,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham?category=tu-quan-ao",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/lien-he",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/gioi-thieu",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham/tu-nhua-4-canh-4",
+    "status": 200,
+    "images": 13,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   }
+  ],
+  "productHref": "/san-pham/tu-nhua-4-canh-4",
+  "postHref": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+  "gallery": 12,
+  "nav": [
+   {
+    "href": "/san-pham?category=do-dung",
+    "ms": 989
+   },
+   {
+    "href": "/san-pham?category=qua-tang",
+    "ms": 928
+   },
+   {
+    "href": "/san-pham?category=tu-quan-ao",
+    "ms": 1296
+   }
+  ],
+  "prefetches": 158,
+  "images": {
+   "requests": 65,
+   "failed": 0,
+   "redirects": 0
+  },
+  "bad": [],
+  "consoleErrors": []
+ },
+ {
+  "name": "chromium-mobile",
+  "ok": true,
+  "pages": [
+   {
+    "path": "/",
+    "status": 200,
+    "images": 12,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham",
+    "status": 200,
+    "images": 10,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham?category=tu-quan-ao",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/lien-he",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/gioi-thieu",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham/tu-nhua-4-canh-4",
+    "status": 200,
+    "images": 13,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   }
+  ],
+  "productHref": "/san-pham/tu-nhua-4-canh-4",
+  "postHref": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+  "gallery": 12,
+  "nav": [
+   {
+    "href": "/san-pham?category=do-dung",
+    "ms": 126
+   },
+   {
+    "href": "/san-pham?category=qua-tang",
+    "ms": 113
+   },
+   {
+    "href": "/san-pham?category=tu-quan-ao",
+    "ms": 114
+   }
+  ],
+  "prefetches": 120,
+  "images": {
+   "requests": 65,
+   "failed": 0,
+   "redirects": 0
+  },
+  "bad": [],
+  "consoleErrors": []
+ },
+ {
+  "name": "webkit",
+  "ok": false,
+  "pages": [
+   {
+    "path": "/",
+    "status": 200,
+    "images": 12,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham",
+    "status": 200,
+    "images": 10,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham?category=tu-quan-ao",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/lien-he",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/gioi-thieu",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham/tu-nhua-4-canh-4",
+    "status": 200,
+    "images": 13,
+    "broken": [
+     "https://tunhuabinhnham.com/_next/image?url=https%3A%2F%2Ffyaourksnjeldsvuedox.su",
+     "https://tunhuabinhnham.com/_next/image?url=https%3A%2F%2Ffyaourksnjeldsvuedox.su"
+    ],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   }
+  ],
+  "productHref": "/san-pham/tu-nhua-4-canh-4",
+  "postHref": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+  "gallery": 12,
+  "nav": [
+   {
+    "href": "/san-pham?category=do-dung",
+    "ms": 263
+   },
+   {
+    "href": "/san-pham?category=qua-tang",
+    "ms": 275
+   },
+   {
+    "href": "/san-pham?category=tu-quan-ao",
+    "ms": 247
+   }
+  ],
+  "prefetches": 168,
+  "images": {
+   "requests": 63,
+   "failed": 0,
+   "redirects": 0
+  },
+  "bad": [],
+  "consoleErrors": []
+ },
+ {
+  "name": "webkit-mobile",
+  "ok": false,
+  "pages": [
+   {
+    "path": "/",
+    "status": 200,
+    "images": 12,
+    "broken": [
+     "https://tunhuabinhnham.com/_next/image?url=https%3A%2F%2Ffyaourksnjeldsvuedox.su"
+    ],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham",
+    "status": 200,
+    "images": 10,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham?category=tu-quan-ao",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/lien-he",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/gioi-thieu",
+    "status": 200,
+    "images": 1,
+    "broken": [],
+    "cfError": false
+   },
+   {
+    "path": "/san-pham/tu-nhua-4-canh-4",
+    "status": 200,
+    "images": 13,
+    "broken": [
+     "https://tunhuabinhnham.com/_next/image?url=https%3A%2F%2Ffyaourksnjeldsvuedox.su"
+    ],
+    "cfError": false
+   },
+   {
+    "path": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+    "status": 200,
+    "images": 2,
+    "broken": [],
+    "cfError": false
+   }
+  ],
+  "productHref": "/san-pham/tu-nhua-4-canh-4",
+  "postHref": "/tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+  "gallery": 12,
+  "nav": [
+   {
+    "href": "/san-pham?category=do-dung",
+    "ms": 260
+   },
+   {
+    "href": "/san-pham?category=qua-tang",
+    "ms": 233
+   },
+   {
+    "href": "/san-pham?category=tu-quan-ao",
+    "ms": 232
+   }
+  ],
+  "prefetches": 137,
+  "images": {
+   "requests": 62,
+   "failed": 0,
+   "redirects": 0
+  },
+  "bad": [],
+  "consoleErrors": [
+   "pageerror Fetch API cannot load https: /tunhuabinhnham.com/admin/login?_rsc=xutcKiSbQwhgYwNN due to access control checks."
+  ]
+ }
+]

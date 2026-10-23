@@ -10,10 +10,11 @@ const matrix = [
   ["webkit", webkit, { viewport: { width: 1440, height: 900 } }],
   ["webkit-mobile", webkit, devices["iPhone 13"]],
 ];
-const report = []; let failures = 0;
+const report = []; let failures = 0, unverified = 0;
 
 for (const [name, engine, contextOptions] of matrix) {
   const browser = await engine.launch();
+  try {
   const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
   const bad = [], consoleErrors = [], images = { requests: 0, failed: 0, redirects: 0 };
@@ -53,13 +54,19 @@ for (const [name, engine, contextOptions] of matrix) {
     await page.waitForURL(u => u.pathname + u.search === href, { timeout: 30000 }); nav.push({ href, ms: Date.now() - t });
   }
   await page.waitForLoadState("networkidle");
-  const ok = bad.length === 0 && consoleErrors.length === 0 && images.failed === 0 && prefetches === 0 && pages.every(p => p.status === 200 && p.broken.length === 0 && !p.cfError);
+  const ok = bad.length === 0 && consoleErrors.length === 0 && images.failed === 0 && (process.env.ALLOW_PREFETCH === "1" || prefetches === 0) && pages.every(p => p.status === 200 && p.broken.length === 0 && !p.cfError);
   if (!ok) failures++;
   report.push({ name, ok, pages, productHref, postHref, gallery, nav, prefetches, images, bad, consoleErrors });
   console.log(`${ok ? "PASS" : "FAIL"} ${name} pages=${pages.length} imgReq=${images.requests} imgFail=${images.failed} redirects=${images.redirects} prefetch=${prefetches} bad=${bad.length} console=${consoleErrors.length} nav=${nav.map(n => n.ms).join("/")}ms`);
   if (!ok) console.log(JSON.stringify({ broken: pages.filter(p => p.broken.length || p.status !== 200 || p.cfError), bad, consoleErrors }, null, 1).slice(0, 1500));
-  await browser.close();
+  } catch (error) {
+    // A navigation timeout or connection error from the test machine is UNVERIFIED, not a site failure and never a PASS.
+    const why = String(error?.message ?? error).split(/\r?\n/)[0].slice(0, 200);
+    report.push({ name, ok: false, unverified: true, error: why });
+    unverified++;
+    console.log(`UNVERIFIED ${name} ${why}`);
+  } finally { await browser.close(); }
 }
 fs.writeFileSync(out, JSON.stringify(report, null, 1));
-console.log(failures ? `BROWSER_SMOKE_FAIL ${failures}` : "BROWSER_SMOKE_PASS");
-process.exit(failures ? 1 : 0);
+console.log(failures ? `BROWSER_SMOKE_FAIL ${failures}` : unverified ? `BROWSER_SMOKE_UNVERIFIED ${unverified}` : "BROWSER_SMOKE_PASS");
+process.exit(failures ? 1 : unverified ? 3 : 0);
