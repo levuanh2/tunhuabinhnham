@@ -25,8 +25,10 @@ export function NavigationFeedback() {
       const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
       if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
       const url = new URL(link.href);
-      if (url.origin !== location.origin || url.pathname + url.search === location.pathname + location.search) return;
-      markPending(link);
+      if (url.origin !== location.origin) return;
+      // The current page: no URL change will come to clear a wait, and it replaces any navigation in flight.
+      if (url.pathname + url.search === location.pathname + location.search) clearPending();
+      else markPending(link);
     };
     window.addEventListener("click", onClick);
     window.addEventListener("popstate", clearPending);

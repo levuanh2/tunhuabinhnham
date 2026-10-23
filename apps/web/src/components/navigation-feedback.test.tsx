@@ -54,6 +54,14 @@ describe("NavigationFeedback", () => {
     expect(duringClick).toEqual({ link: "tab", main: "true", bar: true });
   });
 
+  it("a click back to the current page while waiting ends the wait (the URL never changes then)", () => {
+    render(page());
+    fireEvent.click(link("tab"));
+    expect(busy().bar).toBe(true);
+    fireEvent.click(link("current"));
+    expect(busy()).toEqual({ link: null, main: null, bar: false });
+  });
+
   it("ends the wait on Back/Forward", () => {
     render(page());
     fireEvent.click(link("client"));
