@@ -70,7 +70,7 @@ Every variable the web app reads is `NEXT_PUBLIC_*`. These are **inlined at buil
 
 ## Images
 
-- `next/image` uses the `IMAGES` binding on Workers. Remote images are allowed only from `**.supabase.co/storage/v1/object/public/**` (`next.config.ts`).
+- `next/image` uses the `IMAGES` binding on Workers. Remote images are allowed only from this project's public storage: `https://<host of NEXT_PUBLIC_SUPABASE_URL>/storage/v1/object/public/**` (`next.config.ts`, read at build time). A build without that variable, or with another project's URL, answers `/_next/image` for real media with 400: never deploy such an artifact.
 - **Not verified:** a real Supabase Storage image through the binding. The bucket has 0 objects, and the fixture uses `data:` URIs, which skip the optimiser. This is smoke test S8 after the first CMS image upload.
 - Cost (Cloudflare Images docs):
   - **Free:** up to **5,000 unique transformations per month**. Beyond that, new transformations return error `9422` (no charge); cached ones keep serving.
