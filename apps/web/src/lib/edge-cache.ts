@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 /*
  * Workers Cache policy (worker.ts). The cache key is path + query only: cookies, Authorization and the host
  * are NOT part of it, so a response marked public here is served to every visitor on every hostname.
- * Only anonymous, fully rendered public pages may ever get the public header.
+ * Only anonymous, fully rendered public pages and transformed public uploads may ever get the public header.
  */
 
 export const EDGE_CACHE_TAG = "public-html";
@@ -36,12 +36,16 @@ export function hasRequestCredentials(request: Request): boolean {
   return headers.has("authorization") || SESSION_COOKIE.test(headers.get("cookie") ?? "");
 }
 
+export const isImageRequest = (request: Request) => new URL(request.url).pathname === "/_next/image";
+
 export function isEdgeCacheableRequest(request: Request): boolean {
   if (hasRequestCredentials(request)) return false;
   if (request.method !== "GET" && request.method !== "HEAD") return false;
   const url = new URL(request.url);
-  if (!PUBLIC_PATH.test(url.pathname)) return false;
   const headers = request.headers;
+  // The cache key ignores Accept and images.formats is WebP-only, so only WebP-capable clients share an entry.
+  if (isImageRequest(request)) return (headers.get("accept") ?? "").includes("image/webp");
+  if (!PUBLIC_PATH.test(url.pathname)) return false;
   const rsc = isRscRequest(request);
   if (!rsc && (url.searchParams.has("_rsc") || RSC_HEADERS.some(name => headers.has(name)))) return false;
   return true;
@@ -72,6 +76,30 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   const missing = RSC_HEADERS.filter(name => !vary.includes(name));
   if (missing.length) headers.append("Vary", missing.join(", "));
   return headers;
+}
+
+/** A transformed upload never changes: uploads get a fresh UUID path and are never overwritten. The purge tag
+ * still lets an admin save evict it from the edge. */
+export function imageCacheHeaders(response: Response): Headers | null {
+  if (response.status !== 200 || response.headers.has("set-cookie")) return null;
+  if (!(response.headers.get("content-type") ?? "").startsWith("image/")) return null;
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("Cache-Tag", EDGE_CACHE_TAG);
+  return headers;
+}
+
+/** The original upload to send the browser to when the transform fails, limited to the next.config
+ * remotePatterns source (https Supabase public storage) so it is never an open redirect. */
+export function imageFallbackUrl(request: Request): string | null {
+  try {
+    const source = new URL(new URL(request.url).searchParams.get("url") ?? "");
+    const allowed = source.protocol === "https:" && /^[a-z0-9-]+\.supabase\.co$/.test(source.host) && !source.username && !source.password
+      && source.pathname.startsWith("/storage/v1/object/public/");
+    return allowed ? source.href : null;
+  } catch {
+    return null;
+  }
 }
 
 type CachePurgeResult = { success: boolean };

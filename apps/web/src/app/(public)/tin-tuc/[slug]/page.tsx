@@ -23,7 +23,7 @@ export default async function PostPage({ params }: Props) {
   try { post = await apiFetch<Post>(`/posts/${(await params).slug}`); } catch { notFound(); }
   return <article className="pb-20 pt-8 md:pt-12">
     <header className="shell max-w-3xl">
-      <Link href="/tin-tuc" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-ink"><ArrowLeft size={16} aria-hidden="true" />Tin tức</Link>
+      <Link prefetch={false} href="/tin-tuc" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-ink"><ArrowLeft size={16} aria-hidden="true" />Tin tức</Link>
       <h1 className="display h-page mt-6">{post.title}</h1>
       {post.excerpt && <p className="lede mt-4">{post.excerpt}</p>}
       {post.published_at && <time dateTime={post.published_at} className="mt-5 block text-sm text-ink-soft">{formatDate(post.published_at)}</time>}

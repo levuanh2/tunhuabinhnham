@@ -14,7 +14,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
     </div>
     <div className="mt-3.5 grid gap-1">
       <h3 className="line-clamp-2 text-[.9375rem] font-medium leading-snug sm:text-base">
-        <Link href={`/san-pham/${product.slug}`} className="after:absolute after:inset-0 after:rounded-xl group-hover:text-primary">{product.name}</Link>
+        <Link prefetch={false} href={`/san-pham/${product.slug}`} className="after:absolute after:inset-0 after:rounded-xl group-hover:text-primary">{product.name}</Link>
       </h3>
       <p className="text-base font-semibold tabular-nums text-ink sm:text-[1.0625rem]">{formatPrice(product.price)}</p>
       <p className="truncate text-xs text-ink-soft">Mã {product.sku}</p>

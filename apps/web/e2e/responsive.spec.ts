@@ -376,12 +376,14 @@ test("20. a page rendered while the API is failing is served but never marked ca
   expect(isPublic((await request.get("/")).headers()["cache-control"])).toBe(true);
 });
 
-test("21. real router prefetches of public pages are edge-cacheable; forged _rsc is not", async ({ page, request }) => {
+test("21. public links never prefetch; real router navigations are edge-cacheable; forged _rsc is not", async ({ page, request }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
   const prefetches: { path: string; status: number; cc: string | null; type: string | null }[] = [];
   let signedPrefetch: { url: string; headers: Record<string, string> } | undefined;
+  let viewportPrefetches = 0;
   page.on("request", r => {
     const url = new URL(r.url());
+    if (r.headers()["next-router-prefetch"]) viewportPrefetches++;
     if (!signedPrefetch && url.searchParams.has("_rsc") && url.pathname === "/san-pham") {
       const h = r.headers();
       signedPrefetch = { url: url.pathname + url.search, headers: Object.fromEntries(Object.entries(h).filter(([k]) => k === "rsc" || k.startsWith("next-router"))) };
@@ -392,6 +394,10 @@ test("21. real router prefetches of public pages are edge-cacheable; forged _rsc
     if (url.searchParams.has("_rsc") && !url.pathname.startsWith("/admin")) prefetches.push({ path: url.pathname, status: response.status(), cc: response.headers()["cache-control"] ?? null, type: response.headers()["content-type"] ?? null });
   });
   await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  expect(viewportPrefetches).toBe(0); // every public route is dynamic: a prefetch is a wasted render (2026-10-23)
+  await page.getByRole("link", { name: "Xem sản phẩm" }).click();
+  await expect(page).toHaveURL(/\/san-pham$/);
   await page.waitForLoadState("networkidle");
   const ok = prefetches.filter(p => p.status === 200);
   expect(ok.length).toBeGreaterThan(0);

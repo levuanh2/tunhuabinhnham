@@ -54,8 +54,8 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   return <div className={`shell pt-6 md:pt-8 ${stickyUrl ? "pb-32 md:pb-20" : "pb-20"}`}><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
     <nav aria-label="Đường dẫn" className="mb-6 text-sm text-ink-soft">
       <ol className="flex flex-wrap items-center gap-1">
-        <li><Link href="/san-pham" className="hover:text-ink">Sản phẩm</Link></li>
-        {product.category && <><li aria-hidden="true"><ChevronRight size={14} /></li><li><Link href={`/san-pham?category=${product.category.slug}`} className="hover:text-ink">{product.category.name}</Link></li></>}
+        <li><Link prefetch={false} href="/san-pham" className="hover:text-ink">Sản phẩm</Link></li>
+        {product.category && <><li aria-hidden="true"><ChevronRight size={14} /></li><li><Link prefetch={false} href={`/san-pham?category=${product.category.slug}`} className="hover:text-ink">{product.category.name}</Link></li></>}
       </ol>
     </nav>
 

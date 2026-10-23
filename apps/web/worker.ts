@@ -2,7 +2,7 @@
 import openNext from "./.open-next/worker.js";
 // @ts-expect-error -- cloudflare:workers is provided by the Workers runtime.
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { edgeCacheHeaders, hasRequestCredentials, isEdgeCacheableRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
+import { edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
 import { withSecurityHeaders } from "./src/lib/security-headers";
 
 type Handler = { fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> };
@@ -44,10 +44,25 @@ async function fetchPublic(request: Request, env: unknown, ctx: unknown): Promis
     // Read the whole body first: rendering may still be fetching data after the headers exist,
     // and the degraded flag is only final once the page is complete.
     const body = await response.arrayBuffer();
-    const cacheHeaders = edgeCacheHeaders(response, state.degraded, isRscRequest(request));
+    const cacheHeaders = isImageRequest(request) ? imageCacheHeaders(response) : edgeCacheHeaders(response, state.degraded, isRscRequest(request));
     return finalResponse(request, response, request.method === "HEAD" ? null : body,
       cacheHeaders ? finalHeaders(cacheHeaders) : finalHeaders(response.headers, true));
   });
+}
+
+/** A transform that throws or times out (Images 9523, upstream 504) sends the browser to the original upload
+ * instead of breaking the image. */
+async function fetchImage(request: Request, env: unknown, ctx: GatewayContext): Promise<Response> {
+  const fallback = imageFallbackUrl(request);
+  try {
+    const response = await (isEdgeCacheableRequest(request) ? ctx.exports.PublicCache.fetch(request) : fetchPrivate(request, env, ctx));
+    if (response.status < 500 || !fallback) return response;
+    console.warn("image transform failed, serving original", response.status, fallback);
+  } catch (error) {
+    if (!fallback) throw error;
+    console.warn("image transform failed, serving original", String(error), fallback);
+  }
+  return new Response(null, { status: 302, headers: finalHeaders(new Headers({ Location: fallback }), true) });
 }
 
 /** Only this inner entrypoint has Workers Cache enabled. The public gateway never sends credentials here. */
@@ -56,7 +71,12 @@ export class PublicCache extends WorkerEntrypoint {
   declare ctx: unknown;
 
   async fetch(request: Request): Promise<Response> {
-    return fetchPublic(request, this.env, this.ctx);
+    if (!isImageRequest(request)) return fetchPublic(request, this.env, this.ctx);
+    // A failed transform is an uncached 502 here, so the gateway falls back without an uncaught exception.
+    return fetchPublic(request, this.env, this.ctx).catch((error: unknown) => {
+      console.warn("image transform failed", String(error));
+      return new Response(null, { status: 502, headers: finalHeaders(new Headers(), true) });
+    });
   }
 
   /** Custom RPC bypasses the HTTP cache and purges the cache owned by this entrypoint. */
@@ -82,6 +102,7 @@ const worker = {
       }
       return response;
     }
+    if (isImageRequest(request)) return fetchImage(request, env, ctx);
     if (hasRequestCredentials(request)) return fetchPrivate(request, env, ctx);
     if (isEdgeCacheableRequest(request)) return ctx.exports.PublicCache.fetch(request);
     return fetchPrivate(request, env, ctx);

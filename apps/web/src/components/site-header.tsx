@@ -15,12 +15,12 @@ export function SiteHeader({ storeName = FALLBACK_STORE_NAME, logoUrl }: { store
   return <header className="sticky top-0 z-40 border-b border-line bg-bg/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
     <a href="#noi-dung" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded focus:bg-surface focus:px-3 focus:py-2">Bỏ qua điều hướng</a>
     <div className="shell flex h-14 items-center justify-between gap-2 lg:h-[72px] md:gap-4">
-      <Link href="/" className="flex min-w-0 items-center gap-2.5">
+      <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2.5">
         {logoUrl && <Image src={logoUrl} alt="" width={40} height={40} className="size-8 shrink-0 object-contain md:size-10" />}
         <span className="display truncate text-[1.25rem] leading-none min-[380px]:text-[1.375rem] md:text-2xl">{storeName}</span>
       </Link>
       <nav aria-label="Điều hướng chính" className="hidden lg:block"><NavLinks items={navItems} /></nav>
-      <Link href="/lien-he" className="button sm hidden lg:inline-flex"><MessageCircle size={16} aria-hidden="true" />Nhắn tin</Link>
+      <Link prefetch={false} href="/lien-he" className="button sm hidden lg:inline-flex"><MessageCircle size={16} aria-hidden="true" />Nhắn tin</Link>
       <div className="-mr-2.5 lg:hidden"><MobileNav items={navItems} /></div>
     </div>
   </header>;

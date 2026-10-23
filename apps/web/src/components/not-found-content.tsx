@@ -8,8 +8,8 @@ export function NotFoundContent() {
       <h1 className="display mt-3 text-3xl md:text-4xl">Không tìm thấy trang</h1>
       <p className="mx-auto mt-3 max-w-md text-ink-soft">Trang bạn tìm có thể đã được đổi địa chỉ hoặc không còn hiển thị. Bạn có thể xem các mẫu tủ đang bán hoặc quay về trang chủ.</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link href="/san-pham" className="button min-h-12 px-6">Xem sản phẩm</Link>
-        <Link href="/" className="button secondary min-h-12 px-6">Về trang chủ</Link>
+        <Link prefetch={false} href="/san-pham" className="button min-h-12 px-6">Xem sản phẩm</Link>
+        <Link prefetch={false} href="/" className="button secondary min-h-12 px-6">Về trang chủ</Link>
       </div>
     </div>
   </div>;
