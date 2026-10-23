@@ -100,3 +100,19 @@ Retention after release: keep `.deploy-assets/{0cfcd7d,e681cca,1ab6f7c}`; `3e8c5
 - Each version switch starts a cold cache: two cold starts for P′ then N.
 - OpenNext's 7 s source-fetch signal and its substring `Accept` check are upstream behaviour; residual internal `TimeoutError`s fall back to the original image.
 - Backend latency (Render Singapore ↔ Supabase Sydney) is untouched.
+
+## Authenticated purge (runner v3, 2026-10-23 09:23:17Z) — PURGE_ISOLATION_ACCEPTED_RISK
+
+Runner verdict `AUTH_PURGE_PREVIEW_INCONCLUSIVE` (`docs/qa/evidence/perf-hotfix/purge/purge-probe-result.json`, analysis in `ANALYSIS.md`). Owner decision: **PURGE_ISOLATION_ACCEPTED_RISK**; the HTML purge verdict stays INCONCLUSIVE.
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Unauthenticated / invalid-token purge refused | PASS | 401 private/no-store |
+| Rejected purges evict nothing (image, page) | PASS | SIN HIT Age 65 / 39, older than the rejected purges |
+| Admin login, authenticated purge | PASS | 200, purge 200 private/no-store |
+| Production cache untouched by the preview purge | PASS | LHR HIT Age 60 > 20.2 s since the purge |
+| Preview image purged | PASS | SIN HIT before, SIN MISS after |
+| Preview HTML purged | **INCONCLUSIVE** | the client never returned to SIN; 11 post-purge samples (HKG, CDG) showed no HIT older than the purge |
+| Logout revokes the session; revoked token cannot purge | PASS | 204; 401 |
+
+Accepted risk: tag purge of HTML on the release version is shown only indirectly (same tag and entrypoint as the image, which was proven purged; no stale HTML observed). If an admin save ever failed to refresh public HTML, the edge copy still expires within `s-maxage=300` s.
