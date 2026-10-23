@@ -1,6 +1,6 @@
 # GitHub sync and backup plan (after N)
 
-Status: **step 2 (push) done 2026-10-23 15:06Z: GITHUB_SOURCE_SYNC_PASS** (results at the end). Steps 3–5 not executed; each needs the owner's separate approval. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
+Status: **step 2 (push) done 2026-10-23 15:06Z: GITHUB_SOURCE_SYNC_PASS** (results at the end). Step 3 (`.deploy-assets` backup): ASSET_BACKUP_LOCAL_PASS 2026-10-23 15:13Z; the off-machine copy is pending the owner. Steps 4–5 not executed; each needs the owner's separate approval. Nothing is merged into `main` or `deploy/c2-preview`, no worktree is removed, production is not touched.
 
 ## Current state (2026-10-23, read-only checks)
 
@@ -114,3 +114,22 @@ After the push (15:06–15:08Z):
 Incident during verification (no remote or production effect): the first restore check cloned into a path the shell did not resolve, so two `git checkout` of the tags ran in the main checkout (`E:\Tunhuabinhnham`) and left it detached at `e681cca`. The tree was clean (only untracked `.worktrees/`, `c21-security-worktree/`), nothing was lost; it was put back on `fix/perf-image-cache` at once and the check repeated in the session scratchpad. The stray clone (`E:	mp	mp.UaJYAyUztG`) was removed.
 
 This result commit is local only (made after the verified push).
+
+## Result — step 3 (owner's "BƯỚC 2"): ASSET_BACKUP_LOCAL_PASS (2026-10-23 15:13Z)
+
+| | |
+|---|---|
+| Source | `E:\Tunhuabinhnhampps\web\.deploy-assets` (git-ignored): 227 files, 8,962,483 bytes; builds `0cfcd7d` 45, `1ab6f7c` 45, `3e8c5f0` 45, `70dac36` 45, `e681cca` 47 (+ `BUILD_ID`, `_headers`); 145 js, 5 css, 75 woff2; no symlinks |
+| Archive | `E:\Tunhuabinhnham-backups\deploy-assets-20261023T151345Z.tar.gz`, 3,239,113 bytes (GNU tar, `--sort=name`, gzip) |
+| Archive SHA-256 | `ad26f6acf3cf7d834ac518823386af596fb70718128c6f15e54fb0d5e3e9b082` (file `….tar.gz.sha256`) |
+| Per-file manifest | `….manifest.sha256` (227 lines, `sha256sum` format; manifest SHA-256 `f8a823b4ed2cc9af85b7e1d018ff0239526d418087b911a3f66ca7ace4a495d7`) |
+| Integrity | `sha256sum -c` OK; `gzip -t` OK; 227 files, 31 directories, 0 links, every entry under `.deploy-assets/`, no absolute or `..` paths |
+| Restore | extracted into the session scratchpad (not over the source): 227 files, 8,962,483 bytes; paths + SHA-256 of every file identical to the source manifest; temp copy deleted |
+| Source untouched | source re-hashed after the backup: identical |
+| Sensitive content | no `.env`, key, dump, SQL or credential file names; no private key, connection string with password, `service_role`, JWT, `sb_secret_` key value. Matches reviewed: `sb_publishable_…` (the public Supabase key compiled into the browser bundle) in 5 copies of one chunk, and the supabase-js literal `startsWith("sb_secret_")` in `09g-92lhb07uq.js` (no key value); that chunk is byte-identical to the one served publicly on the site |
+| Git | archive is outside the repository (`E:\Tunhuabinhnham-backups` is not a Git repo); nothing added to Git |
+| Earlier backups | untouched (15 directories + the pre-0006 dump) |
+
+Disk layout: `E:` and `K:` are two partitions of the same USB disk (Disk 1, ASMT 2235); `C:` is the internal NVMe. A copy on `K:` is not independent; the off-machine copy must go to another device or a cloud folder (e.g. OneDrive). The archive holds only public build output, so cloud storage is acceptable for it.
+
+Off-machine copy: **pending (owner)**. Step complete only after the copy is verified at the destination.
