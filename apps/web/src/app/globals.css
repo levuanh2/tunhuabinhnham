@@ -112,6 +112,14 @@ input[type="checkbox"] { width: 1.125rem; height: 1.125rem; accent-color: var(--
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+/* Client navigation feedback (navigation-feedback.tsx). The bar waits 150 ms so fast pages never flash it;
+   reduced motion keeps the delay and drops the growth (global rule below). */
+a[data-nav-pending] { opacity: .6; transition: opacity .15s; }
+.nav-progress { position: fixed; inset: 0 0 auto; z-index: 60; height: 3px; background: var(--color-primary); transform-origin: left; opacity: 0; transform: scaleX(.1);
+  animation: nav-progress-show 0s 150ms forwards, nav-progress-grow 8s cubic-bezier(.1, .6, .2, 1) 150ms forwards; }
+@keyframes nav-progress-show { to { opacity: 1; } }
+@keyframes nav-progress-grow { to { transform: scaleX(.9); } }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

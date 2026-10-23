@@ -1,5 +1,7 @@
 import { connection } from "next/server";
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { NavigationFeedback } from "@/components/navigation-feedback";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { publicApi } from "@/lib/api";
@@ -22,5 +24,5 @@ export default async function PublicLayout({ children }: { children: React.React
   // API responses stay in the Data Cache (revalidate 60s, tag "catalog"); admin saves call revalidateTag.
   await connection();
   const settings = await getSettings();
-  return <><SiteHeader storeName={settings?.store_name} logoUrl={settings?.logo_url} /><main id="noi-dung">{children}</main><SiteFooter settings={settings} /></>;
+  return <><Suspense><NavigationFeedback /></Suspense><SiteHeader storeName={settings?.store_name} logoUrl={settings?.logo_url} /><main id="noi-dung">{children}</main><SiteFooter settings={settings} /></>;
 }
