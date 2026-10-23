@@ -1,4 +1,4 @@
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, CacheRefreshError } from "@/lib/admin-api";
 import type { MediaAsset } from "@/types/api";
 
 export const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
@@ -32,7 +32,7 @@ export async function cleanupMediaUrls(urls: Iterable<string>): Promise<string[]
   const failures: string[] = [];
   for (const url of new Set(urls)) {
     try { await deleteAdminMedia({ url }); }
-    catch { failures.push(url); }
+    catch (error) { if (!(error instanceof CacheRefreshError)) failures.push(url); } // deleted; the edge copy expires within a day
   }
   return failures;
 }
