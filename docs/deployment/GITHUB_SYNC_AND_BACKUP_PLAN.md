@@ -133,3 +133,21 @@ This result commit is local only (made after the verified push).
 Disk layout: `E:` and `K:` are two partitions of the same USB disk (Disk 1, ASMT 2235); `C:` is the internal NVMe. A copy on `K:` is not independent; the off-machine copy must go to another device or a cloud folder (e.g. OneDrive). The archive holds only public build output, so cloud storage is acceptable for it.
 
 Off-machine copy: **pending (owner)**. Step complete only after the copy is verified at the destination.
+
+## Step 4 (owner's "BƯỚC 3"): encrypted environment backup — in progress (2026-10-23 15:30Z)
+
+Inventory (names only; values never printed):
+
+| File | Tracked | Names | Points to |
+|---|---|---|---|
+| `apps/web/.env.production.local` (258 B) | no (`.gitignore` `.env.*`) | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key) | production; all public (in the bundle) |
+| `apps/web/.env.local` (236 B) | no | same names | localhost API/site, production Supabase URL + publishable key |
+| `apps/api/.env` (877 B) | no (`.gitignore` `.env`) | `APP_ENV`, `DATABASE_URL`, `FRONTEND_ORIGINS`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`, `SUPABASE_JWKS_URL`, `MAX_UPLOAD_BYTES`, `CONTACT_TRACKING_ENABLED` | **production** database (pooler, with password), service-role JWT and `sb_secret` key, in plaintext |
+
+- Git: only `.env.example` files were ever committed (all refs). GitHub Actions has no repository secrets or variables. The Worker has no wrangler secrets.
+- Leak scan (values compared in memory, counts only): the service-role key, the secret key and the database password occur **0 times** in 2,263 Git objects (all refs), `docs/`, Claude transcripts and temp files of this project, and the bash and PowerShell histories.
+- Access: both env files inherit `Authenticated Users: Modify` and `Users: Read`; the USB disk (`E:`/`K:`) is not encrypted, so anyone with the disk can read `apps/api/.env`. Not changed (out of scope).
+- GPG: GnuPG 2.4.7 from Git for Windows 2.51.0 (installer signed by Johannes Schindelin), AES256 available. Encryption runs from an owner-run script (passphrase typed at gpg's prompt, `--no-symkey-cache`, verification decrypts into a pipe); dry run on a dummy file: AES256 (`cipher 9`, `s2k 3`, `hash 10`), hash match, wrong passphrase rejected.
+- OneDrive: client installed but **no account signed in** and not running; `C:\Users\Vu Anh\OneDrive` is a plain local folder on the internal disk. The step-3 archive copied there has not reached the cloud.
+
+Recovery checklist: `docs/deployment/PRODUCTION_RECOVERY_CHECKLIST.md`.
