@@ -22,7 +22,13 @@ from app.repositories.catalog import (
     ProductRepository,
     public_product_conditions,
 )
-from app.schemas.catalog import CategoryOut, ContactClickCreate, ContactClickOut, ProductOut
+from app.schemas.catalog import (
+    CategoryOut,
+    ContactClickCreate,
+    ContactClickOut,
+    ProductDetailOut,
+    ProductOut,
+)
 from app.schemas.common import Page
 from app.schemas.content import BannerOut, PostOut, SiteSettingsOut
 
@@ -59,14 +65,21 @@ def products(
 
 @router.get(
     "/products/{slug}",
-    response_model=ProductOut,
+    response_model=ProductDetailOut,
     responses={301: {"description": "Old URL: Location is the product's current URL"}},
 )
-def product(slug: str, request: Request, db: Session = Depends(get_db)) -> ProductOut | Response:
+def product(
+    slug: str,
+    request: Request,
+    related: int = Query(0, ge=0, le=12),
+    db: Session = Depends(get_db),
+) -> ProductDetailOut | Response:
     repository = ProductRepository(db)
-    item = repository.by_slug(slug)
+    item, others = repository.public_with_related(slug, related)
     if item is not None:
-        return ProductOut.model_validate(item)
+        out = ProductDetailOut.model_validate(item)
+        out.related = [ProductOut.model_validate(other) for other in others]
+        return out
     moved = repository.public_by_old_slug(slug)
     if moved is None:
         raise HTTPException(status_code=404, detail="Product not found")
