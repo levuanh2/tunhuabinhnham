@@ -70,6 +70,35 @@ class ProductRepository:
     def eager() -> tuple[ExecutableOption, ...]:
         return (selectinload(Product.images), selectinload(Product.category))
 
+    def public_with_related(self, slug: str, related: int) -> tuple[Product | None, list[Product]]:
+        """The public product and up to `related` public products of its category (any category
+        if it has none), newest first, itself excluded. One statement with the product first: the
+        product page gets both in one request, at the database cost of the product alone."""
+        if not related:
+            return self.by_slug(slug), []
+        target = (
+            select(Product.id, Product.category_id)
+            .where(Product.slug == slug, *public_product_conditions())
+            .subquery()
+        )
+        target_category = select(target.c.category_id).scalar_subquery()
+        same_category = or_(target_category.is_(None), Product.category_id == target_category)
+        rows = list(
+            self.db.scalars(
+                select(Product)
+                .options(*self.eager())
+                .where(
+                    *public_product_conditions(),
+                    or_(Product.slug == slug, and_(select(target.c.id).exists(), same_category)),
+                )
+                .order_by((Product.slug == slug).desc(), Product.published_at.desc(), Product.id)
+                .limit(related + 1)
+            )
+        )
+        if not rows or rows[0].slug != slug:
+            return None, []
+        return rows[0], rows[1:]
+
     def list(
         self,
         *,

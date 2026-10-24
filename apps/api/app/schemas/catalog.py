@@ -120,6 +120,11 @@ class ProductOut(ProductBase):
     updated_at: datetime
 
 
+class ProductDetailOut(ProductOut):
+    # Filled only when asked for (`?related=n`); empty otherwise, so existing clients see one extra field.
+    related: list[ProductOut] = Field(default_factory=list)
+
+
 class ContactClickCreate(BaseModel):
     product_id: uuid.UUID | None = None
     source: Literal["product_detail", "product_card", "contact_page", "unknown"] = "unknown"
