@@ -13,7 +13,9 @@ async function get(url, headers = {}, method = "GET") {
   for (let i = 1; i <= 3; i++) {
     try {
       const t = Date.now();
-      const r = await fetch(url, { method, headers, redirect: "manual", signal: AbortSignal.timeout(30000) });
+      // VERSION_OVERRIDE=<version id>: pin the site's requests to one version of a gradual deployment (canary).
+      const pin = process.env.VERSION_OVERRIDE && url.startsWith(origin) ? { "cloudflare-workers-version-overrides": `tunhuabinhnham-web="${process.env.VERSION_OVERRIDE}"` } : {};
+      const r = await fetch(url, { method, headers: { ...headers, ...pin }, redirect: "manual", signal: AbortSignal.timeout(30000) });
       const body = Buffer.from(await r.arrayBuffer());
       return { status: r.status, h: Object.fromEntries(r.headers), body, ms: Date.now() - t };
     } catch (e) { if (i < 3) await sleep(1000 * i); else return { network: e?.cause?.code ?? e?.name }; }

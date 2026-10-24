@@ -1,0 +1,154 @@
+{
+ "verdict": "SMOKE_PASS",
+ "origin": "https://tunhuabinhnham.com",
+ "api": "https://tunhuabinhnham-api.onrender.com",
+ "at": "2026-10-24T16:15:34.442Z",
+ "results": [
+  {
+   "name": "page /",
+   "result": "PASS",
+   "status": 200,
+   "refs": 11,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 2962
+  },
+  {
+   "name": "page /san-pham",
+   "result": "PASS",
+   "status": 200,
+   "refs": 12,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 2005
+  },
+  {
+   "name": "page /san-pham?category=tu-quan-ao",
+   "result": "PASS",
+   "status": 200,
+   "refs": 12,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 1425
+  },
+  {
+   "name": "page /tin-tuc",
+   "result": "PASS",
+   "status": 200,
+   "refs": 11,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 1765
+  },
+  {
+   "name": "page /lien-he",
+   "result": "PASS",
+   "status": 200,
+   "refs": 11,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 1614
+  },
+  {
+   "name": "page /gioi-thieu",
+   "result": "PASS",
+   "status": 200,
+   "refs": 11,
+   "foreign": [],
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 915
+  },
+  {
+   "name": "API /san-pham/tu-nhua-4-canh-4?related=4 (backend with related)",
+   "result": "PASS",
+   "status": 200,
+   "related": 4
+  },
+  {
+   "name": "product page /san-pham/tu-nhua-4-canh-4",
+   "result": "PASS",
+   "status": 200,
+   "relatedSection": true,
+   "relatedCards": 4,
+   "cc": "public, max-age=0, s-maxage=300",
+   "ms": 2681
+  },
+  {
+   "name": "related = same category, not itself",
+   "result": "PASS",
+   "status": 200,
+   "n": 4
+  },
+  {
+   "name": "post page /tin-tuc/kinh-nghiem-chon-tu-nhua-4-canh-cho-phong-ngu",
+   "result": "PASS",
+   "status": 200
+  },
+  {
+   "name": "anonymous HTML MISS -> HIT",
+   "result": "PASS",
+   "status": 200,
+   "states": [
+    "MISS/1237ms",
+    "HIT/65ms",
+    "HIT/64ms"
+   ]
+  },
+  {
+   "name": "isolation: cookie never served from cache",
+   "result": "PASS",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "isolation: authorization never served from cache",
+   "result": "PASS",
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /admin",
+   "result": "PASS",
+   "status": 307,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /admin/login",
+   "result": "PASS",
+   "status": 200,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /api/revalidate",
+   "result": "PASS",
+   "status": 405,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "purge without token refused",
+   "result": "PASS",
+   "status": 401
+  },
+  {
+   "name": "unknown product 404, not cached",
+   "result": "PASS",
+   "status": 404,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "trailing slash stays 308",
+   "result": "PASS",
+   "status": 308,
+   "location": "/san-pham"
+  },
+  {
+   "name": "image transform cached 24 h",
+   "result": "PASS",
+   "status": 200,
+   "cc": "public, max-age=3600, s-maxage=86400",
+   "type": "image/webp"
+  }
+ ]
+}

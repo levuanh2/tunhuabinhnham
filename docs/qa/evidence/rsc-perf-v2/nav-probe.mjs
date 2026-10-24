@@ -28,6 +28,8 @@ for (const name of names) {
   const [engine, ctx] = PROFILES[name];
   const browser = await engine.launch();
   const page = await (await browser.newContext({ ...ctx, userAgent: (ctx.userAgent ?? "") + " nav-probe-read-only" })).newPage();
+  // VERSION_OVERRIDE=<version id>: pin this origin's requests (HTML, RSC, assets) to one version of a gradual deployment.
+  if (process.env.VERSION_OVERRIDE) await page.route(`${origin}/**`, route => route.continue({ headers: { ...route.request().headers(), "cloudflare-workers-version-overrides": `tunhuabinhnham-web="${process.env.VERSION_OVERRIDE}"` } }));
   const rsc = []; let prefetches = 0;
   page.on("response", async r => {
     const req = r.request(); const h = req.headers();

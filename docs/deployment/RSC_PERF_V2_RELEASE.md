@@ -95,3 +95,25 @@ Rollback readiness: P `ace736be-c3d6-443e-a454-d7bae8c69681` still available (St
 Pre-flight, read-only: production 100 % P′ `68103970` (since 15:34:40Z); backend `45da4c1` live, `/health/ready` 200; N `fae6efa2-4153-411c-9987-55f2f6ccfb87` = tag `rsc-v2-852126e`, created 07:27:41Z (the build tested in the preview E2E; its upload message says "PREVIEW ONLY", the deploy command sets its own message); N serves 54/54 files of P + N + `e681cca`; no other deployment in progress; runbook and rollback commands unchanged.
 
 The approval set a stop condition: "if CPU really exceeds the Free limit continuously or there is exceededCpu, stop and report BLOCKED; if it is wall time mislabelled, correct and continue". The Gate A figure **is CPU time** (`cpuTime`; `wallTime` is a separate field). Uncached page/RSC renders exceed 10 ms CPU on 44 % of observed page/RSC requests on P′ and 41 % on P (`ace736be`), up to ~0.86 s, with no `exceededCpu`/1102 in the observed windows. This is systematic for uncached renders and pre-existing, not caused by RSC V2 (N renders the same pages; it removes one API call, not render work). **Step B was not executed: BLOCKED pending the owner's decision** (accept the pre-existing Free-plan CPU risk as before, or keep P′ / plan Workers Paid).
+
+## 8. Step B1 canary (owner approval 2026-10-24: N 10 %, P′ 90 %; no 100 %)
+
+- Pre-flight: P′ 100 %; N `fae6efa2` = tag `rsc-v2-852126e` (preview E2E build); bindings identical (`WORKER_SELF_REFERENCE`, `IMAGES`, `ASSETS`); each serves 54/54 files of P + N + `e681cca`; CPU baseline P′ page/RSC p95 456 ms, 44 % > 10 ms; nothing else deploying.
+- Deploy 16:14:29Z: `npx wrangler versions deploy 68103970-d684-49ad-84bf-e8909278323c@90% fae6efa2-4153-411c-9987-55f2f6ccfb87@10% --yes --message "Canary B1: …"` → SUCCESS; `deployments status`: (90 %) `68103970…`, (10 %) `fae6efa2…` since 16:14:36Z. No backend, DB, secret, TTL or config change.
+- Version-pinned checks use Cloudflare's `Cloudflare-Workers-Version-Overrides: tunhuabinhnham-web="<id>"` (gradual-deployment override); `nav-probe.mjs` and `release/preview-smoke.mjs` accept `VERSION_OVERRIDE`. Pinning is self-verifying: each version's HTML references only its own build's CSS/JS.
+
+| Check | Result |
+|---|---|
+| Split | 90/10 per `deployments status`. Real visitors during the observation: **0** (all 209 Worker events were test traffic: P′ 80, N 129) → the natural split and any visitor-side effect are **INCONCLUSIVE** |
+| Smoke pinned N (`canary-smoke-n.json`) | SMOKE_PASS 20/20: all public pages with only N's assets; product page 4 related from `?related=4` (same category, not itself); canonical + JSON-LD; MISS→HIT; cookie/Authorization never HIT; admin/login/revalidate private; purge 401; 404 not cached; 308; image 24 h |
+| Smoke pinned P′ (`canary-smoke-pprime.json`) | SMOKE_PASS 20/20 (old frontend path, 4 related) |
+| Browser pinned N (`canary-nav-n.json`) | Chromium, WebKit, WebKit iPhone: prefetch 0; pending indicator 44–70 ms (Chromium) / 124–243 ms (WebKit, incl. Playwright click latency); RSC MISS cold then HIT 62–111 ms; Back/Forward 8–33 ms |
+| Browser unpinned (`canary-nav-unpinned.json`) | landed on P′ (90 %): normal old behaviour, all 200. A session that alternates versions gets Next's full-page fallback on build-ID mismatch (`TASK_P1_ASSET_VERSION_SKEW.md` scenarios 3–4: works, slower); not observed in this run |
+| Assets across versions (`canary-soak.json`) | SOAK_PASS on the apex during the split: 54/54, 0 failing, 302 s clean |
+| Same-request comparison (`canary-pair-probe.json`, 6 + 6 alternating pinned product MISS, HKG) | N 1.28–1.96 s vs P′ 2.38–3.14 s; both 4 related |
+| CPU per version (`canary-tail-by-version.json`, tail `cpuTime`/`wallTime`) | uncached page renders (`PublicCache:page`, n 24 each): **N CPU p50 91 / p95 452 / max 498 ms, 23/24 > 10 ms, wall p50 1246 / p95 1922**; **P′ 87 / 465 / 481 ms, 24/24 > 10 ms, wall 1545 / 2352**. Gateway (HIT/private, `default:page`): N p95 2 ms, P′ p95 34 ms. N image transforms (its own cold partition) n 43, CPU p95 32 ms. No CPU regression; the > 10 ms renders are the pre-existing Free-plan risk |
+| Outcomes and errors | all `ok` (P′ 78, N 127); 0 exceptions; 0 5xx; no `exceededCpu`, 1102, 1027; 0 non-200 image transforms (no 9523) |
+| Tail coverage | 16:14:49 → 16:18:41Z events, then live windows to ~16:30Z with no Worker invocations (a control window at ~16:33Z captured 4/4 test requests, so the stream was live); restarts every 2 min |
+| Render | backend `45da4c1` `/health/ready` 200. N MISS calls expected 2 per product render; owner-checkable at the `canary-pair-probe.json` timestamps (N rows) |
+
+**Verdict: RSC_V2_CANARY_PASS_WITH_EXISTING_CPU_RISK** on version-pinned evidence; natural-traffic behaviour INCONCLUSIVE (no visitors in the window). N stays at 10 %. Rollback: `npx wrangler versions deploy 68103970-d684-49ad-84bf-e8909278323c@100% --yes --message "rollback canary to P-prime"` (backend stays `45da4c1`). Promotion to 100 % needs the owner's decision.
