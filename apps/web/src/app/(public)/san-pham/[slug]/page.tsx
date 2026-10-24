@@ -32,6 +32,8 @@ const availability = {
 
 export default async function ProductDetailPage({ params, searchParams }: Props) {
   const slug = (await params).slug; let product;
+  // Settings do not need the product: in parallel with it. "Same category" comes in the product's own response.
+  const settingsRequest = publicApi.settings().catch(() => null);
   try { product = await publicApi.product(slug); } catch { notFound(); }
   // An old URL: the API answered for the product's current slug. One hop to the current URL,
   // query kept (worker.ts turns Next's 308 into a 301 and keeps it out of every cache).
@@ -40,13 +42,10 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
     for (const [key, value] of Object.entries(await searchParams)) for (const item of [value ?? []].flat()) query.append(key, item);
     permanentRedirect(`/san-pham/${product.slug}${query.size ? `?${query}` : ""}`);
   }
-  const [related, settings] = await Promise.all([
-    publicApi.products(`category=${product.category?.slug ?? ""}&page_size=5`).catch(() => ({ items: [], page: 1, page_size: 5, total: 0, pages: 0 })),
-    publicApi.settings().catch(() => null),
-  ]);
+  const settings = await settingsRequest;
   const messageUrl = settings?.messenger_url ?? settings?.facebook_url ?? "https://facebook.com";
   const stickyUrl = allowedMessengerUrl(settings?.messenger_url) ?? allowedMessengerUrl(settings?.facebook_url);
-  const relatedItems = related.items.filter(p => p.id !== product.id).slice(0, 4);
+  const relatedItems = product.related ?? []; // absent from an API older than `related`
   const specs = Object.entries(product.attributes).filter(([, value]) => value);
   const stock = availability[product.stock_status];
   const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, sku: product.sku, image: product.images.map(i => i.url), description: product.description, offers: product.price ? { "@type": "Offer", priceCurrency: "VND", price: product.price, availability: product.stock_status === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" } : undefined };

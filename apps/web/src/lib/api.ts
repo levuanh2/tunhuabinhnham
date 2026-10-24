@@ -16,8 +16,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
 export const publicApi = {
   products: (query = "") => apiFetch<Page<Product>>(`/products${query ? `?${query}` : ""}`),
-  // The API answers an old slug with a 301 to the current one; fetch follows it.
-  product: (slug: string) => apiFetch<Product>(`/products/${encodeURIComponent(slug)}`),
+  // The API answers an old slug with a 301 to the current one (query kept); fetch follows it. `related=4`: the
+  // product page's "same category" products in the same response (and the same database statements).
+  product: (slug: string) => apiFetch<Product & { related?: Product[] }>(`/products/${encodeURIComponent(slug)}?related=4`),
   categories: () => apiFetch<Category[]>("/categories"),
   posts: () => apiFetch<Page<Post>>("/posts"),
   banners: () => apiFetch<Banner[]>("/banners"),
