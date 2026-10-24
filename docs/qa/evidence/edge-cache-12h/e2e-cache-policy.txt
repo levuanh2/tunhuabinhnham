@@ -1,0 +1,6 @@
+  1) [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+    Error: expect(page).toHaveURL(expected) failed
+  1 failed
+    [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  5 skipped
+  4 passed (31.8s)

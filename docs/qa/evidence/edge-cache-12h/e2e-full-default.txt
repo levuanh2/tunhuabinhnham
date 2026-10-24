@@ -1,0 +1,19 @@
+  16 failed
+    [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+    [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+    [desktop] › e2e\audit-v1.spec.ts:130:5 › A6. V1-BUG-01: removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+    [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+    [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+    [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+    [desktop] › e2e\catalog-admin.spec.ts:128:7 › product form › P5. generated values retry to -3 across slug and code conflicts; a failed cache refresh never saves twice 
+    [desktop] › e2e\catalog-admin.spec.ts:157:7 › product form › P6. a draft published by someone else meanwhile: a stale form may still move it, and the URL that went public redirects 
+    [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+    [desktop] › e2e\product-gallery.spec.ts:33:7 › product gallery › G1. a single image fills the gallery column at every width (was 72x90) 
+    [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+    [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+    [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+    [desktop] › e2e\slug-redirect.spec.ts:121:7 › product URL change › S4. any product customers may have seen asks first; every old URL stays reserved, drafts included 
+    [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+    [mobile] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+  45 skipped
+  69 passed (2.6m)
