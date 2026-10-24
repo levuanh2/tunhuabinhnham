@@ -148,7 +148,7 @@ test.describe("product form", () => {
     await newProductPage(page);
     await page.getByLabel("Tên sản phẩm").fill("Tủ cache lỗi");
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
-    await expect(page.getByText("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 5 phút")).toBeVisible();
+    await expect(page.getByText("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 12 giờ")).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     expect(creates).toEqual(["tu-cache-loi"]);
     expect((await savedProducts(page)).filter(p => p.name === "Tủ cache lỗi")).toHaveLength(1);

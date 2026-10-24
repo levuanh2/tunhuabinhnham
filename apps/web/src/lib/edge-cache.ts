@@ -7,8 +7,10 @@ import { AsyncLocalStorage } from "node:async_hooks";
  */
 
 export const EDGE_CACHE_TAG = "public-html";
-// s-maxage is a backstop; admin saves purge the tag through /api/revalidate.
-export const EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=300";
+// 12 h at the edge: the owner accepts public pages up to ~12 h stale to spare Render Free (2026-10-24). Admin saves
+// still purge the tag through /api/revalidate; s-maxage is the backstop if a purge is lost. Browsers revalidate
+// every time (max-age=0). Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
+export const EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=43200";
 
 const PUBLIC_PATH = /^\/(?:|san-pham(?:\/[^/]+)?|tin-tuc(?:\/[^/]+)?|lien-he|gioi-thieu)$/;
 const RSC_HEADERS = ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"];

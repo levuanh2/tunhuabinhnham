@@ -62,7 +62,7 @@ describe("router (RSC) requests", () => {
   });
   it("store only text/x-component bodies, never HTML, under the RSC rule", () => {
     const flight = new Response("0:[]", { headers: { "content-type": "text/x-component", vary: "rsc" } });
-    expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toMatch(/public/);
+    expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toBe("public, max-age=0, s-maxage=43200");
     expect(edgeCacheHeaders(html(), false, true)).toBeNull();
     expect(edgeCacheHeaders(flight, false, false)).toBeNull();
     expect(edgeCacheHeaders(flight, true, true)).toBeNull();
@@ -72,7 +72,8 @@ describe("router (RSC) requests", () => {
 describe("edgeCacheHeaders", () => {
   it("marks a complete 200 HTML page public with the purge tag and keeps RSC variants apart", () => {
     const headers = edgeCacheHeaders(html(), false)!;
-    expect(headers.get("cache-control")).toBe("public, max-age=0, s-maxage=300");
+    // 12 h at the edge (owner accepts public content up to ~12 h stale; admin saves still purge the tag), never in browsers
+    expect(headers.get("cache-control")).toBe("public, max-age=0, s-maxage=43200");
     expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
     expect(headers.get("vary")).toMatch(/rsc/);
     expect(edgeCacheHeaders(html({ headers: { vary: "accept-encoding" } }), false)!.get("vary")).toMatch(/rsc/);
