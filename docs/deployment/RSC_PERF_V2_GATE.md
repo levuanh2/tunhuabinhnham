@@ -2,7 +2,7 @@
 
 Date: 2026-10-24. Branch `perf/rsc-nav-v2` (from `e3d5d4b`, app code = production `0cfcd7d`). Nothing pushed or deployed. Evidence: `docs/qa/evidence/rsc-perf-v2/`.
 
-**Verdict: BLOCKED — Codex independent review not yet obtained.** Benchmarks, full regression and the self-review are done; no known P0–P2 issue.
+**Verdict: RSC_PERF_V2_READY_FOR_PREVIEW.** Codex round 2: APPROVE, no P0–P3 open (round 1: one P2 in this report, fixed; one P3 accepted, §9). Benchmarks and full regression done. Deploy still needs owner approval per step (§8).
 
 Commits: `bf346ed` + `75f8554` navigation feedback (unchanged from the first round), `9448d43` API `GET /products/{slug}?related=n`, `7a14908` product page uses it. The first round's option B (`related_to` + parallel calls) is kept only on `archive/rsc-nav-v2-option-b` (`23b4d12`): it failed the owner's "other routes" condition (§2).
 
@@ -146,7 +146,7 @@ Warm navigation p50 ≤ 800 ms is met today (edge HIT). Cold p95 ≤ 1.5 s is no
 
 ## 7. Codex review
 
-Round 1 (2026-10-24, `codex-review-r1.txt`): REQUEST_CHANGES, no P0/P1. P2: this report claimed savings for unknown/old slugs that do not exist (fixed in §2 and §6). P3: no indicator on a slow Back/Forward (accepted, §9). Confirmed: PostgreSQL statement and correlation, public rules on target and related rows, no enumeration, `related` bounds, degraded guard on the combined call, fetch dedupe, no unhandled rejection, cache keys/purge/credentials unchanged, rollout order. Request: `docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md`. To run: `codex exec --sandbox read-only -C /e/Tunhuabinhnham "$(cat docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md)"`. Fix P0–P2, re-review, then the verdict can move to RSC_PERF_V2_READY_FOR_PREVIEW.
+Round 1 (2026-10-24, `codex-review-r1.txt`): REQUEST_CHANGES, no P0/P1. P2: this report claimed savings for unknown/old slugs that do not exist (fixed in §2 and §6). P3: no indicator on a slow Back/Forward (accepted, §9). Confirmed: PostgreSQL statement and correlation, public rules on target and related rows, no enumeration, `related` bounds, degraded guard on the combined call, fetch dedupe, no unhandled rejection, cache keys/purge/credentials unchanged, rollout order. Request: `docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md`. To run: `codex exec --sandbox read-only -C /e/Tunhuabinhnham "$(cat docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md)"`. Round 2 (`codex-review-r2.txt`, on `dad8c90`): **APPROVE**, no remaining P0–P3; P2 resolved, P3 accurately recorded.
 
 ## 8. Rollout (each step needs owner approval)
 
