@@ -22,7 +22,7 @@ Commits: `bf346ed` + `75f8554` navigation feedback (unchanged from the first rou
 | Render calls per product view, MISS | 3 | 3 | 2 server + 1 browser | **2** |
 | … per view, edge HIT | 0 | 0 | **+1 per view that scrolls** | 0 |
 | DB statements per MISS view (SQLite count; + 1 pre-ping per request on Postgres) | 3+4+1 | 3+4+1 | 3+1 (+4 browser) | **3+1** |
-| unknown slug / old slug | 2 / product only | 3 (wasted `related_to`) / 3 | 2 | **2 / 2** |
+| Render calls, unknown slug / old slug (301 followed) | 2 / 3 | 3 / 4 (`related_to` wasted) | 2 / 3 | 2 / 3 (no saving; Codex P2) |
 | related links in server HTML (SEO) | yes | yes | no | yes |
 | edge cache key, tag, purge | unchanged | unchanged | page purged, related keeps the API's 60 s browser cache | unchanged |
 | new Worker + old backend | — | wrong products (newest of all categories) | — | section hidden (`related` absent) |
@@ -83,7 +83,7 @@ Open loop, same arrivals for every option (`load-open.jsonl`):
 | Render serves 8 at once, 3.0 view/s | 1898 / 2061 / **1374** | 3285 / 2206 / **1312** |
 | D takes 1000 ms (as a list call), 4 at once, 1.4 / 1.8 view/s | D: 1992 / 2659–2710 (A: 2425 / 4206) | D: 2132 / 3091–3146 |
 
-The order holds under every assumption: B always makes the other routes slower than A; D is never worse than A for other routes beyond noise and is much better for the product page. The first D=1000 run had 5 and 3 degraded renders (a fetch from the Worker to the mock failed; local workerd logged "dropped connection to the UserWorker"); none in two reruns; they were correctly marked not cacheable.
+The order holds under every tested assumption: B always makes the other routes slower than A; D is never worse than A for other routes beyond noise and is much better for the product page. The first D=1000 run had 5 and 3 degraded renders (a fetch from the Worker to the mock failed; local workerd logged "dropped connection to the UserWorker"); none in two reruns; they were correctly marked not cacheable.
 
 ### Worker CPU (render time with an instant API, `load-render.jsonl`, 15 views each, p50 / p95 ms)
 
@@ -141,12 +141,12 @@ Warm navigation p50 ≤ 800 ms is met today (edge HIT). Cold p95 ≤ 1.5 s is no
 
 ## 6. Cost
 
-- Render: −1 call per uncached product view (3 → 2) and per unknown/old slug view; ~24 % less backend busy time at equal traffic in the model. Supabase: one statement fewer list query + count per product view.
+- Render: −1 call per uncached view of a valid product URL (3 → 2); unknown slugs (2) and old slugs (3: product, followed 301, settings) cost the same as today (not benchmarked). ~24 % less backend busy time at equal traffic in the model. Supabase: per valid product view 4 application statements instead of 8 (+1 pre-ping per request).
 - Workers: same requests, same render work. No new service, cache tier, R2/KV, ISR or plan change.
 
-## 7. Codex review (pending)
+## 7. Codex review
 
-Request: `docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md`. To run: `codex exec --sandbox read-only -C /e/Tunhuabinhnham "$(cat docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md)"`. Fix P0–P2, re-review, then the verdict can move to RSC_PERF_V2_READY_FOR_PREVIEW.
+Round 1 (2026-10-24, `codex-review-r1.txt`): REQUEST_CHANGES, no P0/P1. P2: this report claimed savings for unknown/old slugs that do not exist (fixed in §2 and §6). P3: no indicator on a slow Back/Forward (accepted, §9). Confirmed: PostgreSQL statement and correlation, public rules on target and related rows, no enumeration, `related` bounds, degraded guard on the combined call, fetch dedupe, no unhandled rejection, cache keys/purge/credentials unchanged, rollout order. Request: `docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md`. To run: `codex exec --sandbox read-only -C /e/Tunhuabinhnham "$(cat docs/qa/evidence/rsc-perf-v2/CODEX_REVIEW_REQUEST.md)"`. Fix P0–P2, re-review, then the verdict can move to RSC_PERF_V2_READY_FOR_PREVIEW.
 
 ## 8. Rollout (each step needs owner approval)
 
@@ -164,3 +164,4 @@ Rollback: Worker → its P′; backend → Render deploy of `1ab6f7c` (roll the 
 3. Order-dependent e2e flakes (G1/G3/P4/P5/P6/S4/C1) exist on the option B build too; to investigate separately.
 4. `site-settings` is fetched on every uncached render; a shared cache would need its own invalidation (not added).
 5. The 20 s cap can hide the bar for a navigation that really takes longer.
+6. Codex P3 (accepted, not fixed): a Back/Forward that misses Next's router cache and waits on an uncached RSC response shows no indicator (popstate only clears it). Usually served from the router cache (16–67 ms measured).

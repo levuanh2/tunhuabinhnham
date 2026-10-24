@@ -1,0 +1,147 @@
+codex
+## Findings
+
+- **P2 — Release report overstates savings for unknown and old slugs.** Under the report’s cold-cache accounting, an unknown slug remains two Render calls: product lookup plus settings. An old slug requires the initial product request, the followed 301 request, and settings—three calls. Its application SQL count also remains eight: four for the old-slug request, three after following the redirect, and one for settings, excluding pool pre-pings. Only a normal product view drops from three calls to two. The benchmark does not include an old slug, so that claim lacks supporting evidence. Correct the cost statement and add an old-slug case to `api-per-view.mjs`.  
+  [RSC_PERF_V2_GATE.md:144](E:/Tunhuabinhnham/docs/deployment/RSC_PERF_V2_GATE.md:144), [api-per-view.mjs:6](E:/Tunhuabinhnham/docs/qa/evidence/rsc-perf-v2/api-per-view.mjs:6)
+
+- **P3 — Slow Back/Forward navigation has no custom feedback.** `popstate` only clears the indicator. If a history traversal misses Next’s router cache and waits on an uncached RSC response, the visitor again sees unchanged content with no bar or busy state. Link clicks, including keyboard activation, are covered. Consider starting generic feedback on `popstate`, then clearing it when the committed URL changes.  
+  [navigation-feedback.tsx:34](E:/Tunhuabinhnham/apps/web/src/components/navigation-feedback.tsx:34), [navigation-feedback.spec.ts:36](E:/Tunhuabinhnham/apps/web/e2e/navigation-feedback.spec.ts:36)
+
+No P0 or P1 findings.
+
+## Correctness
+
+- The PostgreSQL statement is valid. The target-product derived table is independent of the outer `products` table; its scalar and `EXISTS` subqueries are not accidentally correlated.
+- Boolean `DESC` puts the requested slug first. The guard correctly rejects a result whose first row is not the target. `LIMIT related + 1` returns the target plus at most `n` related products.
+- A target with `category_id IS NULL` deliberately permits any public product. A missing target cannot expose arbitrary related rows because the independent `EXISTS` condition is false.
+- Both target and related rows apply the full public rules: not deleted, published, visible, publication time reached, and category visible/not deleted.
+- PostgreSQL sorts `NULL published_at` first for `DESC`. This matches the existing list endpoint, although “newest first” therefore means undated public products precede dated products.
+- `ProductDetailOut` serializes correctly. Assignment to `out.related` is valid because the model is mutable. Plain requests add only the backward-compatible `related: []` field.
+- The API’s old-slug 301 retains `?related=4`; the Next redirect separately retains the visitor’s page query. The 404 path remains unchanged.
+- `generateMetadata` and the page use the same encoded URL and fetch options, so Next can deduplicate the fetch. Every concurrently started settings promise has an immediate rejection handler; I found no unhandled-rejection path.
+
+## Cache and security
+
+The combined-call failure still calls `markRenderDegraded()`, even when the page catches it. The Worker buffers the completed body and therefore keeps that render private. A 404 or render error also fails the status gate.
+
+Nothing in the change alters edge keys, public tags, purge RPC, credential detection, or sensitive-route handling. Cookie and Authorization requests still bypass `PublicCache`.
+
+The query uses bound SQL expressions, and the web client URL-encodes the slug. Related rows cannot disclose draft, hidden, scheduled, deleted, or hidden-category products. `related` is validated as an integer from 0 through 12.
+
+The navigation code adds only fixed attributes and a fixed class to existing DOM nodes. It does not interpolate link content into HTML and adds no DOM injection path.
+
+## Performance and benchmark assessment
+
+For a valid product with cold edge and Next data caches:
+
+| Version | Render calls | Application SQL |
+|---|---:|---:|
+| Before | 3: product, category list, settings | 8: `3 + 4 + 1` |
+| Branch | 2: combined product, settings | 4: `3 + 1` |
+| Edge HIT | 0 | 0 |
+
+PostgreSQL pool pre-pings add one statement per Render request under the deployment configuration.
+
+The benchmark supports the directional conclusion that option D reduces backend work and performs better than A/B under the tested model. The open-loop runs correctly hold arrivals constant; the report also correctly explains why closed-loop results penalize faster options with more generated traffic.
+
+The exact p95 values are not production predictions. The mock treats the four-connection database pool as four full-request service slots and uses modeled D latency. Two runs per row provide little statistical confidence. The sensitivity runs and the report’s explicit qualification make that acceptable for choosing D, but “under every assumption” should be read as “under every tested assumption.”
+
+## UX and accessibility
+
+- Rapid link clicks replace the prior pending marker cleanly.
+- Current-URL clicks clear pending state and avoid a stuck indicator.
+- Abandoned navigation can remain busy for up to 20 seconds; navigation lasting longer than that loses its indicator.
+- Keyboard activation works because it produces a normal left-button click event.
+- Reduced-motion mode preserves the 150 ms delay and makes the bar effectively static.
+- Mobile-menu closure itself gives immediate feedback; the progress bar remains available after the clicked link disappears.
+- `aria-busy` is applied to the main region and cleared at commit. The bar is correctly hidden from assistive technology.
+- Before hydration, navigation remains a normal document navigation with browser-provided feedback.
+- Back/Forward is the uncovered slow-navigation case described in P3.
+
+## Rollout
+
+The compatibility order is sound:
+
+1. Backend first: old Worker ignores the additive `related: []`.
+2. New Worker with old backend: `product.related ?? []` hides the section safely.
+3. Old Worker with new backend: behavior remains unchanged.
+4. Follow the full P → P′ → N asset-skew procedure, including the P′ propagation gate.
+5. Roll back the Worker to P′ before rolling the backend back. Once N has started, returning directly to original P is unsafe because P lacks N’s assets.
+
+I did not run test suites because they can write caches and artifacts. I inspected the recorded results, compiled the query with the PostgreSQL dialect without bytecode writes, ran `git diff --check`, and confirmed the worktree remained unchanged.
+
+**Verdict: REQUEST_CHANGES**
+tokens used
+158,290
+## Findings
+
+- **P2 — Release report overstates savings for unknown and old slugs.** Under the report’s cold-cache accounting, an unknown slug remains two Render calls: product lookup plus settings. An old slug requires the initial product request, the followed 301 request, and settings—three calls. Its application SQL count also remains eight: four for the old-slug request, three after following the redirect, and one for settings, excluding pool pre-pings. Only a normal product view drops from three calls to two. The benchmark does not include an old slug, so that claim lacks supporting evidence. Correct the cost statement and add an old-slug case to `api-per-view.mjs`.  
+  [RSC_PERF_V2_GATE.md:144](E:/Tunhuabinhnham/docs/deployment/RSC_PERF_V2_GATE.md:144), [api-per-view.mjs:6](E:/Tunhuabinhnham/docs/qa/evidence/rsc-perf-v2/api-per-view.mjs:6)
+
+- **P3 — Slow Back/Forward navigation has no custom feedback.** `popstate` only clears the indicator. If a history traversal misses Next’s router cache and waits on an uncached RSC response, the visitor again sees unchanged content with no bar or busy state. Link clicks, including keyboard activation, are covered. Consider starting generic feedback on `popstate`, then clearing it when the committed URL changes.  
+  [navigation-feedback.tsx:34](E:/Tunhuabinhnham/apps/web/src/components/navigation-feedback.tsx:34), [navigation-feedback.spec.ts:36](E:/Tunhuabinhnham/apps/web/e2e/navigation-feedback.spec.ts:36)
+
+No P0 or P1 findings.
+
+## Correctness
+
+- The PostgreSQL statement is valid. The target-product derived table is independent of the outer `products` table; its scalar and `EXISTS` subqueries are not accidentally correlated.
+- Boolean `DESC` puts the requested slug first. The guard correctly rejects a result whose first row is not the target. `LIMIT related + 1` returns the target plus at most `n` related products.
+- A target with `category_id IS NULL` deliberately permits any public product. A missing target cannot expose arbitrary related rows because the independent `EXISTS` condition is false.
+- Both target and related rows apply the full public rules: not deleted, published, visible, publication time reached, and category visible/not deleted.
+- PostgreSQL sorts `NULL published_at` first for `DESC`. This matches the existing list endpoint, although “newest first” therefore means undated public products precede dated products.
+- `ProductDetailOut` serializes correctly. Assignment to `out.related` is valid because the model is mutable. Plain requests add only the backward-compatible `related: []` field.
+- The API’s old-slug 301 retains `?related=4`; the Next redirect separately retains the visitor’s page query. The 404 path remains unchanged.
+- `generateMetadata` and the page use the same encoded URL and fetch options, so Next can deduplicate the fetch. Every concurrently started settings promise has an immediate rejection handler; I found no unhandled-rejection path.
+
+## Cache and security
+
+The combined-call failure still calls `markRenderDegraded()`, even when the page catches it. The Worker buffers the completed body and therefore keeps that render private. A 404 or render error also fails the status gate.
+
+Nothing in the change alters edge keys, public tags, purge RPC, credential detection, or sensitive-route handling. Cookie and Authorization requests still bypass `PublicCache`.
+
+The query uses bound SQL expressions, and the web client URL-encodes the slug. Related rows cannot disclose draft, hidden, scheduled, deleted, or hidden-category products. `related` is validated as an integer from 0 through 12.
+
+The navigation code adds only fixed attributes and a fixed class to existing DOM nodes. It does not interpolate link content into HTML and adds no DOM injection path.
+
+## Performance and benchmark assessment
+
+For a valid product with cold edge and Next data caches:
+
+| Version | Render calls | Application SQL |
+|---|---:|---:|
+| Before | 3: product, category list, settings | 8: `3 + 4 + 1` |
+| Branch | 2: combined product, settings | 4: `3 + 1` |
+| Edge HIT | 0 | 0 |
+
+PostgreSQL pool pre-pings add one statement per Render request under the deployment configuration.
+
+The benchmark supports the directional conclusion that option D reduces backend work and performs better than A/B under the tested model. The open-loop runs correctly hold arrivals constant; the report also correctly explains why closed-loop results penalize faster options with more generated traffic.
+
+The exact p95 values are not production predictions. The mock treats the four-connection database pool as four full-request service slots and uses modeled D latency. Two runs per row provide little statistical confidence. The sensitivity runs and the report’s explicit qualification make that acceptable for choosing D, but “under every assumption” should be read as “under every tested assumption.”
+
+## UX and accessibility
+
+- Rapid link clicks replace the prior pending marker cleanly.
+- Current-URL clicks clear pending state and avoid a stuck indicator.
+- Abandoned navigation can remain busy for up to 20 seconds; navigation lasting longer than that loses its indicator.
+- Keyboard activation works because it produces a normal left-button click event.
+- Reduced-motion mode preserves the 150 ms delay and makes the bar effectively static.
+- Mobile-menu closure itself gives immediate feedback; the progress bar remains available after the clicked link disappears.
+- `aria-busy` is applied to the main region and cleared at commit. The bar is correctly hidden from assistive technology.
+- Before hydration, navigation remains a normal document navigation with browser-provided feedback.
+- Back/Forward is the uncovered slow-navigation case described in P3.
+
+## Rollout
+
+The compatibility order is sound:
+
+1. Backend first: old Worker ignores the additive `related: []`.
+2. New Worker with old backend: `product.related ?? []` hides the section safely.
+3. Old Worker with new backend: behavior remains unchanged.
+4. Follow the full P → P′ → N asset-skew procedure, including the P′ propagation gate.
+5. Roll back the Worker to P′ before rolling the backend back. Once N has started, returning directly to original P is unsafe because P lacks N’s assets.
+
+I did not run test suites because they can write caches and artifacts. I inspected the recorded results, compiled the query with the PostgreSQL dialect without bytecode writes, ran `git diff --check`, and confirmed the worktree remained unchanged.
+
+**Verdict: REQUEST_CHANGES**
