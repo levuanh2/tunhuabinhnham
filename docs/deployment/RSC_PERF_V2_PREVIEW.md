@@ -2,7 +2,7 @@
 
 Date: 2026-10-24. Owner approved option D for PREVIEW only (not production). Production unchanged: Worker `ace736be` at 100 % (checked with `wrangler deployments status` after the upload), backend `1ab6f7c` on Render.
 
-**Verdict: BLOCKED — no preview backend.** The frontend preview is uploaded and passes its smoke test against the current production API (which ignores `?related=4`: the related section is hidden, the designed old-backend fallback). Option D end to end (related products from `?related=4`, 2 Render calls per product view, the benchmark on real Render) needs a backend with `9448d43`, and no preview backend exists (§4).
+**Verdict: RSC_PERF_V2_PRODUCTION_READY** (§7), after the owner-approved backend release `45da4c1` (§6). Owner confirmation left: Render log call counts at the probe timestamps. Production frontend still `ace736be`. Sections 1–5 describe the first preview round against the old backend.
 
 ## 1. Versions
 
@@ -50,3 +50,36 @@ The preview Worker calls the production API (`NEXT_PUBLIC_API_URL` is baked in a
 ## 5. Rollback
 
 Nothing to roll back for the preview (no deploy). Delete nothing: an uploaded version is inert. Production rollout and rollback steps: `RSC_PERF_V2_GATE.md` §8 (only after the preview passes end to end and a new owner approval).
+
+## 6. Backend release (owner authorization 2026-10-24, option 1)
+
+**Gate 1 (before deploy): PASS.**
+- `1ab6f7c..45da4c1`: 4 API files only (`public.py`, `catalog.py` repository + schema, test); `git patch-id` identical to `9448d43` (Codex round 2 APPROVE). No migration, `alembic`, `supabase/`, env, `config.py`, `main.py`, CORS or `render.yaml` change.
+- API suite: candidate 133 pass / baseline `1ab6f7c` 132 pass; the same 5 admin tests fail on both (identical names). ruff, mypy pass.
+- Response shape (in-memory, both checkouts): `GET /products/{slug}` keeps every baseline field, adds only `related: []`; `?related=4` → 4 same-category products, never itself; `related=13` → 422 (baseline ignored it: 200); unknown → 404.
+- CI (`ci.yml`) runs on `main` and PRs only; Render `autoDeployTrigger: off`.
+- Push: `deploy/c2-preview` fast-forward `1ab6f7c..45da4c1`, no force. Deploy: owner, Render Manual Deploy. GitHub deployment record: `45da4c1` success 2026-10-24T08:12:14Z.
+- Rollback: Render → Events → the `1ab6f7c` deploy → Rollback (or push `1ab6f7c` back as a new revert commit and Manual Deploy). Safe with every Worker: `ace736be` never sends `related`; `fae6efa2` only hides the section.
+
+**Gate 2 (after deploy): PASS** (`backend-deploy/before.json`, `after.json`, `prod-worker-smoke.json`, `tail-summary.json`)
+- Health live/ready 200. Plain product response: same keys + `related: []`; CORS `https://tunhuabinhnham.com` unchanged; `?related=4`: 4 same-category, not itself; `related=13` 422; unknown 404; products/categories/posts/settings 200; admin without token 401.
+- Production site (Worker `ace736be` + new backend): SMOKE_PASS 20/20 (pages, product page with its usual 4 related cards, MISS→HIT, cookie/Authorization isolation, private routes, purge 401, 404 not cached, 308, image 24 h).
+- `wrangler tail` of production during the checks (10 min, 171 events): 0 exceptions, 0 error logs, 0 5xx (outcomes: 170 ok, 1 canceled by the client).
+- Not checked: an authenticated Admin session (owner); the admin API code is unchanged by `45da4c1`.
+
+## 7. Preview E2E with the new backend (Gate 3)
+
+Preview `fae6efa2` (`852126e`), production Worker `ace736be` untouched at 100 %.
+
+| Check | Result |
+|---|---|
+| Smoke (`preview/smoke-new-backend.json`) | SMOKE_PASS 20/20: product page 4 related cards, API `related` = same category, not itself; MISS→HIT; isolation; private routes; purge 401; 404 not cached; 308; image 24 h; TTL 300 unchanged |
+| SEO | server HTML of `/san-pham/tu-nhua-4-canh-4` contains the 4 related links (`/san-pham/tu-nhua-4-canh-3`, `-2`, `/san-pham/tu-4-canh-2`, `/san-pham/tu-4-canh`); canonical `https://tunhuabinhnham.com/…`; JSON-LD present |
+| Navigation (`preview/nav-preview-d.json`) | prefetch 0 on Chromium, WebKit, WebKit iPhone; feedback 3–212 ms (incl. Playwright click latency); product RSC TTFB cold 1067–1113 ms, HIT 160 ms; Back/Forward 7–32 ms from the router cache |
+| Cache MISS/HIT (`backend-deploy/call-count-probe-2.json`) | same URL: MISS (SIN) then HIT ×3 (SIN). Different locations cache separately (a first probe hopped HKG → SIN and missed again) |
+| Light benchmark, 2 sessions, 3 products, each MISS then HIT, 2 rounds, same backend (`preview/bench-real.jsonl`) | MISS TTFB p50: **D 1.94–2.03 s vs A (production) 2.92–3.61 s**; main content p50 D 2.05–2.35 s vs A 3.28–3.69 s; 4 related cards on both. HIT p50: A 0.10–0.20 s, D 0.43–0.52 s (D's HIT pass included location-hop MISSes). This machine's network is degraded (single HITs up to 2.9 s); treat as indicative |
+| Render calls per view | expected MISS 2 (`/products/{slug}?related=4`, `/site-settings`), HIT 0; measured 2 locally (`api-per-view.jsonl`). On the real stack only Render's own logs show it (`request_completed` lines with path); I have no Render access. Probe timestamps for the owner: `call-count-probe.json` (D MISS 08:14:49–53Z and 08:15:23–25Z, A MISS 08:16:25–28Z = 3 calls expected, A HIT 08:16:58Z = 0) and `call-count-probe-2.json` (D MISS 08:18:15Z, HITs 08:18:20/24/28Z = 0) |
+| Product slug redirect | not exercised on live data (no known old slug in production); API and Worker code paths unchanged and covered by API tests (query kept on 301) and e2e S-tests |
+| Auth isolation, image cache | PASS (smoke) |
+
+**Gate 3 verdict: RSC_PERF_V2_PRODUCTION_READY**, with one confirmation left to the owner: Render logs at the probe timestamps show 2 API calls per uncached product render and none for HITs. Production frontend not deployed.
