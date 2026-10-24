@@ -71,3 +71,21 @@ All three versions use TTL 300, so a rollback serves at most 5-minute-old entrie
 - Retention: keep `.deploy-assets/{852126e,0cfcd7d,e681cca}` (last 3 deployed builds); `1ab6f7c`, `3e8c5f0`, `70dac36` may go.
 - Record versions, gate outputs and tail summary in `docs/qa/evidence/rsc-perf-v2/release/`.
 - Cache 12H, if approved later, is built on top of `852126e` and released through its own P → P′ → N.
+
+## 6. Step A executed (owner approval 2026-10-24, Step A only)
+
+- Pre-deploy (15:3xZ): production `ace736be` 100 %, last deployment 2026-10-23T14:37Z (nothing in progress); `68103970-d684-49ad-84bf-e8909278323c` = tag `rsc-v2-pprime-0cfcd7d`; backend `45da4c1` live (GitHub deployment record, `/health/ready` 200); P′ preview re-check 54/54 assets.
+- Deploy: `npx wrangler versions deploy 68103970-d684-49ad-84bf-e8909278323c@100% --yes --message "P-prime RSC V2: 0cfcd7d code + N 852126e assets"` → SUCCESS 15:34:39Z; `deployments status`: (100%) `68103970…` since 15:34:40Z. No backend, DB, env, DNS, TTL, auth or CORS change.
+
+**Gate A: PASS** (`release/`)
+| Check | Result |
+|---|---|
+| Traffic | 100 % `68103970` (deployments status; every tail event `scriptVersion` = `68103970`) |
+| Asset soak, apex, P + N + `e681cca` (`soak-pprime-production.json`) | SOAK_PASS: 54/54 files, 0 failing, 310 s clean (15:34:5x → 15:39:58Z) |
+| Production smoke ×2 (`smoke-pprime-production*.json`) | SMOKE_PASS 20/20 both: home, catalogue, category, news, about, contact 200 with only P's assets; product page 4 related (old frontend path); MISS→HIT (1277 / 86 / 86 ms); cookie/Authorization never HIT; admin, login, `/api/revalidate` private; purge without token 401; 404 not cached; 308; image 24 h WebP |
+| Browser (`nav-production-pprime.json`) | Chromium + WebKit iPhone: prefetch 0; RSC MISS (cold after the switch) then HIT 60–82 ms TTFB; Back/Forward from the router cache. No pending indicator (P′ is the old code, as expected). Old tabs: P′ has P's exact HTML and assets (42/42 identical), so a P tab is unaffected |
+| Tail (`tail-stepA-summary.json`, `tail-stepA-2-summary.json`) | 141 events in two windows (15:34:57–15:36:05Z, 15:41:35–15:42:08Z; the tail stream dropped after ~1 min each time on this network): outcomes all `ok`, 0 exceptions, 0 error logs, 0 5xx, 0 non-200 image transforms (no 9523), no 1102/1027 outcomes |
+| Worker CPU | page/RSC p95 293–431 ms, max 556–858 ms on cold isolates after the switch; baseline `ace736be` this morning p95 501, max 831: no regression |
+| Backend `45da4c1` (`api-after-stepA.json`) | health 200/200; product + `?related=4` OK; lists 200; admin without token 401 |
+
+Rollback readiness: P `ace736be-c3d6-443e-a454-d7bae8c69681` still available (Step A phase → roll back to P). **N `fae6efa2` not deployed; waiting for the owner's Step B approval.**

@@ -1,0 +1,356 @@
+{
+ "origin": "https://tunhuabinhnham.com",
+ "at": "2026-10-24T15:36:02.135Z",
+ "report": [
+  {
+   "name": "chromium",
+   "ok": true,
+   "prefetches": 0,
+   "steps": [
+    {
+     "step": "link /san-pham",
+     "url": "/san-pham",
+     "feedbackMs": 1869,
+     "contentMs": 1878,
+     "rsc": [
+      {
+       "ttfb": 1685,
+       "download": 1,
+       "total": 1686
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "tab /san-pham?category=do-dung",
+     "url": "/san-pham?category=do-dung",
+     "feedbackMs": 935,
+     "contentMs": 938,
+     "rsc": [
+      {
+       "ttfb": 881,
+       "download": 1,
+       "total": 882
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "tab /san-pham?category=qua-tang",
+     "url": "/san-pham?category=qua-tang",
+     "feedbackMs": 1006,
+     "contentMs": 1009,
+     "rsc": [
+      {
+       "ttfb": 952,
+       "download": 1,
+       "total": 953
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "link /san-pham",
+     "url": "/san-pham",
+     "feedbackMs": 1295,
+     "contentMs": 1299,
+     "rsc": [
+      {
+       "ttfb": 1256,
+       "download": 1,
+       "total": 1257
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "product /san-pham/tu-nhua-4-canh-4",
+     "url": "/san-pham/tu-nhua-4-canh-4",
+     "feedbackMs": 2495,
+     "contentMs": 2500,
+     "rsc": [
+      {
+       "ttfb": 2346,
+       "download": 2,
+       "total": 2348
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "back",
+     "url": "/san-pham",
+     "feedbackMs": 26,
+     "contentMs": 32,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "forward",
+     "url": "/san-pham/tu-nhua-4-canh-4",
+     "feedbackMs": 16,
+     "contentMs": 19,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "back",
+     "url": "/san-pham",
+     "feedbackMs": 20,
+     "contentMs": 18,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "link /tin-tuc",
+     "url": "/tin-tuc",
+     "feedbackMs": 1057,
+     "contentMs": 1056,
+     "rsc": [
+      {
+       "ttfb": 1011,
+       "download": 1,
+       "total": 1012
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "link /gioi-thieu",
+     "url": "/gioi-thieu",
+     "feedbackMs": 858,
+     "contentMs": 856,
+     "rsc": [
+      {
+       "ttfb": 815,
+       "download": 1,
+       "total": 815
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "link /lien-he",
+     "url": "/lien-he",
+     "feedbackMs": null,
+     "contentMs": 701,
+     "rsc": [
+      {
+       "ttfb": 660,
+       "download": 1,
+       "total": 661
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    },
+    {
+     "step": "home /",
+     "url": "/",
+     "feedbackMs": null,
+     "contentMs": 2260,
+     "rsc": [
+      {
+       "ttfb": 2198,
+       "download": 2,
+       "total": 2200
+      }
+     ],
+     "edge": [
+      "200:MISS"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "webkit-mobile",
+   "ok": true,
+   "prefetches": 0,
+   "steps": [
+    {
+     "step": "link /san-pham",
+     "url": "/san-pham",
+     "feedbackMs": 407,
+     "contentMs": 417,
+     "rsc": [
+      {
+       "ttfb": 66,
+       "download": 2,
+       "total": 68
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "tab /san-pham?category=do-dung",
+     "url": "/san-pham?category=do-dung",
+     "feedbackMs": 269,
+     "contentMs": 274,
+     "rsc": [
+      {
+       "ttfb": 77,
+       "download": 1,
+       "total": 78
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "tab /san-pham?category=qua-tang",
+     "url": "/san-pham?category=qua-tang",
+     "feedbackMs": null,
+     "contentMs": 270,
+     "rsc": [
+      {
+       "ttfb": 79,
+       "download": 2,
+       "total": 81
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "link /san-pham",
+     "url": "/san-pham",
+     "feedbackMs": null,
+     "contentMs": 413,
+     "rsc": [
+      {
+       "ttfb": 82,
+       "download": 1,
+       "total": 83
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "product /san-pham/tu-nhua-4-canh-4",
+     "url": "/san-pham/tu-nhua-4-canh-4",
+     "feedbackMs": 473,
+     "contentMs": 456,
+     "rsc": [
+      {
+       "ttfb": 60,
+       "download": 1,
+       "total": 61
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "back",
+     "url": "/san-pham",
+     "feedbackMs": 53,
+     "contentMs": 51,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "forward",
+     "url": "/san-pham/tu-nhua-4-canh-4",
+     "feedbackMs": null,
+     "contentMs": 44,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "back",
+     "url": "/san-pham",
+     "feedbackMs": 32,
+     "contentMs": 44,
+     "rsc": [],
+     "edge": []
+    },
+    {
+     "step": "link /tin-tuc",
+     "url": "/tin-tuc",
+     "feedbackMs": 364,
+     "contentMs": 369,
+     "rsc": [
+      {
+       "ttfb": 62,
+       "download": 1,
+       "total": 63
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "link /gioi-thieu",
+     "url": "/gioi-thieu",
+     "feedbackMs": 471,
+     "contentMs": 477,
+     "rsc": [
+      {
+       "ttfb": 64,
+       "download": 1,
+       "total": 65
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "link /lien-he",
+     "url": "/lien-he",
+     "feedbackMs": 370,
+     "contentMs": 370,
+     "rsc": [
+      {
+       "ttfb": 66,
+       "download": 1,
+       "total": 67
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    },
+    {
+     "step": "home /",
+     "url": "/",
+     "feedbackMs": 341,
+     "contentMs": 337,
+     "rsc": [
+      {
+       "ttfb": 65,
+       "download": 1,
+       "total": 66
+      }
+     ],
+     "edge": [
+      "200:HIT"
+     ]
+    }
+   ]
+  }
+ ]
+}
