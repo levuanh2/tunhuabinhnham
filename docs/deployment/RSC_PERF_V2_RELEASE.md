@@ -117,3 +117,23 @@ The approval set a stop condition: "if CPU really exceeds the Free limit continu
 | Render | backend `45da4c1` `/health/ready` 200. N MISS calls expected 2 per product render; owner-checkable at the `canary-pair-probe.json` timestamps (N rows) |
 
 **Verdict: RSC_V2_CANARY_PASS_WITH_EXISTING_CPU_RISK** on version-pinned evidence; natural-traffic behaviour INCONCLUSIVE (no visitors in the window). N stays at 10 %. Rollback: `npx wrangler versions deploy 68103970-d684-49ad-84bf-e8909278323c@100% --yes --message "rollback canary to P-prime"` (backend stays `45da4c1`). Promotion to 100 % needs the owner's decision.
+
+## 9. N to 100 % (owner final approval 2026-10-24) — RSC_PERF_V2_PRODUCTION_PASS_WITH_ACCEPTED_CPU_RISK
+
+- Pre-flight: canary P′ `68103970…` 90 % / N `fae6efa2…` 10 % (since 16:14:36Z, nothing newer); N = tag `rsc-v2-852126e`; backend `45da4c1` live, `/health/ready` 200.
+- Deploy 16:43:07Z: `npx wrangler versions deploy fae6efa2-4153-411c-9987-55f2f6ccfb87@100% --yes --message "N RSC V2 option D 852126e"` → SUCCESS; `deployments status`: (100 %) `fae6efa2-4153-411c-9987-55f2f6ccfb87` since **16:43:14Z** (rechecked 16:58Z). No rebuild, upload, backend, DB, secret, DNS or TTL change; Cache 12H not deployed.
+
+| Check | Result |
+|---|---|
+| Smoke, unpinned (`n100-smoke.json`) | SMOKE_PASS 20/20; every page references only N's assets (served by N); product page 4 related from `?related=4`, same category, not itself; MISS→HIT (1349 / 80 / 89 ms); cookie/Authorization never HIT; admin, login, `/api/revalidate` private; purge without token 401; 404 not cached; 308; image `public, max-age=3600, s-maxage=86400` WebP |
+| SEO | server HTML of `/san-pham/tu-nhua-4-canh-4`: related links `/san-pham/tu-nhua-4-canh-3`, `-2`, `/san-pham/tu-4-canh-2`, `/san-pham/tu-4-canh`; canonical `https://tunhuabinhnham.com/san-pham/tu-nhua-4-canh-4`; JSON-LD present |
+| Browser (`n100-nav.json`) | Chromium: prefetch 0, indicator 41–57 ms, RSC cold (EXPIRED) TTFB 0.67–2.45 s; WebKit iPhone: prefetch 0, indicator 132–229 ms, RSC HIT 65–102 ms; Back/Forward 12–36 ms from the router cache |
+| Assets (`n100-soak.json`) | SOAK_PASS: 54/54 files of P + N + `e681cca`, 0 failing, 301 s clean (16:43:2x → 16:48:22Z) |
+| CPU, tail `cpuTime` (`n100-tail-by-version.json`) | uncached page renders (`PublicCache:page`) n 20: CPU p50 47 / p95 390 / max 390 ms, **20/20 > 10 ms**, wall p50 1239 / p95 2380. Gateway (`default:page`, HIT + private renders: cookie/Authorization/404) n 28: p50 0, p95 371, max 659, 3 > 10 ms. Image transforms n 5: p95 27 ms. Baselines: P′ uncached renders p95 456–465 ms, N canary 452 ms → no regression |
+| Outcomes and errors | 84 events, all `ok`; 0 exceptions, 0 5xx; no `exceededCpu`, 1102, 1027; 0 non-200 image transforms (no 9523) |
+| Tail coverage | events 16:43:29 → 16:46:21Z (restarting 150 s windows until ~16:58Z, later windows captured no Worker invocations); control window 16:58Z captured 4/4 test requests (stream live). **Traffic: 83 test events, 1 visitor event (a 404).** No claim about real visitors beyond that |
+| Backend (`n100-api.json`) | `45da4c1`: health 200/200, product + `?related=4` OK, lists 200, admin without token 401. Render calls per D MISS = 2, HIT = 0 (owner-verified in Render logs, preview and canary) |
+
+**Final verdict: RSC_PERF_V2_PRODUCTION_PASS_WITH_ACCEPTED_CPU_RISK.** Production: Worker `fae6efa2-4153-411c-9987-55f2f6ccfb87` (source `852126e`) at 100 %, backend `45da4c1`. The Workers Free 10 ms CPU limit is **not resolved**: uncached renders use ~50–500 ms CPU (pre-existing; not enforced by Cloudflare so far, not guaranteed). Owner accepted this risk; Workers Paid not enabled.
+
+Rollback: `npx wrangler versions deploy 68103970-d684-49ad-84bf-e8909278323c@100% --yes --message "rollback to P-prime 68103970"` (never P `ace736be`: it lacks N's assets). Backend stays `45da4c1` unless it is the cause (then Worker to P′ first, Render → `1ab6f7c`). Retention: keep `.deploy-assets/{852126e,0cfcd7d,e681cca}`.
