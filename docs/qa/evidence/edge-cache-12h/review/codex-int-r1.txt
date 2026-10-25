@@ -1,0 +1,14 @@
+codex
+No P0 findings.
+
+- **P1 — Release and rollback commands are not executable from a documented working directory.** `docs/deployment/EDGE_CACHE_12H_ON_RSC_V2.md:49-55,71` references nonexistent `RSC_PERF_V2_RELEASE.md`, omits the required `apps/web` working directory, invokes `soak-gate.mjs` without its real path, and abbreviates rollback version IDs. An operator could deploy P′ or N but then be unable to run the gate or rollback command as written. Provide complete commands, an explicit working directory, and full version IDs.
+
+- **P2 — The cache policy points emergency responders to a nonexistent document.** `apps/web/src/lib/edge-cache.ts:12` names `docs/deployment/EDGE_CACHE_12H.md`; the committed runbook is `docs/deployment/EDGE_CACHE_12H_ON_RSC_V2.md`. This could delay removal of stale or hidden content during a purge failure.
+
+- **P3 — “Everything else passes” exceeds the committed evidence.** `docs/deployment/EDGE_CACHE_12H_ON_RSC_V2.md:5,26-28,33` claims baseline behavior, an OpenNext build and secret scan, exact related links, and SEO results. Those rows either cite session-only output, contain no evidence, or lack the claimed baseline comparison. Commit the named outputs or label these results as author-reported.
+
+The application diff otherwise stays within scope: only the public HTML/RSC `s-maxage` and two admin warning strings change. `worker.ts`, RSC V2 option D, `?related=4`, navigation feedback, no-prefetch behavior, private caching, redirects, SEO, CMS purge, and the 24-hour image policy remain unchanged.
+
+The purge probe also meets the requested safety constraints: pinned origins, manual redirects, no credential/token output, and no PASS through redirects. Tests and network services were not run, as requested.
+
+REQUEST_CHANGES

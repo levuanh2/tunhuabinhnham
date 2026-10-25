@@ -7,7 +7,7 @@
 // - a file still unreachable after retries makes the round UNVERIFIED: it adds no clean time, but it is not an
 //   asset failure. If no clean soak is reached before --timeout, the verdict says which of the two prevented it.
 import fs from "node:fs";
-import { hashedAssets } from "../../../../../apps/web/scripts/verify-assets-live.mjs";
+import { hashedAssets } from "../../../../apps/web/scripts/verify-assets-live.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args.splice(i, 2)[1] : fallback; };

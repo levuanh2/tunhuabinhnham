@@ -1,0 +1,29 @@
+{
+ "verdict": "SOAK_PASS",
+ "origin": "https://63e818aa-tunhuabinhnham-web.tunhuabinhnham.workers.dev",
+ "files": 45,
+ "soak": 10,
+ "cleanSeconds": 18,
+ "rounds": [
+  {
+   "at": "2026-10-25T07:52:49.339Z",
+   "state": "CLEAN",
+   "seconds": 6,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-25T07:53:00.698Z",
+   "state": "CLEAN",
+   "seconds": 7,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  }
+ ]
+}
