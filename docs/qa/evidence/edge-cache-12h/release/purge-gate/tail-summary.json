@@ -1,0 +1,29 @@
+{
+ "window": [
+  "2026-10-25T09:12:07.744Z",
+  "2026-10-25T09:28:43.928Z"
+ ],
+ "events": 645,
+ "outcomes": {
+  "ok": 645
+ },
+ "exceptions": 0,
+ "status5xx": 0,
+ "revalidate": [
+  {
+   "t": "2026-10-25T09:27:00.458Z",
+   "status": 200,
+   "outcome": "ok",
+   "version": "63e818aa"
+  }
+ ],
+ "purgeRpc": [
+  {
+   "t": "2026-10-25T09:27:02.373Z",
+   "entrypoint": "PublicCache",
+   "outcome": "ok",
+   "version": "63e818aa"
+  }
+ ],
+ "note": "summary only; raw tail files deleted (they may contain request headers of the Admin session)"
+}

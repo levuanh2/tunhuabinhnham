@@ -1,0 +1,86 @@
+[
+ {
+  "id": "html /",
+  "path": "/",
+  "routerHeaders": []
+ },
+ {
+  "id": "html /san-pham",
+  "path": "/san-pham",
+  "routerHeaders": []
+ },
+ {
+  "id": "html /san-pham/tu-nhua-4-canh-4",
+  "path": "/san-pham/tu-nhua-4-canh-4",
+  "routerHeaders": []
+ },
+ {
+  "id": "html /tin-tuc",
+  "path": "/tin-tuc",
+  "routerHeaders": []
+ },
+ {
+  "id": "html /gioi-thieu",
+  "path": "/gioi-thieu",
+  "routerHeaders": []
+ },
+ {
+  "id": "html /lien-he",
+  "path": "/lien-he",
+  "routerHeaders": []
+ },
+ {
+  "id": "rsc /san-pham",
+  "path": "/san-pham?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ },
+ {
+  "id": "rsc /tin-tuc",
+  "path": "/tin-tuc?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ },
+ {
+  "id": "rsc /gioi-thieu",
+  "path": "/gioi-thieu?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ },
+ {
+  "id": "rsc /lien-he",
+  "path": "/lien-he?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ },
+ {
+  "id": "rsc /san-pham/tu-nhua-4-canh-4",
+  "path": "/san-pham/tu-nhua-4-canh-4?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ },
+ {
+  "id": "rsc /",
+  "path": "/?_rsc=…",
+  "routerHeaders": [
+   "rsc",
+   "next-router-state-tree",
+   "next-url"
+  ]
+ }
+]

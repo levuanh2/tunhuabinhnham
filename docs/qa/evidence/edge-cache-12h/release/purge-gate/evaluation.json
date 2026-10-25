@@ -1,0 +1,295 @@
+{
+ "saveTime": "2026-10-25T09:27:00.458Z",
+ "needle": null,
+ "keys": {
+  "html /": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:47.256Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:09.087Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.056Z",
+    "age": 28,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "html /san-pham": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:49.366Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:11.103Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.145Z",
+    "age": 27,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "html /san-pham/tu-nhua-4-canh-4": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:59.339Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:12.571Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.228Z",
+    "age": 25,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "html /tin-tuc": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:52.960Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:13.947Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.295Z",
+    "age": 24,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "html /gioi-thieu": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:57.043Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:15.146Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.375Z",
+    "age": 23,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "html /lien-he": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:06:54.479Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:15.973Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.436Z",
+    "age": 22,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /san-pham": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:07:40.447Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:17.217Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.500Z",
+    "age": 21,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /tin-tuc": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:12:10.972Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:18.183Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.562Z",
+    "age": 20,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /gioi-thieu": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:12:11.664Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:18.917Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.621Z",
+    "age": 19,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /lien-he": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:12:10.292Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:19.571Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.695Z",
+    "age": 19,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /san-pham/tu-nhua-4-canh-4": {
+   "verdict": "PASS",
+   "preHits": 55,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:07:43.516Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:20.656Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.772Z",
+    "age": 18,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  },
+  "rsc /": {
+   "verdict": "PASS",
+   "preHits": 54,
+   "preColos": [
+    "HKG"
+   ],
+   "preEntryCreated": "2026-10-25T09:12:13.312Z",
+   "firstYoung": {
+    "t": "2026-10-25T09:27:22.858Z",
+    "cache": "MISS",
+    "age": null,
+    "colo": "HKG"
+   },
+   "recovery": {
+    "t": "2026-10-25T09:27:38.851Z",
+    "age": 15,
+    "colo": "HKG"
+   },
+   "staleAfterSave": [],
+   "colosSeen": [
+    "HKG"
+   ],
+   "needle": null
+  }
+ },
+ "verdict": "PRODUCTION_PURGE_PASS"
+}

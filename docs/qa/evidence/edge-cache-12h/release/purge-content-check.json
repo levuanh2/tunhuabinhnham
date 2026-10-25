@@ -1,0 +1,161 @@
+{
+ "html_": [
+  {
+   "entryCreated": "2026-10-25T090646628Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092709087Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "html_gioi_thieu": [
+  {
+   "entryCreated": "2026-10-25T090656980Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092715146Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "html_lien_he": [
+  {
+   "entryCreated": "2026-10-25T090654066Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092715973Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "html_san_pham": [
+  {
+   "entryCreated": "2026-10-25T090648730Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092711103Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "html_san_pham_tu_nhua_4_canh_4": [
+  {
+   "entryCreated": "2026-10-25T090658824Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092712571Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "html_tin_tuc": [
+  {
+   "entryCreated": "2026-10-25T090652183Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T090652897Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092713947Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "rsc_": [
+  {
+   "entryCreated": "2026-10-25T091212292Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T091212707Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092722858Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  }
+ ],
+ "rsc_gioi_thieu": [
+  {
+   "entryCreated": "2026-10-25T091210499Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092718917Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  }
+ ],
+ "rsc_lien_he": [
+  {
+   "entryCreated": "2026-10-25T091209581Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092719571Z",
+   "afterSave": true,
+   "hasAddressBinhNham": true
+  }
+ ],
+ "rsc_san_pham": [
+  {
+   "entryCreated": "2026-10-25T090740135Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092717217Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092717500Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  }
+ ],
+ "rsc_san_pham_tu_nhua_4_canh_4": [
+  {
+   "entryCreated": "2026-10-25T090742676Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092720656Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  }
+ ],
+ "rsc_tin_tuc": [
+  {
+   "entryCreated": "2026-10-25T091209986Z",
+   "afterSave": false,
+   "hasAddressBinhNham": false
+  },
+  {
+   "entryCreated": "2026-10-25T092718183Z",
+   "afterSave": true,
+   "hasAddressBinhNham": false
+  }
+ ]
+}
