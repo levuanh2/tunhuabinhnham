@@ -1,0 +1,10 @@
+codex
+No remaining P0–P3 findings.
+
+- [EDGE_CACHE_12H.md:75](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:75) and [line 77](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:77) now clearly identify the baseline and order-dependence classifications as author-reported.
+- [EDGE_CACHE_12H.md:79](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:79) now states that CPU was not measured and accurately describes the HIT path.
+- The remaining claims are supported by committed source/evidence, explicitly qualified as author-reported, or identified as unverified post-deployment gates.
+
+Reviewed `4a0122f..05ec45e` read-only. No files modified, tests run, deployments, pushes, or network services contacted.
+
+APPROVE

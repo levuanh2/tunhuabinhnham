@@ -1,0 +1,10 @@
+codex
+P1 — [purge-probe.mjs:32](E:/Tunhuabinhnham-cache-review/docs/qa/evidence/edge-cache-12h/purge-probe.mjs:32), [line 137](E:/Tunhuabinhnham-cache-review/docs/qa/evidence/edge-cache-12h/purge-probe.mjs:137): The Supabase Auth origin is not validated. `PURGE_ENV_FILE` can select any file, and its `NEXT_PUBLIC_SUPABASE_URL` is used verbatim for login and logout. A poisoned or mistaken value can therefore receive the live Admin password and access token. The preview-origin guard does not protect this path. Parse and require the exact production Supabase HTTPS origin—with no userinfo, custom port, path, query, or fragment—before accepting credentials or making requests.
+
+No other P0–P3 findings.
+
+The runner does not print or serialize credentials, uses manual redirects, sanitizes errors, clears wrapper environment variables in `finally`, and does not place the password in shell history. Its purge PASS requires a fresh response at a colo that previously served a HIT; a location-hop MISS remains INCONCLUSIVE. The cache documentation otherwise matches the implementation and clearly separates documented facts, observations, and unknown cross-version purge behavior. Rollback and emergency removal do not assume that TTL 300 deletes existing 43200-second entries.
+
+Tests were not run, and no network services were contacted.
+
+REQUEST_CHANGES

@@ -1,0 +1,10 @@
+codex
+## Findings
+
+- **P3 — Forged-RSC eviction is still understated in two places.** [EDGE_CACHE_12H.md:33](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:33) says a visited page re-renders “at most” once per TTL unless purged, but early eviction—including the documented forged variant—can cause additional renders. [EDGE_CACHE_12H.md:73](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:73) still says the variant “evicts it for one request,” while committed evidence records two consecutive legitimate MISS responses before HIT recovery. Qualify line 33 as expiry-only behavior and make line 73 match §3’s corrected “at least two; no bound claimed” wording.
+
+The emergency propagation procedure, build/scan evidence, author-reported smoke observation, exact P5/C6 command, and §3 eviction-cost wording otherwise resolve the round-2 findings.
+
+Read-only review; no tests or network operations were run.
+
+REQUEST_CHANGES
