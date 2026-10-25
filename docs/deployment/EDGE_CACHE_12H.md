@@ -4,7 +4,7 @@
 
 Date: 2026-10-25. Branch `perf/edge-cache-12h-on-rsc-v2` from `852126e` (the source of production Worker `fae6efa2`, RSC V2 option D). Nothing pushed or deployed.
 
-**Verdict: BLOCKED** until the owner's authenticated purge proof on the integrated preview `63e818aa` returns `AUTH_PURGE_PREVIEW_PASS` (§5) and Codex approves the final diff. Every other check below passes except the pre-existing e2e test 19 (fails on the earlier baselines too); rows marked *author-reported* rest on session output that is summarised, not committed in full.
+**Verdict: BLOCKED** until the owner's authenticated purge proof on the integrated preview `63e818aa` returns `AUTH_PURGE_PREVIEW_PASS` (§5). Codex independent review of the final integrated diff: round 5 **APPROVE**, no P0–P3 (rounds 1–4 fixed release-command paths, the soak-gate import, the purge-runner env path, the emergency rebuild and evidence wording; `docs/qa/evidence/edge-cache-12h/review/`). Every other check below passes except the pre-existing e2e test 19 (fails on the earlier baselines too); rows marked *author-reported* rest on session output that is summarised, not committed in full.
 
 Rationale, owner decision (public pages up to ~12 h stale to spare Render Free) and the Cloudflare Workers Cache facts are unchanged from the first Cache 12H round: `docs/qa/evidence/edge-cache-12h/old-0cfcd7d/EDGE_CACHE_12H_on_0cfcd7d.md` (that branch, `perf/edge-cache-12h`, and its preview `335c619f` are retired: not deployable).
 
