@@ -29,7 +29,7 @@ const PREVIEW = process.argv[2] ?? "https://63e818aa-tunhuabinhnham-web.tunhuabi
 const PROD = "https://tunhuabinhnham.com";
 // The admin token is only ever sent to a preview version of this Worker (never production, never another host).
 if (!/^https:\/\/[0-9a-f]{8}-tunhuabinhnham-web\.tunhuabinhnham\.workers\.dev$/.test(PREVIEW)) { console.log(`BLOCKED preview origin must be https://<version>-tunhuabinhnham-web.tunhuabinhnham.workers.dev`); process.exit(2); }
-const env = Object.fromEntries(fs.readFileSync(process.env.PURGE_ENV_FILE ?? path.resolve(import.meta.dirname, "../../../../../apps/web/.env.production.local"), "utf8")
+const env = Object.fromEntries(fs.readFileSync(process.env.PURGE_ENV_FILE ?? path.resolve(import.meta.dirname, "../../../../apps/web/.env.production.local"), "utf8")
   .split(/\r?\n/).filter(l => /^[A-Z_]+=/.test(l)).map(l => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
 // Credentials only ever go to this project's Supabase Auth: the env file's URL must be exactly that HTTPS origin.
 const SUPABASE_ORIGIN = "https://fyaourksnjeldsvuedox.supabase.co";

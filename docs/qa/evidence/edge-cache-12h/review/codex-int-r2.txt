@@ -1,0 +1,24 @@
+codex
+No P0 findings. The earlier documentation-path fix is resolved, but release commands and evidence claims still need changes.
+
+- **P1 — Release gates are not executable.** [soak-gate.mjs:10](</E:/Tunhuabinhnham-cache-review/docs/qa/evidence/edge-cache-12h/soak-gate.mjs:10>) goes up five directories, resolving its import to `E:\apps\web\scripts\verify-assets-live.mjs`; the repository file requires four `..` segments. Both soak commands therefore fail before running. In addition, [EDGE_CACHE_12H.md:57](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:57>) and lines 68–86 write under `docs/qa/evidence/edge-cache-12h/release`, but that directory does not exist in the stated `E:\Tunhuabinhnham` checkout and none of the scripts creates it. The tail redirection fails immediately; the other gates fail when saving results.
+
+- **P1 — The emergency reset omits the build it depends on.** [EDGE_CACHE_12H.md:110](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:110>) deletes `.open-next`, then immediately reads `.open-next/assets` without supplying a build command. `rm -rf` also does not satisfy the document’s PowerShell-or-Git-Bash promise. The emergency procedure cannot produce the new version as written.
+
+- **P2 — The report still references a document absent from this branch.** [EDGE_CACHE_12H.md:53](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:53>) names `docs/deployment/RSC_PERF_V2_RELEASE.md`; that path does not exist at `HEAD`. Naming the other branch does not make the local runbook reference available.
+
+- **P3 — Several verification summaries still exceed or contradict committed evidence.** [EDGE_CACHE_12H.md:7](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:7>) says every other check passes, while `e2e-targeted.txt:9` records a failure. [EDGE_CACHE_12H.md:31](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:31>) attributes the 57-file checks to particular previews and four asset sets, but each committed artifact records only `ok`, file count, rounds, and duration. [EDGE_CACHE_12H.md:36](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:36>) reports RSC HITs of 68–75 ms, while `nav-n.json:242`, `:258`, and `:330` contain HIT totals of 240, 566, and 413 ms. These need qualification or corrected summaries.
+
+- **P3 — The CPU range remains unsupported.** [EDGE_CACHE_12H.md:117](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:117>) claims uncached renders use approximately 50–500 ms CPU. No committed measurement supports that range; the incorporated prior report explicitly says CPU was not measured at `old-0cfcd7d/EDGE_CACHE_12H_on_0cfcd7d.md:91`.
+
+Confirmed resolved:
+
+- `apps/web/src/lib/edge-cache.ts:12` now names an existing report.
+- Application files are unchanged since round 1 (`git diff abf84fb HEAD -- apps` is empty).
+- All actionable `wrangler versions deploy` operands use complete UUIDs.
+- Direct script paths resolve from the stated working directories, apart from the internal soak-gate import and missing output directory above.
+- `build-check.txt` and `preview/seo-n.json` now exist, and explicitly author-reported items are improved.
+
+No files modified, tests run, deployments performed, or network services contacted.
+
+REQUEST_CHANGES
