@@ -126,3 +126,28 @@ Admin e-mail, then the password (hidden). ~3–6 min. The runner (reviewed runne
 4. Each version switch starts a cold cache (two cold starts per release; Render MISS burst).
 5. Pre-existing P3: a forged router-state request evicts one cached RSC entry (re-render on the next request); no data exposure.
 6. The 10 % canary splits per request: a visitor can get a full-page fallback when consecutive requests land on different builds.
+
+## 8. Step A executed (owner approval 2026-10-25, Step A only)
+
+- Owner's purge proof on the integrated preview: **AUTH_PURGE_PREVIEW_PASS**, 11/11 checks (`purge-probe-result.json`, run 08:13Z, purge at 08:13:28Z; no credentials in the file). This is preview evidence only, **not** the production purge proof (Gate B).
+- Pre-flight: production `fae6efa2-4153-411c-9987-55f2f6ccfb87` 100 % (since 2026-10-24T16:43:14Z, nothing newer); backend `45da4c1` live (`/health/ready` 200); P′ `c3ad4b09-7d75-46d2-a085-3f7e2b40fd56` = tag `cache12h-pprime-852126e` (852126e rebuilt, TTL 300) serves 57/57 files; N `63e818aa-c4cb-4510-85a4-b4f169515aee` uploaded only, not in the deployment.
+- Deploy 08:34:44Z with the §4 command → SUCCESS; `deployments status`: (100 %) `c3ad4b09-7d75-46d2-a085-3f7e2b40fd56` since **08:34:48Z**. No build, upload, backend, DB, secret or DNS change; N not deployed.
+
+**Gate A: PASS** (`release/`)
+| Check | Result |
+|---|---|
+| Traffic | 100 % `c3ad4b09` (deployments status; every tail event `scriptVersion` c3ad4b09) |
+| Assets (`soak-pprime.json`) | SOAK_PASS: 57/57 files of `852126e` + `b9122de` + `0cfcd7d` + `e681cca`, 0 failing, 301 s clean (→ 08:40:00Z) |
+| Smoke (`smoke-pprime.json`) | SMOKE_PASS 20/20: public pages `public, max-age=0, s-maxage=300` with only `852126e` assets; product page 4 related from `?related=4` (same category, not itself); MISS→HIT (1290 / 72 / 57 ms); cookie/Authorization never HIT, `private, no-store`; admin, login, `/api/revalidate` private; purge without token 401; unknown product 404 `private, no-store`; 308; image `public, max-age=3600, s-maxage=86400` WebP |
+| SEO (`seo-pprime.json`) | 4 related links in server HTML, canonical, JSON-LD |
+| Real RSC (`rsc-replay-pprime.json`, `EDGE=…300`) | RSC_REPLAY_PASS: RSC `s-maxage=300` MISS→HIT, HTML of the same path its own entry, forged router variant 307 |
+| Browser (`nav-pprime.json`) | Chromium + WebKit iPhone: prefetch 0; pending indicator 46–301 ms; RSC MISS cold, HIT 59–81 ms (one WebKit HIT 463 ms); Back/Forward 16–63 ms |
+| Worker (`tail-pprime-by-version.json`) | 128 events 08:35:04–08:36:21Z: 127 `ok`, 1 `canceled` (client abort), 0 exceptions, 0 5xx, no `exceededCpu`/1102/1027, 0 non-200 image transforms (no 9523). Uncached page renders n 25: CPU p50 39 / p95 526 / max 708 ms (23/25 > 10 ms), wall p50 1209 / p95 1831; image transforms p95 36 ms; gateway p95 41 ms. Same code as the previous production (`fae6efa2`: p95 390, P′ RSC V2 465, P `ace736be` 630, max 831): within the historical range, no material regression; the Free 10 ms risk stays as accepted |
+| Tail coverage | the stream dropped after 08:36:21Z; restarted windows until ~08:49Z recorded nothing (the browser probe and RSC replay at ~08:36–08:39Z fell in the gap); control window 08:50:15Z captured 6/6 (all `ok`, c3ad4b09). Test traffic only; no claim about real visitors |
+| Backend (`api-after-step-a.json`) | `45da4c1`: live/ready 200, `?related=4` → 4 same-category products, plain response has `related`, lists 200, admin without token 401 |
+
+**Verdict: CACHE_12H_GATE_A_PASS_WAITING_FOR_STEP_B_APPROVAL.** P′ stays at 100 %; N not deployed. Rollback in this phase: `npx wrangler versions deploy fae6efa2-4153-411c-9987-55f2f6ccfb87@100% --yes --message "rollback to P fae6efa2"`.
+
+### Gate B preparation (not run; needs the owner's Step B approval)
+
+In addition to §4 Gate B: production TTL check (`preview-smoke.mjs` without `EDGE` → 43200, `rsc-replay.mjs` without `EDGE`); production purge proof by a real Admin save (save → `/api/revalidate` 200 → `PublicCache.purge()` → a page warmed before the save is young at a `cf-ray` location that served it before; record every location seen, state plainly if only one location was observed); private/auth unchanged (smoke isolation rows). If the purge gate fails: roll back to P′ `c3ad4b09-7d75-46d2-a085-3f7e2b40fd56@100%` and confirm with `rsc-replay.mjs` / smoke using `EDGE="public, max-age=0, s-maxage=300"` that every response is P′'s (300, `852126e` assets) — N's 12 h entries stay in N's own partition and are not served by P′. `AUTH_PURGE_PREVIEW_PASS` does not replace the production purge proof.

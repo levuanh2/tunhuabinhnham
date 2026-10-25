@@ -1,0 +1,103 @@
+{
+ "verdict": "RSC_REPLAY_PASS",
+ "origin": "https://tunhuabinhnham.com",
+ "at": "2026-10-25T08:36:01.233Z",
+ "results": [
+  {
+   "name": "captured router request /san-pham?category=do-dung&_rsc=…",
+   "result": "PASS",
+   "rscLength": 16,
+   "routerHeaders": [
+    "rsc",
+    "next-router-state-tree",
+    "next-url"
+   ]
+  },
+  {
+   "name": "RSC replay: x-component, 12 h, Vary router headers",
+   "result": "PASS",
+   "status": 200,
+   "type": "text/x-component",
+   "cc": "public, max-age=0, s-maxage=300"
+  },
+  {
+   "name": "RSC repeated: same variant (HIT where Workers Cache exists)",
+   "result": "PASS",
+   "first": "HIT",
+   "second": "HIT"
+  },
+  {
+   "name": "HTML of the same path: HTML, 12 h, never the RSC payload",
+   "result": "PASS",
+   "type": "text/html; charset=utf-8",
+   "cc": "public, max-age=0, s-maxage=300",
+   "cache": "MISS"
+  },
+  {
+   "name": "RSC URL without router headers: not stored",
+   "result": "PASS",
+   "status": 200,
+   "cc": "private, no-cache, no-store, max-age=0, must-revalidate"
+  },
+  {
+   "name": "RSC URL with other router state: rejected or not public",
+   "result": "PASS",
+   "status": 307,
+   "cc": "private, no-store, max-age=0",
+   "type": null
+  },
+  {
+   "name": "RSC after the HTML request: still the RSC payload",
+   "result": "PASS",
+   "cache": "MISS"
+  },
+  {
+   "name": "captured router request /san-pham?category=qua-tang&_rsc=…",
+   "result": "PASS",
+   "rscLength": 16,
+   "routerHeaders": [
+    "rsc",
+    "next-router-state-tree",
+    "next-url"
+   ]
+  },
+  {
+   "name": "RSC replay: x-component, 12 h, Vary router headers",
+   "result": "PASS",
+   "status": 200,
+   "type": "text/x-component",
+   "cc": "public, max-age=0, s-maxage=300"
+  },
+  {
+   "name": "RSC repeated: same variant (HIT where Workers Cache exists)",
+   "result": "PASS",
+   "first": "MISS",
+   "second": "HIT"
+  },
+  {
+   "name": "HTML of the same path: HTML, 12 h, never the RSC payload",
+   "result": "PASS",
+   "type": "text/html; charset=utf-8",
+   "cc": "public, max-age=0, s-maxage=300",
+   "cache": "MISS"
+  },
+  {
+   "name": "RSC URL without router headers: not stored",
+   "result": "PASS",
+   "status": 200,
+   "cc": "private, no-cache, no-store, max-age=0, must-revalidate"
+  },
+  {
+   "name": "RSC URL with other router state: rejected or not public",
+   "result": "PASS",
+   "status": 307,
+   "cc": "private, no-store, max-age=0",
+   "type": null
+  },
+  {
+   "name": "RSC after the HTML request: still the RSC payload",
+   "result": "PASS",
+   "cache": "MISS"
+  }
+ ]
+}

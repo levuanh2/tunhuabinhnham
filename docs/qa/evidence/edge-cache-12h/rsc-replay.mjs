@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 
 const [origin, out] = process.argv.slice(2);
-const EDGE = "public, max-age=0, s-maxage=43200";
+const EDGE = process.env.EDGE ?? "public, max-age=0, s-maxage=43200"; // expected public TTL (P/P′: EDGE="public, max-age=0, s-maxage=300")
 const ROUTER = ["rsc", "next-router-state-tree", "next-router-prefetch", "next-router-segment-prefetch", "next-url"];
 const results = [];
 const record = (name, pass, detail) => { results.push({ name, result: pass ? "PASS" : "FAIL", ...detail }); console.log(`${pass ? "PASS" : "FAIL"}  ${name} ${JSON.stringify(detail)}`); };
@@ -34,10 +34,10 @@ for (const { url, headers } of captured.slice(0, 2)) {
   const tag = `${u.pathname}${u.search.replace(/_rsc=[^&]+/, "_rsc=…")}`;
   record(`captured router request ${tag}`, !!rsc && !!router.rsc && !!router["next-router-state-tree"], { rscLength: rsc?.length ?? 0, routerHeaders: Object.keys(router) });
   const a = await get(url, router); const b = await get(url, router);
-  record("RSC replay: x-component, 12 h, Vary router headers", a.status === 200 && /text\/x-component/.test(a.type ?? "") && a.cc === EDGE && ROUTER.slice(0, 4).every(h => (a.vary ?? "").toLowerCase().includes(h)), { status: a.status, type: a.type, cc: a.cc });
+  record("RSC replay: x-component, expected edge TTL (EDGE), Vary router headers", a.status === 200 && /text\/x-component/.test(a.type ?? "") && a.cc === EDGE && ROUTER.slice(0, 4).every(h => (a.vary ?? "").toLowerCase().includes(h)), { status: a.status, type: a.type, cc: a.cc });
   record("RSC repeated: same variant (HIT where Workers Cache exists)", b.status === 200 && /text\/x-component/.test(b.type ?? "") && !b.html, { first: a.cache, second: b.cache });
   const h = await get(htmlUrl.href);
-  record("HTML of the same path: HTML, 12 h, never the RSC payload", h.status === 200 && /text\/html/.test(h.type ?? "") && h.html && h.cc === EDGE, { type: h.type, cc: h.cc, cache: h.cache });
+  record("HTML of the same path: HTML, expected edge TTL (EDGE), never the RSC payload", h.status === 200 && /text\/html/.test(h.type ?? "") && h.html && h.cc === EDGE, { type: h.type, cc: h.cc, cache: h.cache });
   const bare = await get(url);
   record("RSC URL without router headers: not stored", bare.status === 307 || !/public/.test(bare.cc ?? ""), { status: bare.status, cc: bare.cc });
   const forged = await get(url, { ...router, "next-router-state-tree": encodeURIComponent(JSON.stringify(["", { children: ["__PAGE__", {}] }, null, null, true])) });
