@@ -1,5 +1,5 @@
 // Authenticated purge probe, reused unchanged in logic from docs/qa/evidence/perf-hotfix/purge (runner v3, Codex-reviewed)
-// for the Cache 12H preview (version 335c619f, TTL 43200). Authenticated purge probe for a preview version. No content writes: the only state touched is the cache of the
+// for the Cache 12H on RSC V2 preview (version 63e818aa, TTL 43200; the 0cfcd7d-based 335c619f is retired). Authenticated purge probe for a preview version. No content writes: the only state touched is the cache of the
 // PREVIEW version and one Supabase Auth session (created by login, revoked at the end). Credentials come from the
 // process environment only (run-purge-probe.ps1) and are never printed; tokens are never printed or stored.
 // Usage (via the wrapper): node purge-probe.mjs [previewOrigin]
@@ -25,7 +25,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const PREVIEW = process.argv[2] ?? "https://335c619f-tunhuabinhnham-web.tunhuabinhnham.workers.dev";
+const PREVIEW = process.argv[2] ?? "https://63e818aa-tunhuabinhnham-web.tunhuabinhnham.workers.dev";
 const PROD = "https://tunhuabinhnham.com";
 // The admin token is only ever sent to a preview version of this Worker (never production, never another host).
 if (!/^https:\/\/[0-9a-f]{8}-tunhuabinhnham-web\.tunhuabinhnham\.workers\.dev$/.test(PREVIEW)) { console.log(`BLOCKED preview origin must be https://<version>-tunhuabinhnham-web.tunhuabinhnham.workers.dev`); process.exit(2); }
@@ -45,9 +45,9 @@ const GRACE_MS = 5000, ROUNDS = 12, SPACING_MS = 1500, PRE_SAMPLES = 6, PROD_TTL
 const run = Date.now().toString(36);
 const KEYS = {
   previewImage: { url: `${PREVIEW}/_next/image?url=${encodeURIComponent("https://fyaourksnjeldsvuedox.supabase.co/storage/v1/object/public/product-images/2026/10/968783db-9ed3-46ac-ae04-758b0e15a25b.jpg")}&w=384&q=75&purge_probe=${run}`,
-    cacheKey: "entrypoint PublicCache, version 335c619f, /_next/image?url=…&w=384&q=75&purge_probe=<run>" },
-  previewPage: { url: `${PREVIEW}/?purge_probe=${run}`, cacheKey: "entrypoint PublicCache, version 335c619f, /?purge_probe=<run>" },
-  productionPage: { url: `${PROD}/?purge_isolation_probe=${run}`, cacheKey: "entrypoint PublicCache, version ace736be (production, TTL 300), /?purge_isolation_probe=<run>" },
+    cacheKey: "entrypoint PublicCache, version 63e818aa, /_next/image?url=…&w=384&q=75&purge_probe=<run>" },
+  previewPage: { url: `${PREVIEW}/?purge_probe=${run}`, cacheKey: "entrypoint PublicCache, version 63e818aa, /?purge_probe=<run>" },
+  productionPage: { url: `${PROD}/?purge_isolation_probe=${run}`, cacheKey: "entrypoint PublicCache, version fae6efa2 (production RSC V2, TTL 300), /?purge_isolation_probe=<run>" },
 };
 const log = []; const checks = [];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
