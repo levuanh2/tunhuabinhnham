@@ -151,3 +151,19 @@ Admin e-mail, then the password (hidden). ~3–6 min. The runner (reviewed runne
 ### Gate B preparation (not run; needs the owner's Step B approval)
 
 In addition to §4 Gate B: production TTL check (`preview-smoke.mjs` without `EDGE` → 43200, `rsc-replay.mjs` without `EDGE`); production purge proof by a real Admin save (save → `/api/revalidate` 200 → `PublicCache.purge()` → a page warmed before the save is young at a `cf-ray` location that served it before; record every location seen, state plainly if only one location was observed); private/auth unchanged (smoke isolation rows). If the purge gate fails: roll back to P′ `c3ad4b09-7d75-46d2-a085-3f7e2b40fd56@100%` and confirm with `rsc-replay.mjs` / smoke using `EDGE="public, max-age=0, s-maxage=300"` that every response is P′'s (300, `852126e` assets) — N's 12 h entries stay in N's own partition and are not served by P′. `AUTH_PURGE_PREVIEW_PASS` does not replace the production purge proof.
+
+## 9. Step B executed (owner final approval 2026-10-25) — purge gate pending
+
+- Pre-flight: production P′ `c3ad4b09-7d75-46d2-a085-3f7e2b40fd56` 100 % (since 08:34:48Z); backend `45da4c1` live; N `63e818aa-c4cb-4510-85a4-b4f169515aee` = tag `cache12h-on-rsc-v2-b9122de` serves 57/57; no `cross_version_cache` in `wrangler.jsonc` (per-version cache); runbook commands present.
+- Deploy 09:06:19Z (§4 command) → SUCCESS; `deployments status`: (100 %) `63e818aa-c4cb-4510-85a4-b4f169515aee` since **09:06:25Z**.
+
+| Check | Result (`release/`) |
+|---|---|
+| Smoke (`smoke-n.json`) | SMOKE_PASS 20/20: public pages and product page `public, max-age=0, s-maxage=43200` (browsers revalidate: `max-age=0`), only `b9122de` assets, 4 related from `?related=4`; MISS→HIT (1419 / 94 / 84 ms); cookie/Authorization `private, no-store`, never HIT; admin/login/revalidate private; purge 401; 404 not cached; 308; image 24 h WebP |
+| Real RSC (`rsc-replay-n.json`) | RSC_REPLAY_PASS: RSC `s-maxage=43200` MISS→HIT; HTML of the same path its own entry (HTML, 43200); forged router variant 307 |
+| SEO (`seo-n.json`) | 4 related links in server HTML, canonical, JSON-LD |
+| Browser (`nav-n.json`) | Chromium + WebKit iPhone: prefetch 0, indicator 41–429 ms, RSC HIT 56–70 ms (one 664 ms), Back/Forward 19–84 ms |
+| Assets (`soak-n.json`) | SOAK_PASS 57/57, 0 failing, 303 s clean (→ 09:11:41Z) |
+| Worker (`tail-n-by-version.json`, 09:06:43–09:20:55Z, restarting windows, 524 events, mostly test and watcher traffic) | 523 `ok`, 1 `canceled`; 0 exceptions, 0 5xx, no `exceededCpu`/1102/1027, 0 non-200 image transforms. Uncached renders n 30: CPU p50 145 / p95 433 / max 484 ms (28/30 > 10 ms), wall p50 1335 / p95 2707; gateway HIT path n 399: CPU p95 1 ms; image transforms p95 35 ms |
+
+**Production purge gate: PENDING** — watcher `purge-gate-production.mjs watch` started ~09:13Z for 60 min on 12 production keys (6 HTML, 6 real RSC); at start all HIT at HKG with `s-maxage=43200`. Waiting for the owner's Admin save. Verdict so far: **CACHE_12H_PRODUCTION_PURGE_PENDING**.
