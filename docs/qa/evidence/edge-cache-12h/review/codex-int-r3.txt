@@ -1,0 +1,20 @@
+codex
+## Findings
+
+- **P1 — The required authenticated purge gate cannot start.** `docs/qa/evidence/edge-cache-12h/purge-probe.mjs:32` climbs five directories from its script directory, resolving the default env file to `E:\apps\web\.env.production.local`, which does not exist. The intended file is `E:\Tunhuabinhnham\apps\web\.env.production.local`, requiring four `..` segments. `docs/deployment/EDGE_CACHE_12H.md:98` invokes the wrapper without setting `PURGE_ENV_FILE`, so the release-blocking owner gate fails before making a request.
+
+- **P2 — The emergency “clean” rebuild does not execute either cleanup command.** `docs/deployment/EDGE_CACHE_12H.md:112-114` prefixes both shell-specific cleanup commands with `#`, making them comments in PowerShell and Git Bash. The newly added `npm run build:cloudflare` resolves the earlier missing-build finding, but the documented procedure does not actually remove `.next` or `.open-next` before rebuilding.
+
+- **P3 — The “PowerShell or Git Bash” promise remains inaccurate.** `docs/deployment/EDGE_CACHE_12H.md:53,57,69,71` includes a backslash-based output path and a PowerShell-only `$env:`/`Remove-Item` command. The Git Bash alternative is abbreviated with an ellipsis rather than being executable. All targets resolve when the PowerShell form is used.
+
+## Round-2 findings
+
+- Soak-gate depth and release directory: resolved. `soak-gate.mjs:10` now resolves to the repository’s `apps/web/scripts/verify-assets-live.mjs`; `release/` exists with three committed dry-run outputs.
+- Missing emergency build: resolved by `EDGE_CACHE_12H.md:114`, subject to the cleanup issue above.
+- Missing RSC release document: resolved. `EDGE_CACHE_12H.md:53` uses `git show origin/perf/rsc-nav-v2:...`, and that local remote-tracking object exists.
+- Evidence summaries: resolved. Test 19 is disclosed; asset-set attribution is marked author-reported; RSC HITs are correctly reported as 65–566 ms.
+- CPU range: resolved. `EDGE_CACHE_12H.md:125` gives exact values matching `rsc-v2-production-cpu.json` and the RSC V2 release evidence.
+
+The follow-up from `f6b036f` is documentation/evidence-only. The five-file application diff from `852126e` remains the expected cache-TTL, warning-text, and test changes. No files were modified, and no tests or network operations were run.
+
+REQUEST_CHANGES
