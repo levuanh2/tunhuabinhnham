@@ -111,7 +111,7 @@ Admin e-mail, then the password (hidden). ~3–6 min. The runner (reviewed runne
   ```
   Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
   npm run build:cloudflare
-  node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/b9122de .deploy-assets/852126e .deploy-assets/0cfcd7d
+  node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/b9122de .deploy-assets/852126e .deploy-assets/0cfcd7d .deploy-assets/e681cca
   npx wrangler versions upload --message "emergency cache reset (Cache 12H)"
   npx wrangler versions deploy <Worker Version ID printed by the upload>@100% --yes --message "emergency cache reset"
   ```
