@@ -1,0 +1,9 @@
+# Author-reported build evidence (session 2026-10-25). Excerpts of the build logs; the secret scan and file checks were run on .open-next right after each build (before the upload) and their console output was not saved to a file.
+## N (b9122de; uploaded as 63e818aa-c4cb-4510-85a4-b4f169515aee)
+✓ Compiled successfully in 6.3s
+OpenNext build complete.
+BUILD_ID ZhME75JHuGk8OiJ8SAQRg; image allowlist host fyaourksnjeldsvuedox.supabase.co; files with test hosts: 0; bundle secret scan: SECRET SCAN PASS; merge: copied 15, totalFiles 62
+## P-prime (852126e rebuilt; uploaded as c3ad4b09-7d75-46d2-a085-3f7e2b40fd56)
+✓ Compiled successfully in 6.5s
+OpenNext build complete.
+own hashed assets 42/42 identical to .deploy-assets/852126e; image allowlist fyaourksnjeldsvuedox.supabase.co; files with test hosts: 0; bundle secret scan: SECRET SCAN PASS; merge: copied 15, totalFiles 62
