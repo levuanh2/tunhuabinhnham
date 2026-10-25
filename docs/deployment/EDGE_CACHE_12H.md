@@ -50,7 +50,7 @@ N's own assets are archived in `apps/web/.deploy-assets/b9122de`. The old Cache 
 
 ## 4. Release plan (each step needs the owner's go)
 
-Same shape as the RSC V2 release (read it with `git show origin/perf/rsc-nav-v2:docs/deployment/RSC_PERF_V2_RELEASE.md`; it is not on this branch). All commands run in **PowerShell or Git Bash from `E:\Tunhuabinhnham\apps\web`** (it holds `.deploy-assets`, `wrangler.jsonc` and `node_modules`) with branch `perf/edge-cache-12h-on-rsc-v2` checked out (for the evidence scripts). No build or upload is needed: only the uploaded versions below are deployed.
+Same shape as the RSC V2 release (read it with `git show origin/perf/rsc-nav-v2:docs/deployment/RSC_PERF_V2_RELEASE.md`; it is not on this branch). All commands run in **PowerShell from `E:\Tunhuabinhnham\apps\web`** (it holds `.deploy-assets`, `wrangler.jsonc` and `node_modules`) with branch `perf/edge-cache-12h-on-rsc-v2` checked out (for the evidence scripts). No build or upload is needed: only the uploaded versions below are deployed.
 
 Tail (second terminal, restart when it stops; the stream drops after ~1–2 min on this network — record the covered windows; output directory `docs/qa/evidence/edge-cache-12h/release/` exists on this branch):
 ```
@@ -68,7 +68,7 @@ npx wrangler deployments status
 node ../../docs/qa/evidence/edge-cache-12h/soak-gate.mjs https://tunhuabinhnham.com .deploy-assets/b9122de .deploy-assets/852126e --soak 300 --timeout 1800 --out ../../docs/qa/evidence/edge-cache-12h/release/soak-pprime.json
 $env:EDGE = "public, max-age=0, s-maxage=300"; node ../../docs/qa/evidence/edge-cache-12h/preview/preview-smoke.mjs https://tunhuabinhnham.com https://tunhuabinhnham-api.onrender.com .deploy-assets/852126e --out ../../docs/qa/evidence/edge-cache-12h/release/smoke-pprime.json; Remove-Item Env:EDGE
 ```
-(Git Bash: `EDGE="public, max-age=0, s-maxage=300" node …`.) SOAK_PASS and SMOKE_PASS → continue. Failure → roll back to P:
+SOAK_PASS and SMOKE_PASS → continue. Failure → roll back to P:
 ```
 npx wrangler versions deploy fae6efa2-4153-411c-9987-55f2f6ccfb87@100% --yes --message "rollback to P fae6efa2"
 ```
@@ -107,15 +107,15 @@ Admin e-mail, then the password (hidden). ~3–6 min. The runner (reviewed runne
   ```
   Never straight to P `fae6efa2-4153-411c-9987-55f2f6ccfb87` once N has started (P lacks N's 3 new admin chunks for open tabs). P′ is a new version that only ever serves with TTL 300, so its partition holds entries ≤ 5 min old.
 - **A rollback does not delete N's 12 h entries**: they stay in N's partition (the cache is partitioned per Worker version; `cross_version_cache` is off) until they expire, unused while N is not deployed. Never re-deploy N `63e818aa-c4cb-4510-85a4-b4f169515aee` (or any version that served 12 h) after it has been replaced: upload a new version instead; if it must be re-deployed, make an admin save right after the switch (the purge then runs in that version's own `PublicCache`) and verify at two `cf-ray` locations.
-- **Emergency removal while N is live:** (1) admin save (purges tag `public-html` for the live version); (2) on a cache warning ("… trong vòng 12 giờ" / "chưa thể làm mới cache công khai"), wait ≥ 1 min without other saves (Workers Cache uses Free-tier purge limits: 5 tag purges/min per account, bucket 25) and save once more; (3) still failing → upload and deploy a **new** version of the current source (empty partition; expect a Render MISS burst). From `E:\Tunhuabinhnham\apps\web` on this branch, with no `NEXT_PUBLIC_*` variables set in the shell (the build reads `.env.production.local`):
+- **Emergency removal while N is live:** (1) admin save (purges tag `public-html` for the live version); (2) on a cache warning ("… trong vòng 12 giờ" / "chưa thể làm mới cache công khai"), wait ≥ 1 min without other saves (Workers Cache uses Free-tier purge limits: 5 tag purges/min per account, bucket 25) and save once more; (3) still failing → upload and deploy a **new** version of the current source (empty partition; expect a Render MISS burst). From `E:\Tunhuabinhnham\apps\web` on this branch, in PowerShell, with no `NEXT_PUBLIC_*` variables set in the session (the build reads `.env.production.local`):
   ```
-  # PowerShell: Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
-  # Git Bash:   rm -rf .next .open-next
+  Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
   npm run build:cloudflare
   node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/b9122de .deploy-assets/852126e .deploy-assets/0cfcd7d
   npx wrangler versions upload --message "emergency cache reset (Cache 12H)"
   npx wrangler versions deploy <Worker Version ID printed by the upload>@100% --yes --message "emergency cache reset"
-  ``` (4) verify absence at two distinct `cf-ray` locations and record them. Zone-level purge (dashboard/API) does **not** affect Workers Cache.
+  ```
+  (4) Verify absence at two distinct `cf-ray` locations and record them. Zone-level purge (dashboard/API) does **not** affect Workers Cache.
 - Backend stays `45da4c1` throughout (not involved).
 
 ## 7. Remaining risks
