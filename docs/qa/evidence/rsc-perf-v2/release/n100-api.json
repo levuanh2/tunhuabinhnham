@@ -1,0 +1,63 @@
+{
+ "label": "after-n100",
+ "at": "2026-10-24T16:44:24.714Z",
+ "api": "https://tunhuabinhnham-api.onrender.com",
+ "health": {
+  "live": 200,
+  "ready": 200
+ },
+ "slug": "tu-nhua-4-canh-4",
+ "publicProducts": 9,
+ "plain": {
+  "status": 200,
+  "ms": 996,
+  "keys": [
+   "attributes",
+   "category",
+   "category_id",
+   "created_at",
+   "description",
+   "id",
+   "images",
+   "is_featured",
+   "is_visible",
+   "name",
+   "price",
+   "publish_status",
+   "published_at",
+   "related",
+   "sku",
+   "slug",
+   "stock_status",
+   "updated_at"
+  ],
+  "related": [],
+  "acao": "https://tunhuabinhnham.com",
+  "cc": "public, max-age=60, stale-while-revalidate=60"
+ },
+ "withRelated": {
+  "status": 200,
+  "ms": 1001,
+  "slug": "tu-nhua-4-canh-4",
+  "related": [
+   "tu-nhua-4-canh-3",
+   "tu-nhua-4-canh-2",
+   "tu-4-canh-2",
+   "tu-4-canh"
+  ],
+  "relatedOk": true,
+  "expectedCandidates": 4
+ },
+ "over": 422,
+ "unknown": 404,
+ "lists": {
+  "products": 200,
+  "categories": 200,
+  "posts": 200,
+  "settings": 200
+ },
+ "adminWithoutToken": {
+  "products": 401,
+  "stats": 401
+ }
+}

@@ -1,0 +1,1 @@
+{"events":41,"from":"2026-10-24T15:41:35.279Z","to":"2026-10-24T15:42:08.345Z","outcomes":{"ok":41},"status":{"200":38,"401":1,"404":1,"405":1},"status5xxByKind":{},"imageNon200":{},"exceptions":0,"errorLogs":0,"cpuMs":{"n":41,"p50":30,"p95":262,"max":858},"versions":{"68103970":41}}
