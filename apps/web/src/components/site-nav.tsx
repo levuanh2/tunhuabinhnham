@@ -12,7 +12,7 @@ const isActive = (pathname: string, href: string) => pathname === href || pathna
 export function NavLinks({ items }: { items: Item[] }) {
   const pathname = usePathname();
   return <ul className="flex items-center gap-1">{items.map(item => <li key={item.href}>
-    <Link href={item.href} aria-current={isActive(pathname, item.href) ? "page" : undefined} className="rounded-full px-3.5 py-2 text-[.9375rem] font-medium text-ink-soft transition-colors hover:text-ink aria-[current=page]:text-ink aria-[current=page]:underline aria-[current=page]:decoration-sand aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8">{item.label}</Link>
+    <Link prefetch={false} href={item.href} aria-current={isActive(pathname, item.href) ? "page" : undefined} className="rounded-full px-3.5 py-2 text-[.9375rem] font-medium text-ink-soft transition-colors hover:text-ink aria-[current=page]:text-ink aria-[current=page]:underline aria-[current=page]:decoration-sand aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8">{item.label}</Link>
   </li>)}</ul>;
 }
 
@@ -42,10 +42,10 @@ export function MobileNav({ items }: { items: Item[] }) {
       </form>
       <nav aria-label="Menu di động" className="px-4 pt-2">
         <ul>{items.map(item => <li key={item.href}>
-          <Link href={item.href} onClick={() => setOpen(false)} aria-current={isActive(pathname, item.href) ? "page" : undefined} className="flex min-h-13 items-center border-b border-line py-3 text-lg font-medium aria-[current=page]:text-primary">{item.label}</Link>
+          <Link prefetch={false} href={item.href} onClick={() => setOpen(false)} aria-current={isActive(pathname, item.href) ? "page" : undefined} className="flex min-h-13 items-center border-b border-line py-3 text-lg font-medium aria-[current=page]:text-primary">{item.label}</Link>
         </li>)}</ul>
       </nav>
-      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"><Link href="/lien-he" onClick={() => setOpen(false)} className="button w-full min-h-12"><MessageCircle size={18} aria-hidden="true" />Nhắn tin cho cửa hàng</Link></div>
+      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"><Link prefetch={false} href="/lien-he" onClick={() => setOpen(false)} className="button w-full min-h-12"><MessageCircle size={18} aria-hidden="true" />Nhắn tin cho cửa hàng</Link></div>
     </Sheet>
   </div>;
 }

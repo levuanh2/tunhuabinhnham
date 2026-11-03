@@ -20,7 +20,8 @@ export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin${path}`, { ...init, cache: "no-store", headers });
   if (response.status === 401) { await supabase.auth.signOut({ scope: "local" }); throw new Error("Phiên đăng nhập đã hết hạn"); }
   if (!response.ok) { const payload = await response.json().catch(() => null); throw new AdminApiError(payload?.error?.message ?? "Yêu cầu không thành công", response.status); }
-  if (init?.method && init.method !== "GET" && !path.startsWith("/media")) {
+  // An upload is not public until saved content uses it; a media DELETE must purge the cached transformed image.
+  if (init?.method && init.method !== "GET" && !(path.startsWith("/media") && init.method !== "DELETE")) {
     const revalidation = await fetch("/api/revalidate", {
       method: "POST",
       headers: { Authorization: `Bearer ${data.session.access_token}` },

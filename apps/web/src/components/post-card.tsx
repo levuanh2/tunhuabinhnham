@@ -11,7 +11,7 @@ export function PostCard({ post, large = false }: { post: Post; large?: boolean 
     <div>
       {post.published_at && <time dateTime={post.published_at} className="text-sm text-ink-soft">{formatDate(post.published_at)}</time>}
       <h3 className={`display mt-1.5 ${large ? "text-3xl md:text-4xl" : "text-[1.375rem]"}`}>
-        <Link href={`/tin-tuc/${post.slug}`} className="after:absolute after:inset-0 group-hover:text-primary">{post.title}</Link>
+        <Link prefetch={false} href={`/tin-tuc/${post.slug}`} className="after:absolute after:inset-0 group-hover:text-primary">{post.title}</Link>
       </h3>
       {post.excerpt && <p className={`mt-2.5 leading-7 text-ink-soft ${large ? "text-lg" : "line-clamp-3"}`}>{post.excerpt}</p>}
     </div>

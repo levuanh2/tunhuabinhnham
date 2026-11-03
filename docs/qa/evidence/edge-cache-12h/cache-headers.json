@@ -1,0 +1,387 @@
+{
+ "origin": "http://127.0.0.1:8787",
+ "total": 38,
+ "failed": 0,
+ "rows": [
+  {
+   "name": "HTML public",
+   "path": "/",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham?category=tu-giay",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham?search=t%E1%BB%A7",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham?page=2",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham?category=tu-quan-ao&sort=price",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/san-pham/tu-giay",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/tin-tuc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/tin-tuc/chon-tu-phong-ngu",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/gioi-thieu",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML public",
+   "path": "/lien-he",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham?category=tu-giay&_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham?search=t%E1%BB%A7&_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham?page=2&_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham?category=tu-quan-ao&sort=price&_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/san-pham/tu-giay?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/tin-tuc?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/tin-tuc/chon-tu-phong-ngu?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/gioi-thieu?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC public (signed _rsc)",
+   "path": "/lien-he?_rsc",
+   "status": 200,
+   "cacheControl": "public, max-age=0, s-maxage=43200",
+   "cacheTag": "public-html",
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML with session cookie",
+   "path": "/san-pham",
+   "status": 200,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "HTML with Authorization",
+   "path": "/san-pham",
+   "status": 200,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "RSC header without _rsc",
+   "path": "/san-pham",
+   "status": 307,
+   "cacheControl": "private, no-store",
+   "cacheTag": null,
+   "vary": null,
+   "location": "/san-pham?_rsc",
+   "ok": true
+  },
+  {
+   "name": "_rsc without RSC header",
+   "path": "/san-pham?_rsc=abc",
+   "status": 200,
+   "cacheControl": "private, no-cache, no-store, max-age=0, must-revalidate",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "admin",
+   "path": "/admin",
+   "status": 307,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "Cookie",
+   "location": "/admin/login",
+   "ok": true
+  },
+  {
+   "name": "admin login",
+   "path": "/admin/dang-nhap",
+   "status": 307,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "Cookie",
+   "location": "/admin/login",
+   "ok": true
+  },
+  {
+   "name": "API route",
+   "path": "/api/revalidate",
+   "status": 405,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "not found product",
+   "path": "/san-pham/khong-ton-tai",
+   "status": 404,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "unknown path",
+   "path": "/khong-co-trang-nay",
+   "status": 404,
+   "cacheControl": "private, no-cache, no-store, max-age=0, must-revalidate",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "sitemap",
+   "path": "/sitemap.xml",
+   "status": 200,
+   "cacheControl": "public, max-age=0, must-revalidate",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "old product URL",
+   "path": "/san-pham/tu-giay?ref=zalo",
+   "status": 301,
+   "cacheControl": "no-store",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": "/san-pham/tu-giay-doi-ten?ref=zalo",
+   "ok": true
+  },
+  {
+   "name": "API outage (degraded)",
+   "path": "/",
+   "status": 200,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "API outage (degraded)",
+   "path": "/san-pham",
+   "status": 200,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "API outage (degraded)",
+   "path": "/san-pham/tu-giay",
+   "status": 404,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "API outage (degraded)",
+   "path": "/tin-tuc",
+   "status": 200,
+   "cacheControl": "private, no-store, max-age=0",
+   "cacheTag": null,
+   "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+   "location": null,
+   "ok": true
+  },
+  {
+   "name": "image (no WebP accept)",
+   "path": "/_next/image?url=https%3A%2F%2Fexample.com%2Fa.jpg&w=640&q=75",
+   "status": 400,
+   "cacheControl": "private, no-store",
+   "cacheTag": null,
+   "vary": null,
+   "location": null,
+   "ok": true
+  }
+ ]
+}

@@ -1,0 +1,329 @@
+{
+ "verdict": "SOAK_PASS",
+ "origin": "https://tunhuabinhnham.com",
+ "files": 52,
+ "soak": 300,
+ "cleanSeconds": 305,
+ "rounds": [
+  {
+   "at": "2026-10-23T14:38:46.774Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:38:56.592Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:05.753Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:15.206Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:24.636Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:34.121Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:43.503Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:39:52.664Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:02.398Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:12.134Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:21.617Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:30.841Z",
+   "state": "CLEAN",
+   "seconds": 6,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:41.365Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:40:51.580Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:01.082Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:11.037Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:20.221Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:29.968Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:39.777Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:49.231Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:41:59.334Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:08.741Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:17.980Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:27.487Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:37.587Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:46.811Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:42:56.391Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:43:06.761Z",
+   "state": "CLEAN",
+   "seconds": 4,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:43:16.141Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:43:25.850Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:43:35.369Z",
+   "state": "CLEAN",
+   "seconds": 5,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  },
+  {
+   "at": "2026-10-23T14:43:45.100Z",
+   "state": "CLEAN",
+   "seconds": 7,
+   "colos": [
+    "HKG"
+   ],
+   "failures": [],
+   "unverified": 0
+  }
+ ]
+}

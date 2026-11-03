@@ -1,0 +1,24 @@
+codex
+No P0 findings. The runner has several P1 correctness gaps that can produce PASS without proving the required behavior.
+
+- **P1 — Rejected purges are verified against only the image.** [purge-probe.mjs:116](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:116>) samples and gates `previewImage` only. A rejected request could wrongly evict the page while leaving the image intact, and the final verdict could still PASS. Check both warmed preview keys after rejection.
+
+- **P1 — Slow responses can be misclassified as pre-event entries.** [purge-probe.mjs:70](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:70>) compares `Age` received later against elapsed time measured at request send. If response headers take more than the one-second tolerance, an entry created after the event can satisfy `old()`. This can falsely PASS `survivedGate`, including the production-isolation check. Use a conservative response/header-receipt timestamp for the old-entry test.
+
+- **P1 — Any non-HIT HTTP 200 is accepted as proof of purge.** [purge-probe.mjs:72](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:72>) defines `young` as every 200 response that is not `HIT`. Consequently `BYPASS`, `DYNAMIC`, `EXPIRED`, `STALE`, `UPDATING`, or a missing `CF-Cache-Status` can PASS `purgedGate` at [purge-probe.mjs:79](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:79>). Require exactly `MISS`, or a `HIT` whose Age proves it was created after the purge; treat other states as inconclusive.
+
+- **P2 — A missing colo identifier can satisfy the same-colo proof.** [purge-probe.mjs:73](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:73>) inserts `null` into the pre-event colo set. A later response also lacking `CF-Ray` then matches at [purge-probe.mjs:79](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:79>) and may PASS. Exclude null colos and require a concrete matching colo.
+
+- **P2 — The 300-second production window is not actually bounded.** [purge-probe.mjs:120](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:120>) claims the check remains inside the TTL, but seven warm GETs can consume more than 300 seconds under the configured retries and 20-second attempt timeout. Login and logout at [purge-probe.mjs:124](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:124>) and [purge-probe.mjs:148](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:148>) have no timeout. The `ttl - 10` condition prevents a late MISS from becoming FAIL, but does not keep the evidence within TTL. Enforce an absolute deadline and make an exceeded window inconclusive.
+
+- **P2 — The drift-and-return simulation does not drift.** [purge-sim.mjs:9](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-sim.mjs:9>) uses a large LCG with JavaScript `Number`, losing the low bits used by `% 4`. Starting from seed 7, the generated sequence remains `HKG`, so `return` is effectively another stable scenario. Use a predetermined colo sequence or an integer-safe generator.
+
+- **P2 — “Network down” models only production GET failure.** [purge-sim.mjs:32](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-sim.mjs:32>) leaves preview GETs and all auth/purge POSTs operational. It proves partial production-path outage handling, not the stated network-down condition. Add a scenario where all relevant GETs fail, while retaining the partial-outage case separately if desired.
+
+- **P2 — Login and logout may automatically repeat POSTs through redirects.** Unlike purge requests, the direct fetches at [purge-probe.mjs:124](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:124>) and [purge-probe.mjs:148](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:148>) use the default `redirect: "follow"`. A 307/308 can resend the POST. Set `redirect: "manual"` and a timeout to guarantee a single HTTP attempt.
+
+- **P3 — The documented pre-event limit is exceeded.** [purge-probe.mjs:102](</E:/Tunhuabinhnham/docs/qa/evidence/perf-hotfix/purge/purge-probe.mjs:102>) performs one cold sample plus six warm samples—seven, despite the six-sample claim at line 18. Post-event rounds are correctly capped at 12, and each GET is capped at three network-error attempts.
+
+The remaining checks look sound: HTTP responses are not retried; purge POSTs use one attempt; failed mandatory checks keep the aggregate verdict from PASS; tokens, email, and password are not logged or serialized; stable, continuous-drift, images-only, stale-upper-tier, production-affected, and transient-GET-flake behavior are substantially represented. Both files pass `node --check`. I did not run the simulator because the probe writes a result file.
+
+REQUEST_CHANGES

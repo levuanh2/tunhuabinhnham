@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { EDGE_CACHE_TAG, edgeCacheHeaders, isEdgeCacheableRequest, isProductMove, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
+import { EDGE_CACHE_TAG, edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, markRenderDegraded, purgeEdgeCache, renderState } from "./edge-cache";
 
 const req = (path: string, init: RequestInit = {}) => new Request(`https://tunhuabinhnham.com${path}`, init);
 const html = (init: ResponseInit = {}) => new Response("<html></html>", { status: 200, ...init, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store", vary: "rsc, next-router-state-tree", ...init.headers } });
@@ -28,7 +28,26 @@ describe("isEdgeCacheableRequest", () => {
     expect(isEdgeCacheableRequest(req("/", { headers: { authorization: "Bearer x" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "a=1; sb-fyaourksnjeldsvuedox-auth-token=eyJ" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "sb-x-auth-token.0=chunk" } }))).toBe(false);
+    expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "__Host-sb-x-auth-token.1=chunk" } }))).toBe(false);
+    expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "__Secure-sb-x-auth-token=token" } }))).toBe(false);
     expect(isEdgeCacheableRequest(req("/", { headers: { cookie: "theme=dark" } }))).toBe(true);
+  });
+
+  it("recognizes Authorization and Supabase base, chunked and security-prefixed cookies", () => {
+    const credentialHeaders: Record<string, string>[] = [
+      { authorization: "Bearer x" },
+      { cookie: "sb-project-auth-token=token" },
+      { cookie: "a=1; sb-project-auth-token.0=chunk" },
+      { cookie: "__Host-sb-project-auth-token.12=chunk" },
+      { cookie: "__Secure-sb-project-auth-token=token" },
+    ];
+    for (const headers of credentialHeaders) expect(hasRequestCredentials(req("/", { headers })), JSON.stringify(headers)).toBe(true);
+    for (const cookie of [
+      "theme=dark",
+      "sb-project-auth-token-extra=value",
+      "sb-project-auth-token.01=chunk",
+      "prefix-sb-project-auth-token=token",
+    ]) expect(hasRequestCredentials(req("/", { headers: { cookie } })), cookie).toBe(false);
   });
 });
 
@@ -43,7 +62,7 @@ describe("router (RSC) requests", () => {
   });
   it("store only text/x-component bodies, never HTML, under the RSC rule", () => {
     const flight = new Response("0:[]", { headers: { "content-type": "text/x-component", vary: "rsc" } });
-    expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toMatch(/public/);
+    expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toBe("public, max-age=0, s-maxage=43200");
     expect(edgeCacheHeaders(html(), false, true)).toBeNull();
     expect(edgeCacheHeaders(flight, false, false)).toBeNull();
     expect(edgeCacheHeaders(flight, true, true)).toBeNull();
@@ -53,7 +72,8 @@ describe("router (RSC) requests", () => {
 describe("edgeCacheHeaders", () => {
   it("marks a complete 200 HTML page public with the purge tag and keeps RSC variants apart", () => {
     const headers = edgeCacheHeaders(html(), false)!;
-    expect(headers.get("cache-control")).toBe("public, max-age=0, s-maxage=300");
+    // 12 h at the edge (owner accepts public content up to ~12 h stale; admin saves still purge the tag), never in browsers
+    expect(headers.get("cache-control")).toBe("public, max-age=0, s-maxage=43200");
     expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
     expect(headers.get("vary")).toMatch(/rsc/);
     expect(edgeCacheHeaders(html({ headers: { vary: "accept-encoding" } }), false)!.get("vary")).toMatch(/rsc/);
@@ -71,6 +91,55 @@ describe("edgeCacheHeaders", () => {
   });
 });
 
+describe("transformed images (/_next/image)", () => {
+  const src = "https://fyaourksnjeldsvuedox.supabase.co/storage/v1/object/public/product-images/2026/10/a.jpg";
+  const img = (url = src, headers: Record<string, string> = { accept: "image/avif,image/webp,*/*" }, init: RequestInit = {}) =>
+    req(`/_next/image?url=${encodeURIComponent(url)}&w=384&q=75`, { headers, ...init });
+  const webp = (init: ResponseInit = {}) => new Response("RIFF", { status: 200, ...init, headers: { "content-type": "image/webp", vary: "Accept", ...init.headers } });
+
+  it("share the edge cache only for anonymous WebP-capable GET/HEAD (the cache key ignores Accept)", () => {
+    expect(isImageRequest(img())).toBe(true);
+    expect(isEdgeCacheableRequest(img())).toBe(true);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp" }, { method: "HEAD" }))).toBe(true);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/png,*/*" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, {}))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/png, image/webp;q=0" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp2" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/png, IMAGE/WEBP; q=0.8" }))).toBe(true);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp", cookie: "sb-x-auth-token=1" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp", authorization: "Bearer x" }))).toBe(false);
+    expect(isEdgeCacheableRequest(img(src, { accept: "image/webp" }, { method: "POST" }))).toBe(false);
+    expect(isImageRequest(req("/_next/image/x"))).toBe(false);
+  });
+
+  it("store only a 200 image, for a bounded time, with the purge tag", () => {
+    const headers = imageCacheHeaders(webp())!;
+    expect(headers.get("cache-control")).toBe("public, max-age=3600, s-maxage=86400");
+    expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
+    expect(headers.get("vary")).toBe("Accept");
+    for (const status of [400, 404, 500, 504, 508]) expect(imageCacheHeaders(webp({ status })), String(status)).toBeNull();
+    expect(imageCacheHeaders(html())).toBeNull();
+    expect(imageCacheHeaders(webp({ headers: { "set-cookie": "a=1" } }))).toBeNull();
+  });
+
+  it("fall back only to an https Supabase public-storage upload, never an arbitrary URL", () => {
+    expect(imageFallbackUrl(img())).toBe(src);
+    for (const url of [
+      "https://evil.example/storage/v1/object/public/a.jpg",
+      "https://x.supabase.co.evil.example/storage/v1/object/public/a.jpg",
+      "http://x.supabase.co/storage/v1/object/public/a.jpg",
+      "https://x.supabase.co:8443/storage/v1/object/public/a.jpg",
+      "https://user@x.supabase.co/storage/v1/object/public/a.jpg",
+      "https://x.supabase.co/storage/v1/object/sign/a.jpg",
+      "https://x.supabase.co/storage/v1/object/public/../sign/a.jpg",
+      "/_next/static/media/a.png",
+      "javascript:alert(1)",
+      "",
+    ]) expect(imageFallbackUrl(img(url)), url).toBeNull();
+    expect(imageFallbackUrl(req("/_next/image?w=384&q=75"))).toBeNull();
+  });
+});
+
 describe("render state", () => {
   it("records a fallback only for the render it happened in", async () => {
     const a = { degraded: false }, b = { degraded: false };
@@ -84,17 +153,18 @@ describe("render state", () => {
 });
 
 describe("purgeEdgeCache", () => {
-  it("purges the public tag when the Worker exposes ctx.cache, and is a no-op otherwise", async () => {
-    const purge = vi.fn().mockResolvedValue(undefined);
+  it("purges the public tag only when Workers Cache accepts the request", async () => {
+    const purge = vi.fn().mockResolvedValue({ success: true });
     expect(await purgeEdgeCache({ cache: { purge } })).toBe(true);
     expect(purge).toHaveBeenCalledWith({ tags: [EDGE_CACHE_TAG] });
     expect(await purgeEdgeCache({})).toBe(false);
+    expect(await purgeEdgeCache({ cache: { purge: vi.fn().mockResolvedValue({ success: false }) } })).toBe(false);
     await expect(purgeEdgeCache({ cache: { purge: vi.fn().mockRejectedValue(new Error("rate limited")) } })).rejects.toThrow();
   });
 });
 
 describe("public pages are identical for every visitor", () => {
-  // A cache HIT is served without running the Worker, cookie or not, so no public page may personalise.
+  // The inner cache serves anonymous requests without rendering again, so public pages may not personalise.
   it("no public route or root layout reads cookies, headers, draft mode or the Supabase session", async () => {
     const { readFileSync, readdirSync, statSync } = await import("node:fs");
     const { join } = await import("node:path");
@@ -103,6 +173,17 @@ describe("public pages are identical for every visitor", () => {
     walk("src/app/(public)");
     files.push("src/app/layout.tsx", "src/lib/api.ts", "src/lib/brand.ts", "src/components/site-header.tsx", "src/components/site-footer.tsx", "src/components/site-nav.tsx");
     for (const file of files) expect(readFileSync(file, "utf8"), file).not.toMatch(/next\/headers|cookies\(|draftMode|@\/lib\/supabase/);
+  });
+
+  // Every public route is dynamic, so a viewport prefetch is a full Worker render plus API calls whose result the
+  // click never reuses (~22 per page view, the 2026-10-23 slowdown). Links fetch on click only.
+  it("no public Link prefetches", async () => {
+    const { readFileSync, readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const files: string[] = [];
+    const walk = (dir: string) => { for (const name of readdirSync(dir)) { const path = join(dir, name); if (statSync(path).isDirectory()) walk(path); else if (/\.tsx$/.test(name) && !name.startsWith("admin")) files.push(path); } };
+    walk("src/app/(public)"); walk("src/components");
+    for (const file of files) for (const link of readFileSync(file, "utf8").match(/<Link\b[^>]*/g) ?? []) expect(link, file).toContain("prefetch={false}");
   });
 });
 

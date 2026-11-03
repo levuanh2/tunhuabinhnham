@@ -1,4 +1,5 @@
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, CacheRefreshError } from "@/lib/admin-api";
+import { toast } from "sonner";
 import type { MediaAsset } from "@/types/api";
 
 export const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
@@ -30,9 +31,11 @@ export async function deleteAdminMedia(media: Pick<MediaAsset, "id"> | { url: st
 
 export async function cleanupMediaUrls(urls: Iterable<string>): Promise<string[]> {
   const failures: string[] = [];
+  let cacheStale = false;
   for (const url of new Set(urls)) {
     try { await deleteAdminMedia({ url }); }
-    catch { failures.push(url); }
+    catch (error) { if (error instanceof CacheRefreshError) cacheStale = true; else failures.push(url); } // stale: deleted, purge failed
   }
+  if (cacheStale) toast.warning("Ảnh cũ đã xoá, nhưng trang web công khai có thể còn hiện ảnh đó tới 1 ngày");
   return failures;
 }

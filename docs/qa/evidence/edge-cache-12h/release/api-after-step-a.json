@@ -1,0 +1,18 @@
+{
+ "at": "2026-10-25T08:51:35.605Z",
+ "live": 200,
+ "ready": 200,
+ "relatedStatus": 200,
+ "related": [
+  "tu-nhua-4-canh-3",
+  "tu-nhua-4-canh-2",
+  "tu-4-canh-2",
+  "tu-4-canh"
+ ],
+ "plainKeysHasRelated": true,
+ "/api/v1/products": 200,
+ "/api/v1/categories": 200,
+ "/api/v1/posts": 200,
+ "/api/v1/site-settings": 200,
+ "adminNoToken": 401
+}

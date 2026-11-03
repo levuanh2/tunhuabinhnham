@@ -1,0 +1,52 @@
+chromium: prefetch=0
+  link /san-pham                         feedback  2223 content  2241 rsc [{"ttfb":2073,"download":1,"total":2074}] 200:EXPIRED
+  tab /san-pham?category=do-dung         feedback  null content  1579 rsc [{"ttfb":1524,"download":1,"total":1525}] 200:EXPIRED
+  tab /san-pham?category=qua-tang        feedback  null content  2421 rsc [{"ttfb":2376,"download":1,"total":2376}] 200:EXPIRED
+  link /san-pham                         feedback  1689 content  1692 rsc [{"ttfb":1637,"download":1,"total":1637}] 200:EXPIRED
+  product /san-pham/tu-nhua-4-canh-4     feedback  2711 content  2715 rsc [{"ttfb":2574,"download":1,"total":2575}] 200:EXPIRED
+  back                                   feedback    13 content    18 rsc [] 
+  forward                                feedback    18 content    20 rsc [] 
+  back                                   feedback     8 content    20 rsc [] 
+  link /tin-tuc                          feedback  null content  1564 rsc [{"ttfb":1501,"download":3,"total":1504}] 200:EXPIRED
+  link /gioi-thieu                       feedback  null content   767 rsc [{"ttfb":717,"download":1,"total":717}] 200:EXPIRED
+  link /lien-he                          feedback  null content  1942 rsc [{"ttfb":1888,"download":5,"total":1893}] 200:EXPIRED
+  home /                                 feedback  2869 content  2873 rsc [{"ttfb":2821,"download":1,"total":2821}] 200:EXPIRED
+chromium-mobile: prefetch=0
+  link /san-pham                         feedback   183 content   196 rsc [{"ttfb":63,"download":1,"total":63}] 200:HIT
+  tab /san-pham?category=do-dung         feedback  null content   131 rsc [{"ttfb":70,"download":1,"total":71}] 200:HIT
+  tab /san-pham?category=qua-tang        feedback   136 content   141 rsc [{"ttfb":92,"download":1,"total":93}] 200:HIT
+  link /san-pham                         feedback   132 content   132 rsc [{"ttfb":59,"download":1,"total":59}] 200:HIT
+  product /san-pham/tu-nhua-4-canh-4     feedback   243 content   249 rsc [{"ttfb":61,"download":1,"total":62}] 200:HIT
+  back                                   feedback    10 content    16 rsc [] 
+  forward                                feedback    16 content    14 rsc [] 
+  back                                   feedback    18 content    21 rsc [] 
+  link /tin-tuc                          feedback   113 content   114 rsc [{"ttfb":67,"download":1,"total":68}] 200:HIT
+  link /gioi-thieu                       feedback  null content   114 rsc [{"ttfb":60,"download":1,"total":61}] 200:HIT
+  link /lien-he                          feedback  null content   109 rsc [{"ttfb":62,"download":1,"total":62}] 200:HIT
+  home /                                 feedback   122 content   127 rsc [{"ttfb":72,"download":2,"total":73}] 200:HIT
+webkit: prefetch=0
+  link /san-pham                         feedback   421 content   434 rsc [{"ttfb":64,"download":1,"total":65}] 200:HIT
+  tab /san-pham?category=do-dung         feedback   289 content   295 rsc [{"ttfb":70,"download":0,"total":70}] 200:HIT
+  tab /san-pham?category=qua-tang        feedback   223 content   229 rsc [{"ttfb":69,"download":1,"total":70}] 200:HIT
+  link /san-pham                         feedback   300 content   306 rsc [{"ttfb":65,"download":0,"total":65}] 200:HIT
+  product /san-pham/tu-nhua-4-canh-4     feedback   442 content   439 rsc [{"ttfb":64,"download":1,"total":65}] 200:HIT
+  back                                   feedback  null content    41 rsc [] 
+  forward                                feedback    28 content    41 rsc [] 
+  back                                   feedback  null content    37 rsc [] 
+  link /tin-tuc                          feedback   289 content   297 rsc [{"ttfb":61,"download":1,"total":62}] 200:HIT
+  link /gioi-thieu                       feedback   322 content   329 rsc [{"ttfb":79,"download":2,"total":81}] 200:HIT
+  link /lien-he                          feedback   256 content   262 rsc [{"ttfb":64,"download":2,"total":66}] 200:HIT
+  home /                                 feedback  null content   306 rsc [{"ttfb":73,"download":1,"total":74}] 200:HIT
+webkit-mobile: prefetch=0
+  link /san-pham                         feedback   445 content   456 rsc [{"ttfb":62,"download":0,"total":62}] 200:HIT
+  tab /san-pham?category=do-dung         feedback   275 content   281 rsc [{"ttfb":94,"download":1,"total":95}] 200:HIT
+  tab /san-pham?category=qua-tang        feedback   244 content   248 rsc [{"ttfb":63,"download":1,"total":64}] 200:HIT
+  link /san-pham                         feedback   346 content   354 rsc [{"ttfb":62,"download":1,"total":63}] 200:HIT
+  product /san-pham/tu-nhua-4-canh-4     feedback  null content   453 rsc [{"ttfb":69,"download":1,"total":70}] 200:HIT
+  back                                   feedback    23 content    33 rsc [] 
+  forward                                feedback  null content    82 rsc [] 
+  back                                   feedback  null content    39 rsc [] 
+  link /tin-tuc                          feedback   336 content   344 rsc [{"ttfb":68,"download":1,"total":69}] 200:HIT
+  link /gioi-thieu                       feedback   362 content   362 rsc [{"ttfb":60,"download":1,"total":61}] 200:HIT
+  link /lien-he                          feedback   315 content   323 rsc [{"ttfb":60,"download":1,"total":61}] 200:HIT
+  home /                                 feedback   316 content   311 rsc [{"ttfb":60,"download":1,"total":61}] 200:HIT

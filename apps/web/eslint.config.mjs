@@ -9,6 +9,7 @@ export default defineConfig([
     ".next/**",
     ".open-next/**",
     ".wrangler/**",
+    ".deploy-assets/**",
     "coverage/**",
     "playwright-report/**",
     "test-results/**",

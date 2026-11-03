@@ -125,7 +125,7 @@ export function ProductForm({ product }: { product?: Product }) {
     const failedCleanup = await cleanupMediaUrls(cleanup);
     toast.success(product ? "Đã lưu sản phẩm" : "Đã tạo sản phẩm");
     if (finalSlug !== values.slug) toast.info(`Đường dẫn “${values.slug}” đã có sản phẩm khác dùng, nên sản phẩm này dùng /san-pham/${finalSlug}`);
-    if (cacheStale) toast.warning("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 5 phút");
+    if (cacheStale) toast.warning("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 12 giờ");
     if (failedCleanup.length) toast.warning("Sản phẩm đã lưu, nhưng có ảnh cũ chưa thể dọn dẹp");
     if (wasPublic && finalSlug !== savedSlug) {
       // Stay on the form: it now shows the new URL and a link to open it; the other fields are kept.

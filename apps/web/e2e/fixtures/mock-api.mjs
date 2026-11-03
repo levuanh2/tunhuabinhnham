@@ -124,7 +124,10 @@ http.createServer((req, res) => {
   const m = path.match(/^\/(products|posts)\/(.+)$/);
   const moved = m?.[1] === "products" && !products.some(x => x.slug === m[2] && isPublic(x)) && products.filter(isPublic).find(x => x.id === oldSlugs.get(m[2]));
   if (moved) { res.writeHead(301, { Location: `/api/v1/products/${moved.slug}${u.search}`, "Cache-Control": "no-store" }); return res.end(); }
-  if (m) { const item = (m[1] === "products" ? products.filter(isPublic) : posts).find(x => x.slug === m[2]); return item ? send(200, item) : send(404, { error: { message: "Không tìm thấy" } }); }
+  if (m) { const item = (m[1] === "products" ? products.filter(isPublic) : posts).find(x => x.slug === m[2]); if (!item) return send(404, { error: { message: "Không tìm thấy" } });
+    // related=n (repositories/catalog.py): public products of its category (any if it has none), itself excluded.
+    const n = m[1] === "products" ? Number(q.get("related") ?? 0) : 0;
+    return send(200, n ? { ...item, related: products.filter(isPublic).filter(p => p.id !== item.id && (!item.category_id || p.category_id === item.category_id)).slice(0, n) } : item); }
   if (path === "/categories") return send(200, liveCats().filter(c => c.is_visible));
   if (path === "/posts") return send(200, page(posts, q));
   if (path === "/banners") return send(200, banners.filter(b => b.is_active).sort((x, y) => x.sort_order - y.sort_order));

@@ -1,0 +1,5 @@
+PASS webkit / pending=[]
+PASS webkit /san-pham/tu-nhua-4-canh-4 pending=[{"i":3,"loading":"lazy","hidden":true,"inViewportX":true,"w":633,"loadsWhenShown":true},{"i":4,"loading":"lazy","hidden":true,"inViewportX":false,"w":633,"loadsWhenShown":true}]
+PASS webkit-mobile / pending=[]
+PASS webkit-mobile /san-pham/tu-nhua-4-canh-4 pending=[{"i":4,"loading":"lazy","hidden":true,"inViewportX":false,"w":358,"loadsWhenShown":true}]
+LAZY_CHECK_PASS

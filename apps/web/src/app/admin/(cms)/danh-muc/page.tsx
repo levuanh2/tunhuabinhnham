@@ -28,7 +28,7 @@ export default function CategoriesPage() {
     setBusy(key);
     try { await change(); toast.success(success); return true; }
     catch (error) {
-      if (error instanceof CacheRefreshError) { toast.warning(`${success}. Trang web công khai sẽ tự cập nhật trong vòng 5 phút`); return true; }
+      if (error instanceof CacheRefreshError) { toast.warning(`${success}. Trang web công khai sẽ tự cập nhật trong vòng 12 giờ`); return true; }
       toast.error(error instanceof Error ? error.message : "Không thể lưu thay đổi");
       return false;
     } finally {

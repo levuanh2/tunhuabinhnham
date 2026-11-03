@@ -1,0 +1,27 @@
+{
+ "events": 552,
+ "versions": {
+  "b2d3421d": 552
+ },
+ "outcomes": {
+  "ok": 550,
+  "canceled": 2
+ },
+ "exceptions": [
+  "Error: Network connection lost."
+ ],
+ "status": {
+  "200": 540,
+  "307": 5,
+  "405": 1,
+  "undefined": 6
+ },
+ "static404": [],
+ "s5xx": [],
+ "from": "2026-10-23T12:11:51.855Z",
+ "to": "2026-10-23T12:19:28.853Z",
+ "cpuP50": 3,
+ "cpuP90": 40,
+ "cpuP99": 357,
+ "cpuMax": 513
+}

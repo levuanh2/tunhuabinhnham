@@ -38,9 +38,9 @@ export default async function HomePage() {
         <h1 className="display h-hero">{banner?.title ?? "Nhà gọn gàng bắt đầu từ một chiếc tủ vừa ý"}</h1>
         <p className="lede mt-5">{banner?.subtitle ?? "Tủ quần áo, tủ ngăn kéo và kệ nhựa cho từng góc trong nhà. Xem mẫu, so kích thước rồi nhắn tin để được báo giá."}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link className="button min-h-12 px-6" href="/san-pham">Xem sản phẩm <ArrowRight size={18} aria-hidden="true" /></Link>
+          <Link prefetch={false} className="button min-h-12 px-6" href="/san-pham">Xem sản phẩm <ArrowRight size={18} aria-hidden="true" /></Link>
           {secondaryCta
-            ? <Link className="button secondary min-h-12 px-6" href={secondaryCta.href}>{secondaryCta.label}</Link>
+            ? <Link prefetch={false} className="button secondary min-h-12 px-6" href={secondaryCta.href}>{secondaryCta.label}</Link>
             : <a className="button secondary min-h-12 px-6" href={messenger} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" />Hỏi cửa hàng</a>}
         </div>
       </div>
@@ -48,7 +48,7 @@ export default async function HomePage() {
         {banner?.image_url
           ? <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted lg:aspect-[5/4]"><Image src={banner.image_url} alt={banner.title} fill priority sizes="(min-width: 1024px) 58vw, 100vw" className="object-cover" /></div>
           : withImages.length >= 3
-            ? <div className="grid aspect-[4/3] grid-cols-[1.4fr_1fr] grid-rows-2 gap-3 lg:aspect-[5/4]">{withImages.slice(0, 3).map((p, i) => <Link key={p.id} href={`/san-pham/${p.slug}`} className={`relative overflow-hidden rounded-2xl bg-muted ${i === 0 ? "row-span-2" : ""}`}><Image src={primaryImage(p)!.url} alt={primaryImage(p)!.alt_text ?? p.name} fill priority={i === 0} sizes="(min-width: 1024px) 35vw, 60vw" className="object-cover" /></Link>)}</div>
+            ? <div className="grid aspect-[4/3] grid-cols-[1.4fr_1fr] grid-rows-2 gap-3 lg:aspect-[5/4]">{withImages.slice(0, 3).map((p, i) => <Link prefetch={false} key={p.id} href={`/san-pham/${p.slug}`} className={`relative overflow-hidden rounded-2xl bg-muted ${i === 0 ? "row-span-2" : ""}`}><Image src={primaryImage(p)!.url} alt={primaryImage(p)!.alt_text ?? p.name} fill priority={i === 0} sizes="(min-width: 1024px) 35vw, 60vw" className="object-cover" /></Link>)}</div>
             : <div className="grid aspect-[4/3] place-items-center rounded-2xl bg-muted p-8 text-center text-ink-soft lg:aspect-[5/4]"><p className="max-w-xs">Ảnh banner sẽ hiển thị tại đây sau khi được thêm trong trang quản trị.</p></div>}
       </div>
     </section>
@@ -58,7 +58,7 @@ export default async function HomePage() {
         <h2 id="danh-muc" className="display text-2xl md:text-[1.75rem]">Mua theo nhu cầu</h2>
         <ul className="no-scrollbar -mx-4 mt-6 flex snap-x gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-5">
           {categories.map(c => <li key={c.id} className="w-[64%] shrink-0 snap-start sm:w-[40%] md:w-auto">
-            <Link href={`/san-pham?category=${c.slug}`} className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-bg transition-colors hover:border-sand">
+            <Link prefetch={false} href={`/san-pham?category=${c.slug}`} className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-bg transition-colors hover:border-sand">
               {c.image_url && <span className="relative block aspect-[4/3] bg-muted"><Image src={c.image_url} alt="" fill sizes="(min-width: 1024px) 20vw, 60vw" className="object-cover" /></span>}
               <span className="grid gap-1 p-4">
                 <span className="flex items-center justify-between gap-2 font-semibold">{c.name}<ArrowRight size={16} aria-hidden="true" className="shrink-0 text-sand transition-transform group-hover:translate-x-0.5 group-hover:text-primary" /></span>
@@ -88,7 +88,7 @@ export default async function HomePage() {
         <div className={introSrc ? "" : "md:col-span-2 md:max-w-2xl"}>
           <h2 className="display h-section">Về {storeName}</h2>
           <p className="mt-5 whitespace-pre-line text-lg leading-8 text-ink-soft">{settings?.about_text || "Cửa hàng chuyên tủ nhựa và đồ lưu trữ cho gia đình: tủ quần áo, tủ ngăn kéo, tủ giày và kệ bếp."}</p>
-          <Link href="/gioi-thieu" className="link mt-6 inline-flex items-center gap-1.5">Tìm hiểu thêm<ArrowRight size={16} aria-hidden="true" /></Link>
+          <Link prefetch={false} href="/gioi-thieu" className="link mt-6 inline-flex items-center gap-1.5">Tìm hiểu thêm<ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
       </div>
     </section>

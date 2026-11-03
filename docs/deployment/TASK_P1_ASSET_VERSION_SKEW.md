@@ -174,6 +174,8 @@ Run it in `E:\Tunhuabinhnham-integration\apps\web`, which has the production pub
    1. `git checkout <N_SHA>`.
    2. `npm ci` (repository root; the lockfile of N).
    3. `npx opennextjs-cloudflare build`.
+      **Image allowlist check (from `981211b`, before any upload):** the build reads `NEXT_PUBLIC_SUPABASE_URL` from `.env.production.local` (not in git). A missing or wrong value still builds, but every product, banner and post image then answers 400. This must print exactly `fyaourksnjeldsvuedox.supabase.co`:
+      `node -e 'console.log(require("./.open-next/server-functions/default/apps/web/.next/required-server-files.json").config.images.remotePatterns.map(p => p.hostname).join(","))'`
    4. Archive: `mkdir -p .deploy-assets/<N_SHA> && cp -r .open-next/assets/_next .deploy-assets/<N_SHA>/`.
 2. **Step A: P′.**
    1. `git checkout --detach <P_SHA>`.

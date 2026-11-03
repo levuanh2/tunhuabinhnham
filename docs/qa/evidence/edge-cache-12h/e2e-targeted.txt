@@ -1,0 +1,12 @@
+# QA fixture build of perf/edge-cache-12h-on-rsc-v2 (a3a036a code = f4fc7e1), local workerd, default config (Chromium desktop + WebKit iPhone)
+## navigation-feedback.spec.ts (N1-N3)
+  6 passed (10.5s)
+## catalog-admin.spec.ts --grep 'C6\.|P5\.' (desktop)
+  2 passed (6.0s)
+## responsive.spec.ts --grep '(18|19|20|21|22)\. '
+  1) [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+    Error: expect(page).toHaveURL(expected) failed
+  1 failed
+    [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  5 skipped
+  4 passed (25.0s)

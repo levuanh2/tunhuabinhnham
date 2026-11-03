@@ -14,7 +14,7 @@ export default async function AboutPage() {
       {settings?.about_text && <p className="whitespace-pre-line text-ink">{settings.about_text}</p>}
       <p>{storeName} giới thiệu tủ nhựa, tủ quần áo, tủ ngăn kéo và đồ lưu trữ cho gia đình. Mỗi sản phẩm trên website có ảnh, mã và giá (nếu có) để bạn dễ so sánh.</p>
       <p>Website không nhận thanh toán trực tiếp. Hãy lưu mã sản phẩm rồi nhắn tin cho cửa hàng để được tư vấn kích thước, màu sắc và giao hàng.</p>
-      <div className="flex flex-wrap gap-3 pt-3"><Link href="/san-pham" className="button">Xem sản phẩm</Link><Link href="/lien-he" className="button secondary">Liên hệ</Link></div>
+      <div className="flex flex-wrap gap-3 pt-3"><Link prefetch={false} href="/san-pham" className="button">Xem sản phẩm</Link><Link prefetch={false} href="/lien-he" className="button secondary">Liên hệ</Link></div>
     </div>
   </div>;
 }

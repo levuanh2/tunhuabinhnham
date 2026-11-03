@@ -1,0 +1,88 @@
+== new playwright.config:  11 failed  45 skipped  80 passed (5.5m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+  FAIL [mobile] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+== base playwright.config:  15 failed  45 skipped  76 passed (5.7m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\navigation-feedback.spec.ts:19:5 › N1. a slow navigation shows feedback at once and clears it when the page arrives; Back/Forward leave nothing behind 
+  FAIL [desktop] › e2e\navigation-feedback.spec.ts:39:5 › N2. keyboard activation and the mobile menu get the same feedback; reduced motion keeps a static bar 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+  FAIL [mobile] › e2e\navigation-feedback.spec.ts:19:5 › N1. a slow navigation shows feedback at once and clears it when the page arrives; Back/Forward leave nothing behind 
+  FAIL [mobile] › e2e\navigation-feedback.spec.ts:39:5 › N2. keyboard activation and the mobile menu get the same feedback; reduced motion keeps a static bar 
+  FAIL [mobile] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+== new playwright.qa-webkit.config:  10 failed  8 skipped  50 passed (5.8m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+== base playwright.qa-webkit.config:  12 failed  8 skipped  48 passed (6.0m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\navigation-feedback.spec.ts:19:5 › N1. a slow navigation shows feedback at once and clears it when the page arrives; Back/Forward leave nothing behind 
+  FAIL [desktop] › e2e\navigation-feedback.spec.ts:39:5 › N2. keyboard activation and the mobile menu get the same feedback; reduced motion keeps a static bar 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+
+== option D (branch 7a14908), default config (Chromium desktop + WebKit iPhone):  17 failed  45 skipped  74 passed (2.7m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:128:7 › product form › P5. generated values retry to -3 across slug and code conflicts; a failed cache refresh never saves twice 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:157:7 › product form › P6. a draft published by someone else meanwhile: a stale form may still move it, and the URL that went public redirects 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:172:7 › product form › P4. editing a published product keeps its URL and category; hiding removes it from the site 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\product-gallery.spec.ts:33:7 › product gallery › G1. a single image fills the gallery column at every width (was 72x90) 
+  FAIL [desktop] › e2e\product-gallery.spec.ts:97:7 › product gallery › G3. broken and missing images show a clear state; the frame is reserved before images load 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:121:7 › product URL change › S4. any product customers may have seen asks first; every old URL stays reserved, drafts included 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+  FAIL [mobile] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+== option D, playwright.qa-webkit.config:  15 failed  8 skipped  45 passed (1.4m) 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:23:5 › A1. news: create and publish an article; it appears on /tin-tuc and on its own page 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:44:5 › A2. banners: add a banner with an uploaded image; it is listed in admin 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:130:5 › A6. V1-BUG-01: removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:154:5 › A7. V1-BUG-01 (news): removing an image and saving at once keeps only the remaining image; the file is deleted after the save 
+  FAIL [desktop] › e2e\audit-v1.spec.ts:174:5 › A8. V1-BUG-01 (banner): replacing an image deletes the old file only after the banner is saved 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:67:7 › product form › P2. blank product code, duplicate name gets -2, category and price saved, draft vs publish 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:208:7 › product categories › C1. create from a suggestion, reject duplicates, rename, reorder, hide and delete safely 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:274:7 › product categories › C3. hidden categories never filter public products, even when every category is hidden 
+  FAIL [desktop] › e2e\catalog-admin.spec.ts:294:7 › product categories › C4. hiding a category hides its products everywhere public, keeps them in admin, and restores them 
+  FAIL [desktop] › e2e\product-gallery.spec.ts:33:7 › product gallery › G1. a single image fills the gallery column at every width (was 72x90) 
+  FAIL [desktop] › e2e\responsive.spec.ts:290:5 › 17. logout redirects, Back does not reopen admin, and replayed pre-logout cookies are rejected 
+  FAIL [desktop] › e2e\responsive.spec.ts:338:5 › 19. signed-in admin pages, admin data and logout are never edge-cacheable 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:37:7 › product URL change › S1. confirm, save, stay on the form; the old URL redirects once, with its query, and SEO points at the new one 
+  FAIL [desktop] › e2e\slug-redirect.spec.ts:121:7 › product URL change › S4. any product customers may have seen asks first; every old URL stays reserved, drafts included 
+  FAIL [desktop] › e2e\v1-fixes.spec.ts:7:5 › H1. pages, admin, 404s and API routes carry the security headers 
+Order-dependent (pass alone; not in the earlier full runs): G1, G3, P4, P5, P6, S4, C1, C3, A6. Same order (catalog-admin -> product-gallery, desktop) on the option B build: P2, P4, C1, C4, G1 fail in 2/2 runs; on D: P2, P4, C4, G1 (+G3 or C1) in 2/2 runs.

@@ -1,0 +1,27 @@
+codex
+## Findings
+
+- **P2 — Emergency reset omits a retained asset set.** An emergency upload may break CSS or JavaScript for older open tabs. The deployed P, P′, and N versions retain the `e681cca` assets, and the compatibility proof checks them, but the rebuild merges only `b9122de`, `852126e`, and `0cfcd7d`. Add `.deploy-assets/e681cca` to the merge command.  
+  `docs/deployment/EDGE_CACHE_12H.md:31,45-47,114`
+
+No P0, P1, or P3 findings.
+
+## Round-3 findings
+
+- Prior P1 resolved: the default environment path now climbs four directories. The wrapper invocation reaches the intended repository location.  
+  `docs/qa/evidence/edge-cache-12h/purge-probe.mjs:32`  
+  `docs/deployment/EDGE_CACHE_12H.md:96-98`
+
+- Prior P2 resolved: the PowerShell cleanup command is executable and runs before the build.  
+  `docs/deployment/EDGE_CACHE_12H.md:110-116`
+
+- Prior P3 resolved: the release and emergency instructions now consistently specify PowerShell.  
+  `docs/deployment/EDGE_CACHE_12H.md:53,69,110-112`
+
+All other reviewed paths, imports, and commands resolve from their stated working directories. Token handling remains safe: credentials use process environment variables, redirects are disabled, authentication is pinned to the expected Supabase origin, tokens are neither logged nor written, and the wrapper clears the environment and zeroes the password buffer.
+
+HEAD matches `perf/edge-cache-12h-on-rsc-v2` at `31145a9`. Application code is unchanged since round 3 (`84c08ba..HEAD -- apps` is empty); `852126e..HEAD -- apps` remains the documented five-file, +20/−7 application patch.
+
+No files were modified, and no tests, deployments, pushes, or network operations were performed.
+
+REQUEST_CHANGES

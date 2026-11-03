@@ -10,7 +10,7 @@ All web variables are `NEXT_PUBLIC_*`. They are **inlined at build time** (`npm 
 |---|---|---|---|---|
 | `NEXT_PUBLIC_API_URL` | no | `https://<render-service>.onrender.com/api/v1` | `https://api.<domain>/api/v1` (optional) | `lib/api.ts`, `lib/admin-api.ts`, `/api/revalidate` |
 | `NEXT_PUBLIC_SITE_URL` | no | `https://tunhuabinhnham-web.<account-subdomain>.workers.dev` | `https://<domain>` | `metadataBase`, canonical/OG, `sitemap.xml`, `robots.txt` |
-| `NEXT_PUBLIC_SUPABASE_URL` | no | `https://fyaourksnjeldsvuedox.supabase.co` | same | browser Supabase client, middleware, logout route |
+| `NEXT_PUBLIC_SUPABASE_URL` | no | `https://fyaourksnjeldsvuedox.supabase.co` | same | browser Supabase client, middleware, logout route, image allowlist (`next.config.ts` remotePatterns, build time) |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`) | no (public by design, RLS-protected) | project publishable key | same | browser client, middleware, logout route |
 
 Never put any of these in a `NEXT_PUBLIC_*` variable: `SUPABASE_SERVICE_ROLE_KEY` / secret key, `DATABASE_URL`, JWT secret.

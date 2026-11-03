@@ -1,0 +1,335 @@
+{
+ "origin": "https://tunhuabinhnham.com",
+ "run": "mvl2sazu",
+ "failures": 0,
+ "results": [
+  {
+   "name": "product cold MISS",
+   "ok": true,
+   "status": 200,
+   "cache": "MISS",
+   "ms": 1173
+  },
+  {
+   "name": "product warm HIT",
+   "ok": true,
+   "cache": [
+    "HIT",
+    "HIT"
+   ],
+   "ms": [
+    202,
+    96
+   ],
+   "age": "0"
+  },
+  {
+   "name": "product same WebP bytes/size",
+   "ok": true,
+   "type": "image/webp",
+   "bytes": 27038,
+   "size": [
+    640,
+    853
+   ],
+   "sha": [
+    "0285564b2b0dfb52",
+    "0285564b2b0dfb52"
+   ]
+  },
+  {
+   "name": "product bounded cache-control",
+   "ok": true,
+   "cc": "public, max-age=3600, s-maxage=86400"
+  },
+  {
+   "name": "productLarge cold MISS",
+   "ok": true,
+   "status": 200,
+   "cache": "MISS",
+   "ms": 1291
+  },
+  {
+   "name": "productLarge warm HIT",
+   "ok": true,
+   "cache": [
+    "HIT",
+    "HIT"
+   ],
+   "ms": [
+    97,
+    121
+   ],
+   "age": "0"
+  },
+  {
+   "name": "productLarge same WebP bytes/size",
+   "ok": true,
+   "type": "image/webp",
+   "bytes": 42774,
+   "size": [
+    640,
+    853
+   ],
+   "sha": [
+    "18baf39bb5319f64",
+    "18baf39bb5319f64"
+   ]
+  },
+  {
+   "name": "productLarge bounded cache-control",
+   "ok": true,
+   "cc": "public, max-age=3600, s-maxage=86400"
+  },
+  {
+   "name": "banner cold MISS",
+   "ok": true,
+   "status": 200,
+   "cache": "MISS",
+   "ms": 798
+  },
+  {
+   "name": "banner warm HIT",
+   "ok": true,
+   "cache": [
+    "HIT",
+    "HIT"
+   ],
+   "ms": [
+    102,
+    86
+   ],
+   "age": "0"
+  },
+  {
+   "name": "banner same WebP bytes/size",
+   "ok": true,
+   "type": "image/webp",
+   "bytes": 22234,
+   "size": [
+    640,
+    360
+   ],
+   "sha": [
+    "4b4180c65a05a05d",
+    "4b4180c65a05a05d"
+   ]
+  },
+  {
+   "name": "banner bounded cache-control",
+   "ok": true,
+   "cc": "public, max-age=3600, s-maxage=86400"
+  },
+  {
+   "name": "post cold MISS",
+   "ok": true,
+   "status": 200,
+   "cache": "MISS",
+   "ms": 1034
+  },
+  {
+   "name": "post warm HIT",
+   "ok": true,
+   "cache": [
+    "HIT",
+    "HIT"
+   ],
+   "ms": [
+    105,
+    73
+   ],
+   "age": "0"
+  },
+  {
+   "name": "post same WebP bytes/size",
+   "ok": true,
+   "type": "image/webp",
+   "bytes": 33648,
+   "size": [
+    640,
+    480
+   ],
+   "sha": [
+    "e9e4be10f69d5d52",
+    "e9e4be10f69d5d52"
+   ]
+  },
+  {
+   "name": "post bounded cache-control",
+   "ok": true,
+   "cc": "public, max-age=3600, s-maxage=86400"
+  },
+  {
+   "name": "bypass cookie",
+   "ok": true,
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "bypass chunkedCookie",
+   "ok": true,
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "bypass authorization",
+   "ok": true,
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "bypass both",
+   "ok": true,
+   "status": 200,
+   "cache": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "auth-first does not seed cache",
+   "ok": true,
+   "cache": "MISS"
+  },
+  {
+   "name": "non-WebP client bypass",
+   "ok": true,
+   "cache": null,
+   "type": "image/jpeg",
+   "cc": "private, no-store"
+  },
+  {
+   "name": "webp;q=0 client bypasses the shared cache",
+   "ok": true,
+   "cache": null,
+   "type": "image/webp",
+   "cc": "private, no-store"
+  },
+  {
+   "name": "width 384 HIT and own size",
+   "ok": true,
+   "cache": "HIT",
+   "size": [
+    384,
+    512
+   ],
+   "bytes": 19856
+  },
+  {
+   "name": "width 640 HIT and own size",
+   "ok": true,
+   "cache": "HIT",
+   "size": [
+    640,
+    853
+   ],
+   "bytes": 42774
+  },
+  {
+   "name": "width 1080 HIT and own size",
+   "ok": true,
+   "cache": "HIT",
+   "size": [
+    1080,
+    1440
+   ],
+   "bytes": 90718
+  },
+  {
+   "name": "widths distinct",
+   "ok": true,
+   "shas": [
+    "2006b05885b3c0d6",
+    "18baf39bb5319f64",
+    "90fe8bf6554f4961"
+   ]
+  },
+  {
+   "name": "disallowed quality rejected, not cached",
+   "ok": true,
+   "status": 400,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "HEAD served from cache, public",
+   "ok": true,
+   "status": 200,
+   "cache": "HIT"
+  },
+  {
+   "name": "reject otherProject",
+   "ok": true,
+   "status": 400,
+   "location": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "reject signed",
+   "ok": true,
+   "status": 400,
+   "location": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "reject authenticated",
+   "ok": true,
+   "status": 400,
+   "location": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "reject arbitrary",
+   "ok": true,
+   "status": 400,
+   "location": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "reject http",
+   "ok": true,
+   "status": 400,
+   "location": null,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "missing source: no redirect, not cached",
+   "ok": true,
+   "status": 400,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "private /admin",
+   "ok": true,
+   "status": 307,
+   "cc": "private, no-store, max-age=0",
+   "cache": null
+  },
+  {
+   "name": "private /admin/login",
+   "ok": true,
+   "status": 200,
+   "cc": "private, no-store, max-age=0",
+   "cache": null
+  },
+  {
+   "name": "private /api/revalidate",
+   "ok": true,
+   "status": 405,
+   "cc": "private, no-store, max-age=0",
+   "cache": null
+  },
+  {
+   "name": "forged RSC not public",
+   "ok": true,
+   "status": 307,
+   "cc": "private, no-store, max-age=0"
+  },
+  {
+   "name": "purge without valid admin is refused and evicts nothing",
+   "ok": true,
+   "purge": 401,
+   "after": "HIT"
+  }
+ ]
+}

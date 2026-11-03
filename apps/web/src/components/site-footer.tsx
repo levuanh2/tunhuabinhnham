@@ -14,10 +14,10 @@ export function SiteFooter({ settings }: { settings?: SiteSettings | null }) {
       <nav aria-label="Liên kết chân trang">
         <p className="text-sm font-semibold text-white">Khám phá</p>
         <ul className="mt-2 grid md:mt-4 md:gap-2.5">
-          <li><Link className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/san-pham">Sản phẩm</Link></li>
-          <li><Link className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/tin-tuc">Tin tức</Link></li>
-          <li><Link className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/gioi-thieu">Giới thiệu</Link></li>
-          <li><Link className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/lien-he">Liên hệ</Link></li>
+          <li><Link prefetch={false} className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/san-pham">Sản phẩm</Link></li>
+          <li><Link prefetch={false} className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/tin-tuc">Tin tức</Link></li>
+          <li><Link prefetch={false} className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/gioi-thieu">Giới thiệu</Link></li>
+          <li><Link prefetch={false} className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/lien-he">Liên hệ</Link></li>
         </ul>
       </nav>
       <div>
@@ -32,7 +32,7 @@ export function SiteFooter({ settings }: { settings?: SiteSettings | null }) {
     <div className="border-t border-white/10">
       <div className="shell flex flex-wrap items-center justify-between gap-3 py-5 text-sm text-[#a9a197]">
         <p>© {new Date().getFullYear()} {storeName}</p>
-        <Link className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/admin/login">Quản trị</Link>
+        <Link prefetch={false} className="inline-flex min-h-11 items-center hover:text-white md:min-h-0" href="/admin/login">Quản trị</Link>
       </div>
     </div>
   </footer>;

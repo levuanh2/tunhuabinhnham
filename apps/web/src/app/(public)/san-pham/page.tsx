@@ -43,7 +43,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
       <ul className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:px-0">
         {[{ id: "all", name: "Tất cả sản phẩm", slug: undefined as string | undefined }, ...categories].map(c => {
           const current = (c.slug ?? undefined) === params.category;
-          return <li key={c.id} className="shrink-0"><Link href={href({ category: c.slug, page: undefined })} aria-current={current ? "page" : undefined} className="-mb-px block min-h-11 border-b-2 border-transparent px-3 py-3 text-[.9375rem] font-medium text-ink-soft hover:text-ink aria-[current=page]:border-primary aria-[current=page]:text-ink">{c.name}</Link></li>;
+          return <li key={c.id} className="shrink-0"><Link prefetch={false} href={href({ category: c.slug, page: undefined })} aria-current={current ? "page" : undefined} className="-mb-px block min-h-11 border-b-2 border-transparent px-3 py-3 text-[.9375rem] font-medium text-ink-soft hover:text-ink aria-[current=page]:border-primary aria-[current=page]:text-ink">{c.name}</Link></li>;
         })}
       </ul>
     </nav>}
@@ -58,7 +58,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
 
     <div className="mb-6 mt-8 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
       <p aria-live="polite">{total} sản phẩm{params.search ? ` cho “${params.search}”` : ""}</p>
-      {filtered && <Link href="/san-pham" className="link">Xoá bộ lọc</Link>}
+      {filtered && <Link prefetch={false} href="/san-pham" className="link">Xoá bộ lọc</Link>}
     </div>
 
     {items.length
@@ -66,11 +66,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
       : <div className="rounded-xl border border-dashed border-line-strong px-6 py-16 text-center">
           <h2 className="display text-2xl">{unknownCategory ? "Loại sản phẩm này hiện không còn hiển thị" : active && !params.search && !params.min_price && !params.max_price ? `Chưa có sản phẩm nào trong “${active.name}”` : "Không có sản phẩm phù hợp"}</h2>
           <p className="mx-auto mt-2 max-w-md text-ink-soft">{active && !params.search && !params.min_price && !params.max_price ? "Cửa hàng đang cập nhật thêm mẫu cho loại này. Bạn có thể xem các loại tủ khác." : "Thử từ khoá ngắn hơn, bỏ khoảng giá hoặc xem tất cả loại tủ."}</p>
-          <Link href="/san-pham" className="button secondary mt-6">Xem tất cả sản phẩm</Link>
+          <Link prefetch={false} href="/san-pham" className="button secondary mt-6">Xem tất cả sản phẩm</Link>
         </div>}
 
     {pages > 1 && <nav className="mt-14 flex flex-wrap justify-center gap-2" aria-label="Phân trang">
-      {Array.from({ length: pages }, (_, i) => i + 1).map(page => <Link key={page} href={href({ page: String(page) })} aria-current={page === result.page ? "page" : undefined} aria-label={`Trang ${page}`} className="grid size-11 place-items-center rounded-full border border-line-strong text-sm font-medium hover:border-primary aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-white">{page}</Link>)}
+      {Array.from({ length: pages }, (_, i) => i + 1).map(page => <Link prefetch={false} key={page} href={href({ page: String(page) })} aria-current={page === result.page ? "page" : undefined} aria-label={`Trang ${page}`} className="grid size-11 place-items-center rounded-full border border-line-strong text-sm font-medium hover:border-primary aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-white">{page}</Link>)}
     </nav>}
   </div>;
 }

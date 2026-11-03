@@ -1,0 +1,33 @@
+codex
+## Findings
+
+- **P1 — Rollback can reactivate stale cache entries.** [EDGE_CACHE_12H.md:80](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:80>) says deploying P′ starts with an empty cache because of the version key. That is only true for a newly created Worker version. Switching back to an existing P′ can reuse that version’s still-live entries—the guide itself correctly warns about this at line 45. During an urgent removal, rollback could therefore restore stale content. Require a fresh version built from the rollback source, or purge and verify the existing rollback version before treating it as clean.
+
+- **P2 — The emergency procedure does not account for per-location/version propagation.** [EDGE_CACHE_12H.md:43](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:43>) verifies removal using one private-window request, although line 32 correctly says caches are per Cloudflare location. Likewise, deploying a cold version at [line 45](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:45>) does not immediately stop locations still serving the previous version during rollout. The guide should require completion of the propagation gate and checks from more than one location before declaring emergency removal complete.
+
+- **P2 — The evidence does not establish “signed RSC” coverage as claimed.** [cache-headers.mjs:19](</E:/Tunhuabinhnham-cache-review/docs/qa/evidence/edge-cache-12h/cache-headers.mjs:19>) obtains a redirect using only `RSC: 1`, then treats any non-null location as signed. The recorded paths contain empty `_rsc` parameters—for example [cache-headers.json:118](</E:/Tunhuabinhnham-cache-review/docs/qa/evidence/edge-cache-12h/cache-headers.json:118>) is `/?_rsc`. No realistic router-state/prefetch header combination is replayed, and local workerd does not exercise cache HIT key selection. Therefore [EDGE_CACHE_12H.md:67](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:67>) overstates what the 38/38 matrix proves. Capture a real browser RSC request with a non-empty `_rsc` value and router headers, then replay HTML/RSC variants against an actual Workers Cache deployment.
+
+- **P2 — The fixed one-minute purge retry is not supported by committed evidence.** [EDGE_CACHE_12H.md:44](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:44>) attributes purge failures to Free-plan rate limiting and prescribes a one-minute wait. The worker discards the underlying error at [worker.ts:97](</E:/Tunhuabinhnham-cache-review/apps/web/worker.ts:97>), so the operator cannot distinguish rate limiting from another Cloudflare failure, and the evidence directory contains no source for the applicable Free-plan limit. Document the verified limit or describe one minute as a heuristic and require escalation if the retry fails.
+
+- **P3 — Most reported test results are not reproducible from the committed evidence.** [EDGE_CACHE_12H.md:65](</E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:65>) through line 70 report unit, lint, TypeScript, browser, and build results, but the evidence directory contains only the header-matrix script and JSON. Mark those results as author-reported or commit the corresponding logs/summaries. Importantly, the report correctly does **not** claim current-RPC HTML purge PASS: lines 37 and 72 explicitly defer MISS-after-purge proof to post-deploy checks.
+
+- **P3 — The category purge-failure warning is untested.** The category message changes at [danh-muc/page.tsx:31](</E:/Tunhuabinhnham-cache-review/apps/web/src/app/admin/(cms)/danh-muc/page.tsx:31>), but the only updated UI assertion covers the product form at [catalog-admin.spec.ts:151](</E:/Tunhuabinhnham-cache-review/apps/web/e2e/catalog-admin.spec.ts:151>). Add a category save with `/api/revalidate` returning 502 and assert the 12-hour warning.
+
+## Requirement audit
+
+- **TTL and scope:** Correct. [edge-cache.ts:13](</E:/Tunhuabinhnham-cache-review/apps/web/src/lib/edge-cache.ts:13>) is the only runtime cache-policy change: `s-maxage=300` becomes `43200`. The public-path allowlist and query behavior are unchanged.
+- **Browser caching:** Correct. `max-age=0` remains, so browsers must revalidate rather than retaining HTML for 12 hours.
+- **Private/admin/auth/API isolation:** Unchanged and intact. The gateway checks credentials before `PublicCache`, and non-public paths stay on the private path.
+- **Cookie/Authorization:** Current behavior is preserved: Authorization and Supabase session cookies bypass the shared cache. Other non-session cookies remain shareable exactly as before.
+- **Degraded/error/`Set-Cookie`:** Correct. Only status-200 HTML/RSC without `Set-Cookie` and without the degraded flag receives the public policy.
+- **Contact-click tracking/rate limit:** Unchanged and outside the Worker cache; the client posts directly to the Render API.
+- **Images:** Correctly unchanged at `max-age=3600, s-maxage=86400` in [edge-cache.ts:96](</E:/Tunhuabinhnham-cache-review/apps/web/src/lib/edge-cache.ts:96>).
+- **HTML/RSC separation:** Runtime mechanism is unchanged: `_rsc` remains in the URL/query key and all router headers remain in `Vary`. The new evidence does not independently prove actual HIT separation.
+- **Redirects, SEO, CMS purge:** No runtime changes. Product redirects remain `no-store`; revalidation still calls the `PublicCache` tag purge.
+- **Buffering:** Preserved at [worker.ts:46](</E:/Tunhuabinhnham-cache-review/apps/web/worker.ts:46>), allowing degraded state to settle before cache headers are assigned.
+- **Admin warning:** The 12-hour wording correctly reflects the HTML/RSC TTL backstop in both product and category flows, subject to the category test gap above.
+- **Rollout:** The post-deploy MISS→HIT and purge→MISS gates are appropriate. Rollback and emergency verification need the corrections above.
+
+No tests were run, as requested.
+
+**VERDICT: REQUEST_CHANGES**

@@ -1,0 +1,12 @@
+codex
+The round-3 forged-RSC P3 is resolved. §3 now limits the 12-hour cadence to expiry and acknowledges extra renders; §6 matches `evict-probe.txt`: two legitimate MISSes, HIT after five seconds, no bound claimed.
+
+Remaining findings:
+
+- **P3 — Baseline and order-dependence labels exceed the committed evidence.** [EDGE_CACHE_12H.md:75](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:75) and [EDGE_CACHE_12H.md:77](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:77) call failures pre-existing/order-dependent and say they also occurred on other builds. The evidence directory records only this branch’s failures; it contains no baseline or comparison-run output. Commit that evidence or mark these characterizations as author-reported.
+
+- **P3 — The Worker CPU claim is unsupported and overly broad.** [EDGE_CACHE_12H.md:79](E:/Tunhuabinhnham-cache-review/docs/deployment/EDGE_CACHE_12H.md:79) says “a HIT does not run the Worker.” The committed evidence contains no CPU or invocation measurement, and the gateway entrypoint still executes before calling the cache-enabled `PublicCache` binding. Narrow this to the supported claim that a HIT avoids the Next/Render rendering path.
+
+No P0–P2 findings. Read-only review; no files modified, tests run, network services contacted, deployments, or pushes.
+
+REQUEST_CHANGES

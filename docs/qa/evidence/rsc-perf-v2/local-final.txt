@@ -1,0 +1,52 @@
+chromium: prefetch=0
+  link /san-pham                         feedback   147 content  1754 rsc [{"ttfb":1492,"download":1,"total":1492}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=do-dung         feedback    62 content  1143 rsc [{"ttfb":1063,"download":1,"total":1064}] 200:null api {"/api/v1/products?category=do-dung":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=qua-tang        feedback    52 content  1212 rsc [{"ttfb":1164,"download":0,"total":1164}] 200:null api {"/api/v1/products?category=qua-tang":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  link /san-pham                         feedback    44 content  1431 rsc [{"ttfb":1377,"download":1,"total":1378}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  product /san-pham/tu-nhua-4-canh-4     feedback    52 content  1986 rsc [{"ttfb":1843,"download":1,"total":1844}] 200:null api {"/api/v1/products?related_to=tu-nhua-4-canh-4&page_size=5":1,"/api/v1/site-settings":1,"/api/v1/products/tu-nhua-4-canh-4":1}
+  back                                   feedback    23 content    32 rsc []  api {}
+  forward                                feedback    19 content    21 rsc []  api {}
+  back                                   feedback    21 content    19 rsc []  api {}
+  link /tin-tuc                          feedback    55 content  1715 rsc [{"ttfb":1646,"download":1,"total":1646}] 200:null api {"/api/v1/posts":1,"/api/v1/site-settings":1}
+  link /gioi-thieu                       feedback    57 content   844 rsc [{"ttfb":781,"download":1,"total":782}] 200:null api {"/api/v1/site-settings":1}
+  link /lien-he                          feedback    53 content   803 rsc [{"ttfb":749,"download":1,"total":750}] 200:null api {"/api/v1/site-settings":1}
+  home /                                 feedback    56 content  1151 rsc [{"ttfb":1079,"download":1,"total":1080}] 200:null api {"/api/v1/products?page_size=12&sort=-published_at":1,"/api/v1/categories":1,"/api/v1/posts":1,"/api/v1/banners":1,"/api/v1/site-settings":1}
+chromium-mobile: prefetch=0
+  link /san-pham                         feedback    47 content  1525 rsc [{"ttfb":1073,"download":0,"total":1073}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=do-dung         feedback    55 content  1122 rsc [{"ttfb":1063,"download":1,"total":1063}] 200:null api {"/api/v1/products?category=do-dung":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=qua-tang        feedback    51 content  1207 rsc [{"ttfb":1154,"download":1,"total":1155}] 200:null api {"/api/v1/products?category=qua-tang":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  link /san-pham                         feedback    48 content  1323 rsc [{"ttfb":1267,"download":1,"total":1267}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  product /san-pham/tu-nhua-4-canh-4     feedback    47 content  1645 rsc [{"ttfb":1374,"download":1,"total":1374}] 200:null api {"/api/v1/products?related_to=tu-nhua-4-canh-4&page_size=5":1,"/api/v1/site-settings":1,"/api/v1/products/tu-nhua-4-canh-4":1}
+  back                                   feedback    18 content    19 rsc []  api {}
+  forward                                feedback    20 content    18 rsc []  api {}
+  back                                   feedback    17 content    19 rsc []  api {}
+  link /tin-tuc                          feedback    48 content  1658 rsc [{"ttfb":1604,"download":1,"total":1604}] 200:null api {"/api/v1/posts":1,"/api/v1/site-settings":1}
+  link /gioi-thieu                       feedback    50 content   944 rsc [{"ttfb":895,"download":1,"total":895}] 200:null api {"/api/v1/site-settings":1}
+  link /lien-he                          feedback    50 content   583 rsc [{"ttfb":532,"download":1,"total":533}] 200:null api {"/api/v1/site-settings":1}
+  home /                                 feedback    56 content  1188 rsc [{"ttfb":1126,"download":1,"total":1126}] 200:null api {"/api/v1/products?page_size=12&sort=-published_at":1,"/api/v1/categories":1,"/api/v1/posts":1,"/api/v1/banners":1,"/api/v1/site-settings":1}
+webkit: prefetch=0
+  link /san-pham                         feedback   193 content  1677 rsc [{"ttfb":1073,"download":1,"total":1074}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=do-dung         feedback   149 content  1272 rsc [{"ttfb":1065,"download":0,"total":1065}] 200:null api {"/api/v1/products?category=do-dung":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=qua-tang        feedback   165 content  1280 rsc [{"ttfb":1066,"download":1,"total":1067}] 200:null api {"/api/v1/products?category=qua-tang":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  link /san-pham                         feedback   175 content  1320 rsc [{"ttfb":1063,"download":1,"total":1064}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  product /san-pham/tu-nhua-4-canh-4     feedback   191 content  1503 rsc [{"ttfb":1078,"download":1,"total":1079}] 200:null api {"/api/v1/products?related_to=tu-nhua-4-canh-4&page_size=5":1,"/api/v1/site-settings":1,"/api/v1/products/tu-nhua-4-canh-4":1}
+  back                                   feedback  null content    61 rsc []  api {}
+  forward                                feedback    48 content    43 rsc []  api {}
+  back                                   feedback    35 content    40 rsc []  api {}
+  link /tin-tuc                          feedback   209 content  1269 rsc [{"ttfb":994,"download":1,"total":995}] 200:null api {"/api/v1/posts":1,"/api/v1/site-settings":1}
+  link /gioi-thieu                       feedback   165 content   733 rsc [{"ttfb":508,"download":1,"total":509}] 200:null api {"/api/v1/site-settings":1}
+  link /lien-he                          feedback   192 content   757 rsc [{"ttfb":514,"download":1,"total":515}] 200:null api {"/api/v1/site-settings":1}
+  home /                                 feedback   200 content  1392 rsc [{"ttfb":1120,"download":1,"total":1121}] 200:null api {"/api/v1/products?page_size=12&sort=-published_at":1,"/api/v1/categories":1,"/api/v1/posts":1,"/api/v1/banners":1,"/api/v1/site-settings":1}
+webkit-mobile: prefetch=0
+  link /san-pham                         feedback   266 content  1582 rsc [{"ttfb":1071,"download":2,"total":1073}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=do-dung         feedback   182 content  1387 rsc [{"ttfb":1138,"download":1,"total":1139}] 200:null api {"/api/v1/products?category=do-dung":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  tab /san-pham?category=qua-tang        feedback   168 content  1280 rsc [{"ttfb":1058,"download":1,"total":1059}] 200:null api {"/api/v1/products?category=qua-tang":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  link /san-pham                         feedback   229 content  1393 rsc [{"ttfb":1067,"download":1,"total":1068}] 200:null api {"/api/v1/products":1,"/api/v1/categories":1,"/api/v1/site-settings":1}
+  product /san-pham/tu-nhua-4-canh-4     feedback   225 content  1826 rsc [{"ttfb":1452,"download":0,"total":1452}] 200:null api {"/api/v1/products?related_to=tu-nhua-4-canh-4&page_size=5":1,"/api/v1/site-settings":1,"/api/v1/products/tu-nhua-4-canh-4":1}
+  back                                   feedback    48 content    49 rsc []  api {}
+  forward                                feedback  null content    44 rsc []  api {}
+  back                                   feedback  null content    45 rsc []  api {}
+  link /tin-tuc                          feedback   269 content  1731 rsc [{"ttfb":1383,"download":1,"total":1384}] 200:null api {"/api/v1/posts":1,"/api/v1/site-settings":1}
+  link /gioi-thieu                       feedback   234 content   772 rsc [{"ttfb":497,"download":0,"total":497}] 200:null api {"/api/v1/site-settings":1}
+  link /lien-he                          feedback   257 content   817 rsc [{"ttfb":507,"download":0,"total":507}] 200:null api {"/api/v1/site-settings":1}
+  home /                                 feedback   187 content  1543 rsc [{"ttfb":1233,"download":1,"total":1234}] 200:null api {"/api/v1/products?page_size=12&sort=-published_at":1,"/api/v1/categories":1,"/api/v1/posts":1,"/api/v1/banners":1,"/api/v1/site-settings":1}

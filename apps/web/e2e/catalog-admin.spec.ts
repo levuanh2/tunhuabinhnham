@@ -148,7 +148,7 @@ test.describe("product form", () => {
     await newProductPage(page);
     await page.getByLabel("Tên sản phẩm").fill("Tủ cache lỗi");
     await page.getByRole("button", { name: "Lưu bản nháp" }).click();
-    await expect(page.getByText("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 5 phút")).toBeVisible();
+    await expect(page.getByText("Đã lưu. Trang web công khai sẽ tự cập nhật trong vòng 12 giờ")).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/san-pham$/);
     expect(creates).toEqual(["tu-cache-loi"]);
     expect((await savedProducts(page)).filter(p => p.name === "Tủ cache lỗi")).toHaveLength(1);
@@ -349,6 +349,16 @@ test.describe("product categories", () => {
     await page.getByRole("button", { name: "Xóa loại Tủ quần áo" }).click();
     await expect(page.getByText("Chưa kiểm tra được số sản phẩm của loại này.")).toBeVisible();
     expect([dialogs, deletes]).toEqual([0, []]);
+  });
+
+  test("C6. a category saved while the cache refresh fails says the public site catches up within 12 hours", async ({ page }) => {
+    writesFixture();
+    await page.route("**/api/revalidate", route => route.fulfill({ status: 502, body: "Edge cache purge failed" }));
+    await page.goto("/admin/danh-muc");
+    await page.getByRole("button", { name: "Tủ đa năng", exact: true }).click();
+    await page.getByRole("button", { name: "Thêm loại" }).click();
+    await expect(page.getByText(/Trang web công khai sẽ tự cập nhật trong vòng 12 giờ$/)).toBeVisible();
+    await expect(page.locator("li").filter({ has: page.getByText("Tủ đa năng", { exact: true }) })).toContainText("0 sản phẩm"); // saved once
   });
 
   test("C2. the product form links to category management and shows hidden categories as such", async ({ page }) => {
