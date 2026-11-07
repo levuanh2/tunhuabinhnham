@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tunhuabinhnham-render-keepalive",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-10",
+  // Cron-only Worker: no public URL, no routes, no bindings.
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "TARGET_URL": "https://tunhuabinhnham-api.onrender.com/health/live",
+    "TIMEOUT_MS": "120000"
+  },
+  // Cron Triggers run in UTC. Asia/Ho_Chi_Minh = UTC+7.
+  // 10-minute mode (ACTIVE, owner-approved 2026-11-07): 07:00..00:50 VN every 10 min, last ping 01:00 VN.
+  // Rollback to 30-minute mode: replace the first entry with "0,30 0-17 * * *".
+  "triggers": {
+    "crons": ["*/10 0-17 * * *", "0 18 * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
