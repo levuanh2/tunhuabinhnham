@@ -12,7 +12,9 @@ Schedule (UTC; Vietnam = UTC+7), 109 pings/day, 10-minute mode (owner-approved 2
 | `0 18 * * *`      | 01:00 (last ping until 07:00)      |
 
 Each run makes one request with a 120 s timeout, no retries, and logs one JSON line:
-`ts, target, status, outcome (ok | http_5xx | http_other | timeout | network_error), durationMs, cron`.
+`ts, target, status, outcome (ok | http_429 | http_4xx | http_5xx | timeout | network_error), durationMs, cron`.
+A failed ping also logs safe response headers and `alert`, then **fails the invocation** so Cloudflare
+Metrics and Cron Events show it. Incident notes, alerting and troubleshooting: [render-keepalive.md](render-keepalive.md).
 
 Commands (run from the repo root):
 
