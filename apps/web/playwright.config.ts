@@ -9,7 +9,8 @@ export default defineConfig({
   use: { baseURL: externalBaseUrl ?? "http://localhost:3000", trace: "on-first-retry" },
   webServer: externalBaseUrl ? undefined : {
     command: process.env.CI ? "npm run build && npm start" : "npm run dev",
-    url: "http://localhost:3000",
+    // ponytail: probe a page that needs no API; "/" now answers 500 when the API is down (error.tsx).
+    url: "http://localhost:3000/robots.txt",
     reuseExistingServer: !process.env.CI,
   },
   projects: [
