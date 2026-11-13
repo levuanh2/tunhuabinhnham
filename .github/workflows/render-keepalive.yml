@@ -1,12 +1,12 @@
 # Wakes the Render Free backend from non-Cloudflare IPs. Interleaved with the Cloudflare cron Worker
-# tunhuabinhnham-render-keepalive (:15/:45): this one pings :00/:30, 07:00–00:30 VN (UTC+7).
+# tunhuabinhnham-render-keepalive (:22/:52): this one pings :07/:37, 07:07–00:37 VN (UTC+7).
 # ponytail: ~1,100 Actions min/month on a private repo; GitHub may delay or skip scheduled runs and
 # disables them after 60 days without repo activity — the Cloudflare cron is the backup.
 name: render-keepalive
 
 on:
   schedule:
-    - cron: "0,30 0-17 * * *"
+    - cron: "7,37 0-17 * * *"  # off :00/:30: GitHub delays or drops top-of-hour schedules
   workflow_dispatch:
 
 permissions: {}
