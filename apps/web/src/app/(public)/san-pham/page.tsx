@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductFilters } from "@/components/product-filters";
-import { publicApi } from "@/lib/api";
+import { isUnavailable, publicApi } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Sản phẩm", description: "Tủ nhựa, tủ quần áo, tủ ngăn kéo và kệ lưu trữ. Lọc theo loại tủ, giá và tìm theo tên.", alternates: { canonical: "/san-pham" } };
 
@@ -15,7 +15,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Par
   const params: Record<string, string> = {};
   for (const key of FILTER_KEYS) { const value = raw[key]; if (typeof value === "string" && value) params[key] = value; }
   const [result, categories] = await Promise.all([
-    publicApi.products(new URLSearchParams(params).toString()).catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 })),
+    publicApi.products(new URLSearchParams(params).toString()).catch(error => { if (isUnavailable(error)) throw error; return { items: [], page: 1, page_size: 20, total: 0, pages: 0 }; }),
     publicApi.categories().catch(() => null),
   ]);
   const href = (patch: Record<string, string | undefined>) => {
