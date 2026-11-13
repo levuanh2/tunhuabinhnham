@@ -13,12 +13,12 @@
   // Optional alert: Cloudflare Secret ALERT_WEBHOOK_URL (Discord/Slack-style JSON webhook), never a var.
   // Unset = webhook alerts DISABLED; failed pings still fail the invocation (Metrics / Cron Events).
   // Cron Triggers run in UTC. Asia/Ho_Chi_Minh = UTC+7.
-  // Interleaved mode (ACTIVE, owner-approved 2026-11-13): this Worker pings :15/:45, GitHub Actions
-  // (.github/workflows/render-keepalive.yml on the default branch) pings :00/:30 from non-Cloudflare IPs.
-  // 07:15..00:45 VN here, last ping 01:00 VN.
+  // Interleaved mode (ACTIVE, owner-approved 2026-11-13): this Worker pings :22/:52, GitHub Actions
+  // (.github/workflows/render-keepalive.yml on the default branch) pings :07/:37 from non-Cloudflare IPs.
+  // 07:22..00:52 VN here, last ping 01:00 VN.
   // Rollback to 30-minute mode: replace the first entry with "0,30 0-17 * * *".
   "triggers": {
-    "crons": ["15,45 0-17 * * *", "0 18 * * *"]
+    "crons": ["22,52 0-17 * * *", "0 18 * * *"]
   },
   "observability": {
     "enabled": true
