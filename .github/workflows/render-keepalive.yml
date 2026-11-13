@@ -1,0 +1,24 @@
+# Wakes the Render Free backend from non-Cloudflare IPs. Interleaved with the Cloudflare cron Worker
+# tunhuabinhnham-render-keepalive (:15/:45): this one pings :00/:30, 07:00–00:30 VN (UTC+7).
+# ponytail: ~1,100 Actions min/month on a private repo; GitHub may delay or skip scheduled runs and
+# disables them after 60 days without repo activity — the Cloudflare cron is the backup.
+name: render-keepalive
+
+on:
+  schedule:
+    - cron: "0,30 0-17 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: GET /health/live (fails on non-2xx or timeout)
+        run: >
+          curl -sS --fail -m 120 -o /dev/null
+          -A tunhuabinhnham-render-keepalive-gh
+          -w "%{http_code} %{time_total}s\n"
+          https://tunhuabinhnham-api.onrender.com/health/live
