@@ -80,6 +80,12 @@ http.createServer((req, res) => {
   if (u.pathname === "/auth/v1/logout") { issued.delete((req.headers.authorization ?? "").replace(/^Bearer /, "")); return send(204, {}); }
   if (u.pathname === "/__outage" && req.method === "POST") { outage = q.get("on") === "1"; return send(200, { outage }); }
   if (outage && !u.pathname.startsWith("/__") && !path.startsWith("/admin")) return send(503, { error: { message: "Simulated outage" } });
+  // Per-request failures for api-outage.spec.ts (parallel-safe, no shared state): a URL containing
+  // "e2e-fail-429" / "e2e-fail-500" gets that status (429 as text/plain, like Render's proxy); "e2e-fail-reset" drops the socket.
+  const fail = req.url.match(/e2e-fail-(429|500|reset)/)?.[1];
+  if (fail === "reset") return req.socket.destroy();
+  if (fail === "429") { res.writeHead(429, { "Content-Type": "text/plain; charset=utf-8" }); return res.end("Too Many Requests"); }
+  if (fail === "500") return send(500, { error: { message: "Simulated failure" } });
   if (u.pathname === "/__reset" && req.method === "POST") { products.splice(0, products.length, ...structuredClone(initialProducts)); cats.splice(0, cats.length, ...structuredClone(initialCats)); oldSlugs.clear(); Object.assign(settings, structuredClone(initialSettings)); return send(200, { reset: true }); }
   if (path.startsWith("/admin/")) {
     // In-memory writes so UI specs can be dry-run locally (incl. staging-cms.spec.ts with E2E_* pointing here).
