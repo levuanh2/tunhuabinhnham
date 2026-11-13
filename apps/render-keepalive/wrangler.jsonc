@@ -13,10 +13,10 @@
   // Optional alert: Cloudflare Secret ALERT_WEBHOOK_URL (Discord/Slack-style JSON webhook), never a var.
   // Unset = webhook alerts DISABLED; failed pings still fail the invocation (Metrics / Cron Events).
   // Cron Triggers run in UTC. Asia/Ho_Chi_Minh = UTC+7.
-  // 10-minute mode (ACTIVE, owner-approved 2026-11-07): 07:00..00:50 VN every 10 min, last ping 01:00 VN.
+  // 15-minute mode (ACTIVE, owner-approved 2026-11-13 after repeated Render 429 challenges in 10-min mode): 07:00..00:45 VN every 15 min, last ping 01:00 VN.
   // Rollback to 30-minute mode: replace the first entry with "0,30 0-17 * * *".
   "triggers": {
-    "crons": ["*/10 0-17 * * *", "0 18 * * *"]
+    "crons": ["*/15 0-17 * * *", "0 18 * * *"]
   },
   "observability": {
     "enabled": true
