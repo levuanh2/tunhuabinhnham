@@ -65,10 +65,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # desktop = Chromium, mobile = iPhone 13 (WebKit): both projects need their browser.
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm --workspace apps/web run test:e2e
         env:
           CI: "true"
+          # Playwright starts e2e/fixtures/mock-api.mjs on 127.0.0.1:8100 (playwright.config.ts). The Next build and
+          # server read these, so the app talks only to the fixture: never Supabase or Render.
+          E2E_MOCK_API: "1"
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8100/api/v1
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8100
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: qa-local-mock-key
+          NEXT_PUBLIC_SITE_URL: http://localhost:8787
 
   supabase-integration:
     if: github.event_name == 'workflow_dispatch' && inputs.run_supabase_integration

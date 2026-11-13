@@ -360,14 +360,15 @@ test("19. signed-in admin pages, admin data and logout are never edge-cacheable"
   await anonymous.close();
 });
 
-test("20. a page rendered while the API is failing is served but never marked cacheable", async ({ request }) => {
+test("20. a page rendered while the API is failing shows the error state and is never marked cacheable", async ({ request }) => {
   test.skip(test.info().project.name !== "desktop", "mutates the shared fixture outage switch");
   const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
   try {
     await request.post(`${mock}/__outage?on=1`);
     for (const path of ["/", "/san-pham", "/tin-tuc"]) {
       const response = await request.get(path);
-      expect(response.status(), path).toBe(200); // degraded page still served (C2 behaviour)
+      // Since 859efe9 a failed catalogue fetch renders (public)/error.tsx with HTTP 500, never an empty list.
+      expect(response.status(), path).toBe(500);
       expect(isPublic(response.headers()["cache-control"]), path).toBe(false);
     }
   } finally {
