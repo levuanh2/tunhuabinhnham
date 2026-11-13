@@ -5,7 +5,7 @@ import { publicApi } from "@/lib/api";
 export const metadata: Metadata = { title: "Tin tức", description: "Mẹo chọn tủ nhựa, sắp xếp nhà cửa và thông tin mới từ cửa hàng.", alternates: { canonical: "/tin-tuc" } };
 
 export default async function PostsPage() {
-  const posts = await publicApi.posts().catch(() => ({ items: [], page: 1, page_size: 20, total: 0, pages: 0 }));
+  const posts = await publicApi.posts(); // a failure shows error.tsx, not "no posts"
   const [lead, ...rest] = posts.items;
   return <div className="shell pb-20 pt-10 md:pt-14">
     <header className="max-w-2xl">

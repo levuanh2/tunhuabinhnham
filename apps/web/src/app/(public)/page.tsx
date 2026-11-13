@@ -16,7 +16,7 @@ const primaryImage = (product: Product) => product.images.find(item => item.is_p
 
 export default async function HomePage() {
   const [products, categories, posts, banners, settings] = await Promise.all([
-    publicApi.products("page_size=12&sort=-published_at").catch(() => ({ items: [], page: 1, page_size: 12, total: 0, pages: 0 })),
+    publicApi.products("page_size=12&sort=-published_at"), // a failure shows error.tsx, not "no products"
     publicApi.categories().catch(() => []),
     publicApi.posts().catch(() => ({ items: [], page: 1, page_size: 6, total: 0, pages: 0 })),
     publicApi.banners().catch(() => []),

@@ -14,6 +14,10 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return (response.json() as Promise<T>).catch(error => { markRenderDegraded(); throw error; });
 }
 
+// The backend could not answer (network, rate limit, 5xx): the page shows the error boundary instead of
+// pretending the catalogue is empty. Other 4xx (bad filter, unknown slug) are real answers.
+export const isUnavailable = (error: unknown) => !(error instanceof ApiError) || error.status === 429 || error.status >= 500;
+
 export const publicApi = {
   products: (query = "") => apiFetch<Page<Product>>(`/products${query ? `?${query}` : ""}`),
   // The API answers an old slug with a 301 to the current one (query kept); fetch follows it. `related=4`: the

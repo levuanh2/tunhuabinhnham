@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/product-card";
 import { ProductGallery } from "@/components/product-gallery";
 import { SectionHeading } from "@/components/section-heading";
 import { StickyContact } from "@/components/sticky-contact";
-import { publicApi } from "@/lib/api";
+import { isUnavailable, publicApi } from "@/lib/api";
 import { getStoreName } from "@/lib/brand";
 import { formatPrice } from "@/lib/format";
 import { allowedMessengerUrl } from "@/lib/messenger";
@@ -34,7 +34,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   const slug = (await params).slug; let product;
   // Settings do not need the product: in parallel with it. "Same category" comes in the product's own response.
   const settingsRequest = publicApi.settings().catch(() => null);
-  try { product = await publicApi.product(slug); } catch { notFound(); }
+  try { product = await publicApi.product(slug); } catch (error) { if (isUnavailable(error)) throw error; notFound(); }
   // An old URL: the API answered for the product's current slug. One hop to the current URL,
   // query kept (worker.ts turns Next's 308 into a 301 and keeps it out of every cache).
   if (product.slug !== slug) {

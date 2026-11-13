@@ -21,3 +21,12 @@ describe("apiFetch marks fallback renders so they are never edge-cached", () => 
     expect(await render(async () => new Response("{truncated", { headers: { "content-type": "application/json" } }))).toBe(true);
   });
 });
+
+describe("isUnavailable: backend failure vs a real answer", () => {
+  it("treats network errors, 429 and 5xx as unavailable; other 4xx as answers", async () => {
+    const { ApiError, isUnavailable } = await import("./api");
+    expect(isUnavailable(new TypeError("fetch failed"))).toBe(true);
+    for (const status of [429, 500, 503]) expect(isUnavailable(new ApiError(status, "x")), String(status)).toBe(true);
+    for (const status of [400, 404, 422]) expect(isUnavailable(new ApiError(status, "x")), String(status)).toBe(false);
+  });
+});
