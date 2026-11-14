@@ -40,7 +40,8 @@ jobs:
         id: ping
         shell: bash
         run: |
-          set -uo pipefail
+          # GitHub runs bash -eo pipefail; this script checks every status itself (grep finding no header is normal).
+          set +e -uo pipefail
           now=$(date -u +%s)
           not_before=$(tr -cd '0-9' 2>/dev/null < .keepalive-not-before || true)
           if [ -n "$not_before" ] && [ "$now" -lt "$not_before" ]; then
