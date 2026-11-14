@@ -81,7 +81,12 @@ export class PublicCache extends WorkerEntrypoint {
 
   /** Custom RPC bypasses the HTTP cache and purges the cache owned by this entrypoint. */
   async purge(): Promise<void> {
-    if (!await purgeEdgeCache(this.ctx)) throw new Error("Workers Cache API unavailable");
+    if (await purgeEdgeCache(this.ctx)) return;
+    // Local workerd (wrangler dev) has no ctx.cache, so there is nothing to purge. Only the CI e2e job sets this,
+    // through apps/web/.dev.vars (ignored, never uploaded by wrangler deploy); production keeps failing closed.
+    const localOnly = (this.env as { E2E_LOCAL_NO_EDGE_CACHE?: string } | undefined)?.E2E_LOCAL_NO_EDGE_CACHE === "1";
+    if (localOnly && !(this.ctx as { cache?: unknown } | undefined)?.cache) return;
+    throw new Error("Workers Cache API unavailable");
   }
 }
 
