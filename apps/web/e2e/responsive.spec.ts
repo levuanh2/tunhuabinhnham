@@ -308,15 +308,19 @@ test("17. logout redirects, Back does not reopen admin, and replayed pre-logout 
 });
 
 /* Edge cache (worker.ts + src/lib/edge-cache.ts). The Workers Cache key ignores cookies, Authorization and
-   the host, so every response that is not anonymous public HTML must keep private/no-store. */
-const isPublic = (cc: string | null) => /\bpublic\b/.test(cc ?? "") && /s-maxage=\d+/.test(cc ?? "");
+   the host, so every response that is not anonymous public HTML must keep private/no-store.
+   The edge lifetime is in Cloudflare-CDN-Cache-Control (Workers Cache prefers it and strips it before clients;
+   wrangler dev passes it through), so any response carrying it, or an s-maxage, counts as edge-cacheable. */
+const isPublic = (headers: Record<string, string>) => "cloudflare-cdn-cache-control" in headers || /s-maxage=\d+/.test(headers["cache-control"] ?? "");
+const EDGE = { "cache-control": "public, max-age=0", "cloudflare-cdn-cache-control": "public, max-age=43200, stale-if-error=86400" };
 
 test("18. only anonymous public HTML is edge-cacheable; admin, API, RSC and redirects stay private", async ({ request, baseURL }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
   for (const path of ["/", "/san-pham", "/san-pham?category=tu-quan-ao", "/san-pham/tu-5-tang", "/tin-tuc", "/tin-tuc/chon-tu-phong-ngu", "/lien-he", "/gioi-thieu"]) {
     const response = await request.get(path);
     expect(response.status(), path).toBe(200);
-    expect(isPublic(response.headers()["cache-control"]), path).toBe(true);
+    expect(isPublic(response.headers()), path).toBe(true);
+    expect(response.headers(), path).toMatchObject(EDGE);
     expect(response.headers()["cache-tag"], path).toBe("public-html");
     expect(response.headers()["vary"], path).toMatch(/rsc/);
     expect(response.headers()["set-cookie"], path).toBeUndefined();
@@ -328,11 +332,11 @@ test("18. only anonymous public HTML is edge-cacheable; admin, API, RSC and redi
   ];
   for (const [path, headers] of privatePaths) {
     const response = await request.get(path, { headers, maxRedirects: 0 });
-    expect(isPublic(response.headers()["cache-control"] ?? null), `${path} ${JSON.stringify(headers)}`).toBe(false);
+    expect(isPublic(response.headers()), `${path} ${JSON.stringify(headers)}`).toBe(false);
     expect(response.headers()["cache-tag"], path).toBeUndefined();
   }
   const logout = await request.post("/api/auth/logout", { headers: { origin: new URL(baseURL!).origin } });
-  expect(isPublic(logout.headers()["cache-control"] ?? null)).toBe(false);
+  expect(isPublic(logout.headers())).toBe(false);
 });
 
 test("19. signed-in admin pages, admin data and logout are never edge-cacheable", async ({ page }) => {
@@ -341,14 +345,14 @@ test("19. signed-in admin pages, admin data and logout are never edge-cacheable"
   page.on("response", response => {
     const url = new URL(response.url());
     if (url.port === "8787" && (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/"))) {
-      if (isPublic(response.headers()["cache-control"] ?? null) || response.headers()["cache-tag"]) seen.push(`${response.status()} ${url.pathname}${url.search}`);
+      if (isPublic(response.headers()) || response.headers()["cache-tag"]) seen.push(`${response.status()} ${url.pathname}${url.search}`);
     }
   });
   await login(page);
   for (const path of ["/admin", "/admin/san-pham", "/admin/cai-dat", "/admin/bai-viet"]) await page.goto(path);
   // A public page visited with the session cookie is rendered but not stored for others.
   const withSession = await page.request.get("/");
-  expect(isPublic(withSession.headers()["cache-control"])).toBe(false);
+  expect(isPublic(withSession.headers())).toBe(false);
   await page.getByRole("button", { name: "Đăng xuất" }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
   expect(seen).toEqual([]);
@@ -369,17 +373,17 @@ test("20. a page rendered while the API is failing shows the error state and is 
       const response = await request.get(path);
       // Since 859efe9 a failed catalogue fetch renders (public)/error.tsx with HTTP 500, never an empty list.
       expect(response.status(), path).toBe(500);
-      expect(isPublic(response.headers()["cache-control"]), path).toBe(false);
+      expect(isPublic(response.headers()), path).toBe(false);
     }
   } finally {
     await request.post(`${mock}/__outage?on=0`);
   }
-  expect(isPublic((await request.get("/")).headers()["cache-control"])).toBe(true);
+  expect(isPublic((await request.get("/")).headers())).toBe(true);
 });
 
 test("21. public links never prefetch; real router navigations are edge-cacheable; forged _rsc is not", async ({ page, request }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
-  const prefetches: { path: string; status: number; cc: string | null; type: string | null }[] = [];
+  const prefetches: { path: string; status: number; headers: Record<string, string>; type: string | null }[] = [];
   let signedPrefetch: { url: string; headers: Record<string, string> } | undefined;
   let viewportPrefetches = 0;
   page.on("request", r => {
@@ -392,7 +396,7 @@ test("21. public links never prefetch; real router navigations are edge-cacheabl
   });
   page.on("response", response => {
     const url = new URL(response.url());
-    if (url.searchParams.has("_rsc") && !url.pathname.startsWith("/admin")) prefetches.push({ path: url.pathname, status: response.status(), cc: response.headers()["cache-control"] ?? null, type: response.headers()["content-type"] ?? null });
+    if (url.searchParams.has("_rsc") && !url.pathname.startsWith("/admin")) prefetches.push({ path: url.pathname, status: response.status(), headers: response.headers(), type: response.headers()["content-type"] ?? null });
   });
   await page.goto("/");
   await page.waitForLoadState("networkidle");
@@ -404,17 +408,40 @@ test("21. public links never prefetch; real router navigations are edge-cacheabl
   expect(ok.length).toBeGreaterThan(0);
   for (const p of ok) {
     expect(p.type, p.path).toMatch(/text\/x-component/);
-    expect(isPublic(p.cc), p.path).toBe(true);
+    expect(isPublic(p.headers), p.path).toBe(true);
   }
   const forged = await request.get("/san-pham?_rsc=forged", { headers: { rsc: "1", "next-router-prefetch": "1" }, maxRedirects: 0 });
-  expect(isPublic(forged.headers()["cache-control"] ?? null)).toBe(false);
+  expect(isPublic(forged.headers())).toBe(false);
   // Exact-key replay: the same signed URL with missing or altered router headers must not get a cacheable RSC body.
   const signed = signedPrefetch!;
   const variants: Record<string, string>[] = [{}, { rsc: "1" }, { ...signed.headers, "next-router-state-tree": "%5B%22x%22%5D" }];
   for (const headers of variants) {
     const replay = await request.get(signed.url, { headers, maxRedirects: 0 });
     const rscBody = /text\/x-component/.test(replay.headers()["content-type"] ?? "");
-    expect(rscBody && isPublic(replay.headers()["cache-control"] ?? null), JSON.stringify(Object.keys(headers))).toBe(false);
+    expect(rscBody && isPublic(replay.headers()), JSON.stringify(Object.keys(headers))).toBe(false);
+  }
+});
+
+test("23. a client navigation while the API is down falls back to a full page load (RSC 500, worker.ts)", async ({ page, request }) => {
+  // Shared fixture outage switch: CI runs specs one at a time, locally only the desktop project runs this.
+  test.skip(!process.env.CI && test.info().project.name !== "desktop", "mutates the shared fixture outage switch");
+  const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
+  await page.goto("/");
+  const seen: string[] = [];
+  page.on("response", response => {
+    const url = new URL(response.url());
+    if (url.pathname !== "/san-pham") return;
+    seen.push(`${response.request().resourceType() === "document" ? "DOC" : url.searchParams.has("_rsc") ? "RSC" : "OTHER"} ${response.status()}`);
+  });
+  try {
+    await request.post(`${mock}/__outage?on=1`);
+    await page.locator('a[href="/san-pham"]:visible').first().click();
+    await expect(page).toHaveURL(/\/san-pham$/);
+    // On Cloudflare the DOC can then be the edge's stale copy with the notice; here (no Workers Cache) it is error.tsx.
+    await expect(page.getByRole("heading", { name: "Chưa tải được dữ liệu" })).toBeVisible();
+    expect(seen).toEqual(["RSC 500", "DOC 500"]);
+  } finally {
+    await request.post(`${mock}/__outage?on=0`);
   }
 });
 
@@ -424,6 +451,6 @@ test("22. a corrupted Supabase session cookie redirects to login instead of fail
     const response = await request.get("/admin/san-pham", { headers: { cookie: `sb-127-auth-token=${value}` }, maxRedirects: 0 });
     expect(response.status(), value).toBe(307);
     expect(response.headers()["location"], value).toMatch(/\/admin\/login$/);
-    expect(isPublic(response.headers()["cache-control"] ?? null), value).toBe(false);
+    expect(isPublic(response.headers()), value).toBe(false);
   }
 });
