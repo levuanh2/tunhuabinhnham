@@ -40,6 +40,35 @@ describe("apiFetch ends hung requests and logs upstream failures without private
     expect(logged(warn)).toEqual([expect.objectContaining({ event: "api_upstream_error", path: "/products", category: "timeout" })]);
   });
 
+  it("keeps the timeout when the caller passes its own signal that never aborts", async () => {
+    vi.stubEnv("API_TIMEOUT_MS", "50");
+    vi.stubGlobal("fetch", hang);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const error = await apiFetch("/products", { signal: new AbortController().signal }).catch((e: unknown) => e);
+    expect((error as Error).name).toBe("TimeoutError");
+  });
+
+  it("lets the caller abort sooner, without counting it as an upstream failure", async () => {
+    vi.stubEnv("API_TIMEOUT_MS", "60000");
+    vi.stubGlobal("fetch", hang);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const caller = new AbortController();
+    const state: { degraded: boolean; unavailable?: boolean } = { degraded: false };
+    const pending = renderState.run(state, () => apiFetch("/products", { signal: caller.signal }).catch((e: unknown) => e));
+    caller.abort();
+    expect((await pending as Error).name).toBe("AbortError");
+    expect(state).toEqual({ degraded: true });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("fails at once, without a request reaching the API, when the caller's signal is already aborted", async () => {
+    const fetchSpy = vi.fn((_url: string, init: RequestInit) => init.signal!.aborted ? Promise.reject(init.signal!.reason) : Promise.resolve(Response.json({})));
+    vi.stubGlobal("fetch", fetchSpy);
+    const error = await apiFetch("/products", { signal: AbortSignal.abort() }).catch((e: unknown) => e);
+    expect((error as Error).name).toBe("AbortError");
+    expect(fetchSpy.mock.calls[0][1].signal!.aborted).toBe(true);
+  });
+
   it("defaults to a timeout long enough for a Render cold start", async () => {
     const seen: AbortSignal[] = [];
     vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => { seen.push(init.signal!); return Response.json({}); }));

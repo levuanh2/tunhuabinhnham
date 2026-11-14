@@ -25,7 +25,7 @@ describe("public page edge caching", () => {
     next.fetch.mockResolvedValue(html());
     const response = await gateway()(page("/san-pham"));
     expect(response.headers.get("cache-control")).toBe("public, max-age=0");
-    expect(response.headers.get(CDN)).toBe("public, max-age=43200, stale-if-error=259200");
+    expect(response.headers.get(CDN)).toBe("public, max-age=43200, stale-if-error=86400");
     expect(response.headers.get("cache-tag")).toBe("public-html");
   });
 

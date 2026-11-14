@@ -312,7 +312,7 @@ test("17. logout redirects, Back does not reopen admin, and replayed pre-logout 
    The edge lifetime is in Cloudflare-CDN-Cache-Control (Workers Cache prefers it and strips it before clients;
    wrangler dev passes it through), so any response carrying it, or an s-maxage, counts as edge-cacheable. */
 const isPublic = (headers: Record<string, string>) => "cloudflare-cdn-cache-control" in headers || /s-maxage=\d+/.test(headers["cache-control"] ?? "");
-const EDGE = { "cache-control": "public, max-age=0", "cloudflare-cdn-cache-control": "public, max-age=43200, stale-if-error=259200" };
+const EDGE = { "cache-control": "public, max-age=0", "cloudflare-cdn-cache-control": "public, max-age=43200, stale-if-error=86400" };
 
 test("18. only anonymous public HTML is edge-cacheable; admin, API, RSC and redirects stay private", async ({ request, baseURL }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");

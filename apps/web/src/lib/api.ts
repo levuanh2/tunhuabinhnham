@@ -21,15 +21,23 @@ function upstreamFailed(path: string, started: number, category: string, respons
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const started = Date.now();
-  const response = await fetch(`${API_URL}${path}`, { signal: AbortSignal.timeout(timeoutMs()), ...init, headers: { "Content-Type": "application/json", ...init?.headers }, next: { revalidate: 60, tags: ["catalog"] }, }).catch(error => {
-    upstreamFailed(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "network"); throw error; });
+  // The timeout always applies; a caller's own signal can only end the request sooner, never disable the timeout.
+  const signal = init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs())]) : AbortSignal.timeout(timeoutMs());
+  // A failure the caller caused (its signal aborted) is not an upstream failure: degraded, not logged as one.
+  const failed = (error: unknown, category: string, response?: Response) => {
+    if (init?.signal?.aborted) markRenderDegraded();
+    else upstreamFailed(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : category, response);
+    throw error;
+  };
+  const response = await fetch(`${API_URL}${path}`, { ...init, signal, headers: { "Content-Type": "application/json", ...init?.headers }, next: { revalidate: 60, tags: ["catalog"] }, })
+    .catch(error => failed(error, "network"));
   // Any failure (404 included: a detail page then renders 404, which is never cached anyway) means the page
   // may show fallback content, so it must not be edge-cached.
   if (!response.ok) {
     if (response.status === 429 || response.status >= 500) upstreamFailed(path, started, response.status === 429 ? "rate_limited" : "upstream_5xx", response);
     else markRenderDegraded();
     const payload = await response.json().catch(() => null); throw new ApiError(response.status, payload?.error?.message ?? "Không thể tải dữ liệu"); }
-  return (response.json() as Promise<T>).catch(error => { upstreamFailed(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "invalid_json", response); throw error; });
+  return (response.json() as Promise<T>).catch(error => failed(error, "invalid_json", response));
 }
 
 // The backend could not answer (network, rate limit, 5xx): the page shows the error boundary instead of

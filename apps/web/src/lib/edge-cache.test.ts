@@ -79,7 +79,7 @@ describe("edgeCacheHeaders", () => {
     // and then an expired page plus a Render outage is a 500 for every visitor (2026-11-14).
     expect(headers.get("cache-control")).toBe("public, max-age=0");
     expect(headers.get("cache-control")).not.toMatch(/s-maxage|must-revalidate|proxy-revalidate/);
-    expect(headers.get("cloudflare-cdn-cache-control")).toBe("public, max-age=43200, stale-if-error=259200");
+    expect(headers.get("cloudflare-cdn-cache-control")).toBe("public, max-age=43200, stale-if-error=86400");
     expect(headers.get("cache-tag")).toBe(EDGE_CACHE_TAG);
     expect(headers.get("vary")).toMatch(/rsc/);
     expect(edgeCacheHeaders(html({ headers: { vary: "accept-encoding" } }), false)!.get("vary")).toMatch(/rsc/);

@@ -11,10 +11,11 @@ export const EDGE_CACHE_TAG = "public-html";
 // Workers Cache prefers over Cache-Control and strips before the client: `s-maxage` there would disable stale-if-error.
 export const EDGE_CACHE_CONTROL = "public, max-age=0";
 // 12 h fresh: the owner accepts public pages up to ~12 h stale to spare Render Free (2026-10-24). Then, only while
-// the Worker errors (Render 429/5xx/timeout renders error.tsx = 500), the last good page is served for up to 72 h
-// more instead of the error page. Admin saves purge the tag through /api/revalidate, which deletes entries (stale
+// the Worker errors (Render 429/5xx/timeout renders error.tsx = 500), the last good page is served for up to 24 h
+// more instead of the error page (24 h: proposal pending the owner's decision in PR #9; 72 h was the first draft).
+// Admin saves purge the tag through /api/revalidate, which deletes entries (stale
 // ones too), so a hidden or changed product never comes back from here. Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
-export const EDGE_CDN_CACHE_CONTROL = "public, max-age=43200, stale-if-error=259200";
+export const EDGE_CDN_CACHE_CONTROL = "public, max-age=43200, stale-if-error=86400";
 // Router (RSC) payloads are never served stale: a stale payload would render without the stale notice. When one
 // cannot be rendered the Worker answers 500 (worker.ts), the router falls back to a full page load, and that HTML
 // may come from the stale copy with the notice. stale-if-error=0 must be explicit: without it Workers Cache serves

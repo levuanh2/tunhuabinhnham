@@ -10,16 +10,16 @@
 
 ## Change
 
-1. **Edge lifetime moved to `Cloudflare-CDN-Cache-Control: public, max-age=43200, stale-if-error=259200`.**
+1. **Edge lifetime moved to `Cloudflare-CDN-Cache-Control: public, max-age=43200, stale-if-error=86400`.**
    - `Cache-Control` is now `public, max-age=0`, so browsers still revalidate every time.
    - Workers Cache prefers the CDN header and strips it before the client.
-   - Fresh time is unchanged at 12 h. After that, **only while the Worker errors** (500 from error.tsx, a throw, a timeout), the last good page is served for up to 72 h, with `Cf-Cache-Status: STALE`.
+   - Fresh time is unchanged at 12 h. After that, **only while the Worker errors** (500 from error.tsx, a throw, a timeout), the last good page is served for up to 24 h, with `Cf-Cache-Status: STALE`. **24 h is a proposal pending the owner's decision**; the first draft used 72 h (`stale-if-error=259200`).
 2. **Correctness of stale pages.**
    - Every admin save already calls `PublicCache.purge()` (tag `public-html`). A purge **deletes** entries, stale ones included ("Deleted … the next matching request is a cache miss"), so a hidden, deleted or repriced product cannot come back from the stale copy.
    - A stale page can only differ from the database if the data changed without an admin save (direct SQL) or the purge failed. A failed purge already shows the admin the "chưa thể làm mới cache công khai" warning.
    - Errors, fallback (degraded) renders and every private response are never stored. `finalHeaders` also strips `Cloudflare-CDN-Cache-Control` / `CDN-Cache-Control` from private responses, because that header would otherwise override `private`.
    - Images are unchanged.
-3. **`apiFetch` timeout:** `AbortSignal.timeout(API_TIMEOUT_MS || 60000)`. Observed cold starts were 35–46 s, so 60 s leaves room for one. A hung Render request now ends, the page fails, and the stale copy can be served. The 2026-11-08 outage had 120 s hangs.
+3. **`apiFetch` timeout:** `AbortSignal.timeout(API_TIMEOUT_MS || 60000)`, combined with any caller signal through `AbortSignal.any`, so a caller can abort sooner but never disable the timeout. A caller abort is not logged or flagged as an upstream failure. Observed cold starts were 35–46 s, so 60 s leaves room for one. A hung Render request now ends, the page fails, and the stale copy can be served. The 2026-11-08 outage had 120 s hangs.
 4. **Upstream failure logs (Workers Logs):** one JSON line per 429/5xx/network/timeout/invalid-JSON:
 
    ```json
@@ -33,7 +33,16 @@
    - Unit-tested with a fake rewriter.
    - **UNVERIFIED on Cloudflare:** that `Cf-Cache-Status` reaches the gateway. If it does not, nothing is added; the page is still the stale copy.
    - Client navigations (RSC) get no notice.
-   - **Owner decision before merge:** accept the 72 h stale window. A price changed directly in the database (not through Admin, so no purge) can show for up to 12 h + 72 h. Shorten `stale-if-error` if that is too long.
+   - **Owner decision before merge: the stale window, 24 h (this PR) or 72 h.**
+
+     | | 24 h (`stale-if-error=86400`) | 72 h (`259200`) |
+     |---|---|---|
+     | Outage covered after a page expires | about 1 day (the 2026-11-08 to 11-14 incidents lasted minutes to about 6 h) | about 3 days (a weekend without anyone redeploying Render) |
+     | Change made **through Admin** (price, stock, hide, delete) | never shown stale: the purge deletes the entries | same |
+     | Change made **outside Admin** (direct SQL), or a purge that failed (admin sees the warning) | old value visible at most 12 h + 24 h = 36 h, only while the API is failing | at most 12 h + 72 h = 84 h |
+     | Visitor signal | stale notice on HTML | same |
+
+     Prices and stock are only as stale as the last successful render after the last Admin save. A shorter window costs only coverage of long outages.
 
 ## Not verifiable locally (owner, on a preview, before production)
 
