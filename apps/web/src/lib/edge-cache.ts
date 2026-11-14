@@ -127,3 +127,9 @@ export async function purgeEdgeCache(ctx: unknown): Promise<boolean> {
   const result = await cache.purge({ tags: [EDGE_CACHE_TAG] });
   return result.success;
 }
+
+/** Shown on a page Workers Cache served from its stale-if-error copy because rendering failed (Render down):
+ * the stored page can be older than 12 h, so prices and stock may have changed. Client navigations (RSC) keep
+ * the page already on screen. ponytail: relies on Cf-Cache-Status reaching the gateway; verify STALE on a preview. */
+export const STALE_NOTICE = '<p role="status" style="margin:0;padding:8px 16px;background:#fff7e6;color:#7a4b00;font-size:14px;line-height:1.4;text-align:center">'
+  + "Thông tin có thể chưa được cập nhật mới nhất. Vui lòng liên hệ cửa hàng để xác nhận giá và tình trạng hàng.</p>";

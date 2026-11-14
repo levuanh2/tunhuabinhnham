@@ -2,7 +2,7 @@
 import openNext from "./.open-next/worker.js";
 // @ts-expect-error -- cloudflare:workers is provided by the Workers runtime.
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { EDGE_CDN_HEADER, edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
+import { EDGE_CDN_HEADER, STALE_NOTICE, edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
 import { withSecurityHeaders } from "./src/lib/security-headers";
 
 type Handler = { fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> };
@@ -98,12 +98,7 @@ export class PublicCache extends WorkerEntrypoint {
 type Rewriter = { on(selector: string, handler: { element(element: { prepend(content: string, options: { html: boolean }): void }): void }): Rewriter; transform(response: Response): Response };
 declare const HTMLRewriter: { new (): Rewriter };
 
-/** Shown on a page Workers Cache served from its stale-if-error copy because rendering failed (Render down):
- * the stored page can be older than 12 h, so prices and stock may have changed. Client navigations (RSC) keep
- * the page already on screen. ponytail: relies on Cf-Cache-Status reaching the gateway; verify STALE on a preview. */
-export const STALE_NOTICE = '<p role="status" style="margin:0;padding:8px 16px;background:#fff7e6;color:#7a4b00;font-size:14px;line-height:1.4;text-align:center">'
-  + "Thông tin có thể chưa được cập nhật mới nhất. Vui lòng liên hệ cửa hàng để xác nhận giá và tình trạng hàng.</p>";
-
+// STALE_NOTICE lives in edge-cache.ts: a Workers entry module may only export handlers and entrypoints.
 function withStaleNotice(response: Response): Response {
   if (response.headers.get("cf-cache-status")?.toUpperCase() !== "STALE") return response;
   if (!(response.headers.get("content-type") ?? "").startsWith("text/html")) return response;

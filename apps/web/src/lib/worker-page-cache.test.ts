@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import next from "@/test/open-next-worker"; // aliased for worker.ts's ./.open-next/worker.js (vitest.config)
-import worker, { PublicCache, STALE_NOTICE } from "../../worker";
-import { markRenderDegraded } from "./edge-cache";
+import worker, { PublicCache } from "../../worker";
+import { STALE_NOTICE, markRenderDegraded } from "./edge-cache";
 
 /* Page responses through the real gateway + PublicCache entrypoint. Workers Cache prefers Cloudflare-CDN-Cache-Control
    over Cache-Control, so that header decides what the edge stores and for how long it may serve it stale on errors. */
@@ -86,4 +86,8 @@ describe("stale-if-error notice", () => {
       expect(await response.text(), `${status} ${type}`).toBe(body);
     }
   });
+});
+
+it("the Worker entry module exports only handlers (workerd refuses to start on any other export)", async () => {
+  expect(Object.keys(await import("../../worker")).sort()).toEqual(["PublicCache", "default"]);
 });
