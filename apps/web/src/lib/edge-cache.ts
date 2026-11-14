@@ -7,10 +7,15 @@ import { AsyncLocalStorage } from "node:async_hooks";
  */
 
 export const EDGE_CACHE_TAG = "public-html";
-// 12 h at the edge: the owner accepts public pages up to ~12 h stale to spare Render Free (2026-10-24). Admin saves
-// still purge the tag through /api/revalidate; s-maxage is the backstop if a purge is lost. Browsers revalidate
-// every time (max-age=0). Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
-export const EDGE_CACHE_CONTROL = "public, max-age=0, s-maxage=43200";
+// Browsers revalidate every time (max-age=0). The edge lifetime lives only in Cloudflare-CDN-Cache-Control, which
+// Workers Cache prefers over Cache-Control and strips before the client: `s-maxage` there would disable stale-if-error.
+export const EDGE_CACHE_CONTROL = "public, max-age=0";
+// 12 h fresh: the owner accepts public pages up to ~12 h stale to spare Render Free (2026-10-24). Then, only while
+// the Worker errors (Render 429/5xx/timeout renders error.tsx = 500), the last good page is served for up to 72 h
+// more instead of the error page. Admin saves purge the tag through /api/revalidate, which deletes entries (stale
+// ones too), so a hidden or changed product never comes back from here. Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
+export const EDGE_CDN_CACHE_CONTROL = "public, max-age=43200, stale-if-error=259200";
+export const EDGE_CDN_HEADER = "Cloudflare-CDN-Cache-Control";
 
 const PUBLIC_PATH = /^\/(?:|san-pham(?:\/[^/]+)?|tin-tuc(?:\/[^/]+)?|lien-he|gioi-thieu)$/;
 const RSC_HEADERS = ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"];
@@ -79,6 +84,7 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   if (!(response.headers.get("content-type") ?? "").startsWith(rsc ? "text/x-component" : "text/html")) return null;
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", EDGE_CACHE_CONTROL);
+  headers.set(EDGE_CDN_HEADER, EDGE_CDN_CACHE_CONTROL);
   headers.set("Cache-Tag", EDGE_CACHE_TAG);
   // Every router header must partition the cache, so no variant answers a request with other router headers.
   const vary = (headers.get("vary") ?? "").toLowerCase().split(",").map(name => name.trim());

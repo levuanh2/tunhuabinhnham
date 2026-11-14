@@ -69,7 +69,10 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       # Local workerd has no Workers Cache purge; worker.ts tolerates that only with this wrangler-dev var.
       # .dev.vars is git-ignored and never uploaded by wrangler deploy.
-      - run: echo E2E_LOCAL_NO_EDGE_CACHE=1 > apps/web/.dev.vars
+      # API_TIMEOUT_MS: the hung-request regression test (api-outage.spec.ts) must end in 5 s, not the 60 s default.
+      - run: |
+          echo E2E_LOCAL_NO_EDGE_CACHE=1 > apps/web/.dev.vars
+          echo API_TIMEOUT_MS=5000 >> apps/web/.dev.vars
       - run: npm --workspace apps/web run test:e2e
         env:
           CI: "true"
