@@ -16,7 +16,8 @@ test("H1. pages, admin, 404s and API routes carry the security headers", async (
     expect(headers["x-powered-by"], path).toBeUndefined();
   }
   // V1-CACHE-01: a response without Cache-Control is never stored.
-  expect((await request.get("/api/revalidate")).headers()["cache-control"]).toBe("private, no-store");
+  // /api/ is a sensitive path: worker.ts forces "private, no-store, max-age=0" there since e681cca.
+  expect((await request.get("/api/revalidate")).headers()["cache-control"]).toBe("private, no-store, max-age=0");
 });
 
 test("H2. static assets are served with nosniff and their immutable cache header", async ({ page, request }) => {
