@@ -67,6 +67,9 @@ jobs:
       - run: npm ci
       # desktop = Chromium, mobile = iPhone 13 (WebKit): both projects need their browser.
       - run: npx playwright install --with-deps chromium webkit
+      # Local workerd has no Workers Cache purge; worker.ts tolerates that only with this wrangler-dev var.
+      # .dev.vars is git-ignored and never uploaded by wrangler deploy.
+      - run: echo E2E_LOCAL_NO_EDGE_CACHE=1 > apps/web/.dev.vars
       - run: npm --workspace apps/web run test:e2e
         env:
           CI: "true"
