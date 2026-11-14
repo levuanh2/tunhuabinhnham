@@ -51,3 +51,40 @@ Local workerd has no Workers Cache, so `STALE` serving and the header precedence
 - **Deploy.** Build and deploy as in `EDGE_CACHE_12H.md` §6, step 3, from `apps/web` on the merged commit. Deploy while Render is warm, then open `/`, `/san-pham`, `/tin-tuc`, `/lien-he`, `/gioi-thieu` once each to fill the new (empty) cache partition.
 - **Rollback.** `npx wrangler versions deploy da26f85d-8650-42b5-a256-feb0c54afce8@100% -y` from `apps/web`. Its own cache partition still holds its old entries until they expire.
 - **Kill switch for stale serving.** An admin save, which purges everything, removes every stale entry at once. For a permanent off switch, set `stale-if-error=0` in `EDGE_CDN_CACHE_CONTROL` and deploy a new version.
+
+## Router (RSC) navigations (added after the preview test)
+
+- On Cloudflare, the first test build showed that a client navigation while the API failed got Next's error boundary inside a **200** RSC payload. The edge cannot tell that apart from success, so the visitor saw the error page although a stale HTML copy existed.
+- Fix:
+  - `apiFetch` marks the render `unavailable` on 429, 5xx, network, timeout or an unreadable body; a 404 only marks it degraded.
+  - `fetchPublic` answers such a router request with **500**, private and never stored.
+  - RSC entries use `Cloudflare-CDN-Cache-Control: public, max-age=43200, stale-if-error=0`. The `0` is explicit: without the directive, Workers Cache serves stale on error indefinitely, and a stale RSC payload would render without the notice.
+- Next's router reacts to the 500 with a full page load. That HTML is the stale copy with the notice, or `error.tsx` when no copy exists.
+
+## Cloudflare preview test (2026-11-14, throwaway Workers, both deleted afterwards)
+
+**Setup**
+- `tnbn-staleprobe-api`: a mock serving a read-only snapshot of public API data. Mode `ok`, `fail` (503) or `429` (text/plain). It accepts only a random test token on `/admin/dashboard/stats`.
+- `tnbn-staleprobe-web`: PR #9 built against the mock. TTLs were shortened **in that build only**: 60 s fresh, `stale-if-error=600` for HTML, 0 for RSC.
+- All requests went through the HKG colo. Production (`da26f85d`, keepalive `34322ba9`) was not touched.
+
+**Cache states**
+
+| Check | Result |
+|---|---|
+| Warm | MISS then HIT for HTML and RSC. The client sees `Cache-Control: public, max-age=0`; `Cloudflare-CDN-Cache-Control` and `Cache-Tag` are stripped. |
+| Expired, API healthy | `EXPIRED` (render again), then HIT with `Age 0`. |
+| Expired, API 503 or 429 | HTML `200 STALE`, all products (home 8, `/san-pham` 9, product page with 4 related), stale notice shown. |
+| Never cached, API failing | `500 BYPASS`, `private, no-store`; a second request is still 500, never stored. |
+| Cookie or Authorization, `/admin/login` | `private, no-store`, no `Cf-Cache-Status`. |
+| Purge | No token 401, wrong token 401, test token 200. Afterwards the stale keys were `500 BYPASS`: purge deletes stale entries, so hidden or repriced products cannot come back. |
+| API healthy again | MISS then HIT. |
+
+**Navigation with Playwright** (desktop Chromium and iPhone 13 WebKit, API at 503 and again at 429):
+
+| Step | Requests seen | Page |
+|---|---|---|
+| Load `/` | `DOC 200 STALE` | notice shown |
+| Click to `/san-pham` | `RSC 500 BYPASS`, then `DOC 200 STALE` | notice, 9 products, no error page |
+| Click to a product | `RSC 500`, then `DOC 200 STALE` | notice, 4 related products |
+| Back, Back, Forward, Reload | `DOC 200 STALE` each | notice, products shown |

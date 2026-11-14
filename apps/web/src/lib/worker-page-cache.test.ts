@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import next from "@/test/open-next-worker"; // aliased for worker.ts's ./.open-next/worker.js (vitest.config)
 import worker, { PublicCache } from "../../worker";
-import { STALE_NOTICE, markRenderDegraded } from "./edge-cache";
+import { STALE_NOTICE, markRenderDegraded, markRenderUnavailable } from "./edge-cache";
 
 /* Page responses through the real gateway + PublicCache entrypoint. Workers Cache prefers Cloudflare-CDN-Cache-Control
    over Cache-Control, so that header decides what the edge stores and for how long it may serve it stale on errors. */
@@ -36,6 +36,27 @@ describe("public page edge caching", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(response.headers.get(CDN)).toBeNull();
     expect(response.headers.get("cache-tag")).toBeNull();
+  });
+
+  it("answers 500 to a router (RSC) request rendered while the API was down, so the router does a full page load", async () => {
+    // Next renders the error boundary into the payload with status 200; verified on Cloudflare (2026-11-14) that a
+    // 500 here makes the router load the page as HTML, which the edge can serve from its stale copy.
+    next.fetch.mockImplementation(async () => { markRenderUnavailable(); return new Response("0:[]", { headers: { "content-type": "text/x-component" } }); });
+    const response = await gateway()(page("/san-pham?_rsc=abc", { rsc: "1" }));
+    expect(response.status).toBe(500);
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(response.headers.get(CDN)).toBeNull();
+  });
+
+  it("keeps a router request's status when data was only missing (404) and the HTML status when the API was down", async () => {
+    next.fetch.mockImplementation(async () => { markRenderDegraded(); return new Response("0:[]", { headers: { "content-type": "text/x-component" } }); });
+    const missing = await gateway()(page("/san-pham/khong-co?_rsc=abc", { rsc: "1" }));
+    expect(missing.status).toBe(200);
+    expect(missing.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    next.fetch.mockImplementation(async () => { markRenderUnavailable(); return html(500); });
+    const htmlDown = await gateway()(page("/san-pham"));
+    expect(htmlDown.status).toBe(500);
+    expect(htmlDown.headers.get(CDN)).toBeNull();
   });
 
   it("never stores a 200 page rendered from fallback data", async () => {

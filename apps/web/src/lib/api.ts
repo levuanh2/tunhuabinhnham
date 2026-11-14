@@ -1,5 +1,5 @@
 import type { Banner, Category, Page, Post, Product, SiteSettings } from "@/types/api";
-import { markRenderDegraded } from "./edge-cache";
+import { markRenderDegraded, markRenderUnavailable } from "./edge-cache";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -9,8 +9,10 @@ export class ApiError extends Error { constructor(public status: number, message
 // starts took 35-46 s (2026-11-13/14), so the default leaves room for one. API_TIMEOUT_MS overrides it (e2e uses 5 s).
 const timeoutMs = () => Number(process.env.API_TIMEOUT_MS) || 60_000;
 
-/** One JSON line per upstream failure for Workers Logs: no query string (search text), headers or body. */
-function logFailure(path: string, started: number, category: string, response?: Response) {
+/** The API could not answer: the render must not be cached (a router request then becomes a 500, worker.ts), and
+ * Workers Logs get one JSON line without query string (search text), headers or body. */
+function upstreamFailed(path: string, started: number, category: string, response?: Response) {
+  markRenderUnavailable();
   console.warn(JSON.stringify({
     event: "api_upstream_error", path: path.split("?")[0], category, status: response?.status,
     durationMs: Date.now() - started, rndrId: response?.headers.get("rndr-id") ?? undefined,
@@ -20,14 +22,14 @@ function logFailure(path: string, started: number, category: string, response?: 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const started = Date.now();
   const response = await fetch(`${API_URL}${path}`, { signal: AbortSignal.timeout(timeoutMs()), ...init, headers: { "Content-Type": "application/json", ...init?.headers }, next: { revalidate: 60, tags: ["catalog"] }, }).catch(error => {
-    markRenderDegraded(); logFailure(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "network"); throw error; });
+    upstreamFailed(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "network"); throw error; });
   // Any failure (404 included: a detail page then renders 404, which is never cached anyway) means the page
   // may show fallback content, so it must not be edge-cached.
   if (!response.ok) {
-    markRenderDegraded();
-    if (response.status === 429 || response.status >= 500) logFailure(path, started, response.status === 429 ? "rate_limited" : "upstream_5xx", response);
+    if (response.status === 429 || response.status >= 500) upstreamFailed(path, started, response.status === 429 ? "rate_limited" : "upstream_5xx", response);
+    else markRenderDegraded();
     const payload = await response.json().catch(() => null); throw new ApiError(response.status, payload?.error?.message ?? "Không thể tải dữ liệu"); }
-  return (response.json() as Promise<T>).catch(error => { markRenderDegraded(); logFailure(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "invalid_json", response); throw error; });
+  return (response.json() as Promise<T>).catch(error => { upstreamFailed(path, started, (error as Error)?.name === "TimeoutError" ? "timeout" : "invalid_json", response); throw error; });
 }
 
 // The backend could not answer (network, rate limit, 5xx): the page shows the error boundary instead of

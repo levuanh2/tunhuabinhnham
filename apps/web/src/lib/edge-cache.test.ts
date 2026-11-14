@@ -63,7 +63,8 @@ describe("router (RSC) requests", () => {
   it("store only text/x-component bodies, never HTML, under the RSC rule", () => {
     const flight = new Response("0:[]", { headers: { "content-type": "text/x-component", vary: "rsc" } });
     expect(edgeCacheHeaders(flight, false, true)?.get("cache-control")).toBe("public, max-age=0");
-    expect(edgeCacheHeaders(flight, false, true)?.get("cloudflare-cdn-cache-control")).toBe("public, max-age=43200, stale-if-error=259200");
+    // Router payloads are never served stale (they would render without the notice); explicit 0, the default is "forever".
+    expect(edgeCacheHeaders(flight, false, true)?.get("cloudflare-cdn-cache-control")).toBe("public, max-age=43200, stale-if-error=0");
     expect(edgeCacheHeaders(html(), false, true)).toBeNull();
     expect(edgeCacheHeaders(flight, false, false)).toBeNull();
     expect(edgeCacheHeaders(flight, true, true)).toBeNull();

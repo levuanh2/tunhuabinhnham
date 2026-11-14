@@ -422,6 +422,29 @@ test("21. public links never prefetch; real router navigations are edge-cacheabl
   }
 });
 
+test("23. a client navigation while the API is down falls back to a full page load (RSC 500, worker.ts)", async ({ page, request }) => {
+  // Shared fixture outage switch: CI runs specs one at a time, locally only the desktop project runs this.
+  test.skip(!process.env.CI && test.info().project.name !== "desktop", "mutates the shared fixture outage switch");
+  const mock = process.env.E2E_MOCK_API_URL ?? "http://127.0.0.1:8100";
+  await page.goto("/");
+  const seen: string[] = [];
+  page.on("response", response => {
+    const url = new URL(response.url());
+    if (url.pathname !== "/san-pham") return;
+    seen.push(`${response.request().resourceType() === "document" ? "DOC" : url.searchParams.has("_rsc") ? "RSC" : "OTHER"} ${response.status()}`);
+  });
+  try {
+    await request.post(`${mock}/__outage?on=1`);
+    await page.locator('a[href="/san-pham"]:visible').first().click();
+    await expect(page).toHaveURL(/\/san-pham$/);
+    // On Cloudflare the DOC can then be the edge's stale copy with the notice; here (no Workers Cache) it is error.tsx.
+    await expect(page.getByRole("heading", { name: "Chưa tải được dữ liệu" })).toBeVisible();
+    expect(seen).toEqual(["RSC 500", "DOC 500"]);
+  } finally {
+    await request.post(`${mock}/__outage?on=0`);
+  }
+});
+
 test("22. a corrupted Supabase session cookie redirects to login instead of failing", async ({ request }) => {
   test.skip(test.info().project.name !== "desktop", "header contract, one browser is enough");
   for (const value of ["base64-synthetic", "base64-%%%", "garbage"]) {

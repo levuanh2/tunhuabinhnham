@@ -73,6 +73,24 @@ describe("apiFetch ends hung requests and logs upstream failures without private
   });
 });
 
+describe("apiFetch tells the Worker when the API could not answer (router requests then become a 500)", () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+  const run = async (answer: () => Promise<Response>) => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(answer));
+    const state: { degraded: boolean; unavailable?: boolean } = { degraded: false };
+    await renderState.run(state, () => apiFetch("/products").catch(() => null));
+    return state;
+  };
+  it("marks 429, 5xx, network errors and unreadable bodies unavailable; a 404 only degraded", async () => {
+    for (const status of [429, 500, 503]) expect(await run(async () => new Response("x", { status })), String(status)).toEqual({ degraded: true, unavailable: true });
+    expect(await run(async () => { throw new TypeError("fetch failed"); })).toEqual({ degraded: true, unavailable: true });
+    expect(await run(async () => new Response("{truncated"))).toEqual({ degraded: true, unavailable: true });
+    expect(await run(async () => new Response("{}", { status: 404 }))).toEqual({ degraded: true });
+    expect(await run(async () => Response.json({ items: [] }))).toEqual({ degraded: false });
+  });
+});
+
 describe("isUnavailable: backend failure vs a real answer", () => {
   it("treats network errors, 429 and 5xx as unavailable; other 4xx as answers", async () => {
     const { ApiError, isUnavailable } = await import("./api");

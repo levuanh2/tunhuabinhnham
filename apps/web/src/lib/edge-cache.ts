@@ -15,13 +15,18 @@ export const EDGE_CACHE_CONTROL = "public, max-age=0";
 // more instead of the error page. Admin saves purge the tag through /api/revalidate, which deletes entries (stale
 // ones too), so a hidden or changed product never comes back from here. Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
 export const EDGE_CDN_CACHE_CONTROL = "public, max-age=43200, stale-if-error=259200";
+// Router (RSC) payloads are never served stale: a stale payload would render without the stale notice. When one
+// cannot be rendered the Worker answers 500 (worker.ts), the router falls back to a full page load, and that HTML
+// may come from the stale copy with the notice. stale-if-error=0 must be explicit: without it Workers Cache serves
+// stale on errors indefinitely.
+export const EDGE_CDN_CACHE_CONTROL_RSC = "public, max-age=43200, stale-if-error=0";
 export const EDGE_CDN_HEADER = "Cloudflare-CDN-Cache-Control";
 
 const PUBLIC_PATH = /^\/(?:|san-pham(?:\/[^/]+)?|tin-tuc(?:\/[^/]+)?|lien-he|gioi-thieu)$/;
 const RSC_HEADERS = ["rsc", "next-router-prefetch", "next-router-state-tree", "next-router-segment-prefetch"];
 const SESSION_COOKIE = /(?:^|;\s*)(?:__Host-|__Secure-)?sb-[^=;\s]+-auth-token(?:\.(?:0|[1-9]\d*))?=/;
 
-type RenderState = { degraded: boolean };
+type RenderState = { degraded: boolean; unavailable?: boolean };
 // One instance shared by worker.ts and the Next server bundle (they are bundled separately).
 const KEY = Symbol.for("tunhuabinhnham.render-state");
 const shared = globalThis as typeof globalThis & { [KEY]?: AsyncLocalStorage<RenderState> };
@@ -31,6 +36,12 @@ export const renderState = (shared[KEY] ??= new AsyncLocalStorage<RenderState>()
 export function markRenderDegraded() {
   const state = renderState.getStore();
   if (state) state.degraded = true;
+}
+
+/** apiFetch calls this when the API could not answer (429, 5xx, network, timeout, unreadable body). */
+export function markRenderUnavailable() {
+  const state = renderState.getStore();
+  if (state) { state.degraded = true; state.unavailable = true; }
 }
 
 /** Router (RSC) request: Next signs `_rsc` with a hash of the router headers and 307s on a mismatch,
@@ -84,7 +95,7 @@ export function edgeCacheHeaders(response: Response, degraded: boolean, rsc = fa
   if (!(response.headers.get("content-type") ?? "").startsWith(rsc ? "text/x-component" : "text/html")) return null;
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", EDGE_CACHE_CONTROL);
-  headers.set(EDGE_CDN_HEADER, EDGE_CDN_CACHE_CONTROL);
+  headers.set(EDGE_CDN_HEADER, rsc ? EDGE_CDN_CACHE_CONTROL_RSC : EDGE_CDN_CACHE_CONTROL);
   headers.set("Cache-Tag", EDGE_CACHE_TAG);
   // Every router header must partition the cache, so no variant answers a request with other router headers.
   const vary = (headers.get("vary") ?? "").toLowerCase().split(",").map(name => name.trim());

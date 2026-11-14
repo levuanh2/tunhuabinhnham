@@ -43,12 +43,16 @@ async function fetchPrivate(request: Request, env: unknown, ctx: unknown): Promi
 
 async function fetchPublic(request: Request, env: unknown, ctx: unknown): Promise<Response> {
   if (!isEdgeCacheableRequest(request)) return fetchPrivate(request, env, ctx);
-  const state = { degraded: false };
+  const state: { degraded: boolean; unavailable?: boolean } = { degraded: false };
   return renderState.run(state, async () => {
     const response = await next.fetch(request, env, ctx);
     // Read the whole body first: rendering may still be fetching data after the headers exist,
     // and the degraded flag is only final once the page is complete.
     const body = await response.arrayBuffer();
+    // A router (RSC) payload rendered while the API was down carries the error boundary with status 200, which looks
+    // like success. 500 instead: Next's router then does a full page load (verified on Cloudflare 2026-11-14), and
+    // that HTML can be the stale-if-error copy with the stale notice.
+    if (state.unavailable && isRscRequest(request)) return new Response(null, { status: 500, headers: finalHeaders(response.headers, true) });
     const cacheHeaders = isImageRequest(request) ? imageCacheHeaders(response) : edgeCacheHeaders(response, state.degraded, isRscRequest(request));
     return finalResponse(request, response, request.method === "HEAD" ? null : body,
       cacheHeaders ? finalHeaders(cacheHeaders) : finalHeaders(response.headers, true));
