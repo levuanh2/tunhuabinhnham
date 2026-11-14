@@ -13,7 +13,7 @@
 1. **Edge lifetime moved to `Cloudflare-CDN-Cache-Control: public, max-age=43200, stale-if-error=86400`.**
    - `Cache-Control` is now `public, max-age=0`, so browsers still revalidate every time.
    - Workers Cache prefers the CDN header and strips it before the client.
-   - Fresh time is unchanged at 12 h. After that, **only while the Worker errors** (500 from error.tsx, a throw, a timeout), the last good page is served for up to 24 h, with `Cf-Cache-Status: STALE`. **24 h is a proposal pending the owner's decision**; the first draft used 72 h (`stale-if-error=259200`).
+   - Fresh time is unchanged at 12 h. After that, **only while the Worker errors** (500 from error.tsx, a throw, a timeout), the last good page is served for up to 24 h, with `Cf-Cache-Status: STALE`. **24 h is the owner's decision (task brief 2026-11-15)**; the first draft used 72 h (`stale-if-error=259200`).
 2. **Correctness of stale pages.**
    - Every admin save already calls `PublicCache.purge()` (tag `public-html`). A purge **deletes** entries, stale ones included ("Deleted … the next matching request is a cache miss"), so a hidden, deleted or repriced product cannot come back from the stale copy.
    - A stale page can only differ from the database if the data changed without an admin save (direct SQL) or the purge failed. A failed purge already shows the admin the "chưa thể làm mới cache công khai" warning.
@@ -30,10 +30,9 @@
    - 404 and other real answers are not logged, to keep log volume small.
    - Filter Workers Logs on `api_upstream_error` to see what Render answered during the next outage.
 5. **Stale notice.** When the cached entrypoint's response carries `Cf-Cache-Status: STALE` and is HTML, the gateway prepends a `role="status"` line with HTMLRewriter: "Thông tin có thể chưa được cập nhật mới nhất. Vui lòng liên hệ cửa hàng để xác nhận giá và tình trạng hàng."
-   - Unit-tested with a fake rewriter.
-   - **UNVERIFIED on Cloudflare:** that `Cf-Cache-Status` reaches the gateway. If it does not, nothing is added; the page is still the stale copy.
+   - Unit-tested with a fake rewriter, and verified on Cloudflare (preview test below): `Cf-Cache-Status: STALE` reaches the gateway and the notice is shown.
    - Client navigations (RSC) get no notice.
-   - **Owner decision before merge: the stale window, 24 h (this PR) or 72 h.**
+   - **Stale window: 24 h, chosen by the owner on 2026-11-15.** Comparison kept for the record:
 
      | | 24 h (`stale-if-error=86400`) | 72 h (`259200`) |
      |---|---|---|
@@ -55,10 +54,43 @@ Local workerd has no Workers Cache, so `STALE` serving and the header precedence
 3. Prove the stale-on-error path. Expiry takes 12 h, so the practical proof is to watch real outages after the release: an expired key plus a Render failure must give `STALE` and 200, not 500.
 4. Purge proof as in `EDGE_CACHE_12H.md` §4: after an admin save, the warmed key must be a MISS or young.
 
-## Deploy and rollback (owner only, after approval)
+## Release checklist (each merge/upload/deploy needs the owner's explicit go)
 
-- **Deploy.** Build and deploy as in `EDGE_CACHE_12H.md` §6, step 3, from `apps/web` on the merged commit. Deploy while Render is warm, then open `/`, `/san-pham`, `/tin-tuc`, `/lien-he`, `/gioi-thieu` once each to fill the new (empty) cache partition.
-- **Rollback.** `npx wrangler versions deploy da26f85d-8650-42b5-a256-feb0c54afce8@100% -y` from `apps/web`. Its own cache partition still holds its old entries until they expire.
+Live today: `P_VERSION = da26f85d-8650-42b5-a256-feb0c54afce8`, built from `P_SHA = 859efe9`. Follow `TASK_P1_ASSET_VERSION_SKEW.md` → "Standard procedure for frontend releases" (it keeps open tabs working); this list adds what is specific to PR #9.
+
+1. **Merge PR #9** (owner, no `--admin`). Wait for CI green on `deploy/c2-preview`; `N_SHA` = the merge commit.
+2. **Live state:** `npx wrangler deployments status` (from `apps/web`) must still show `da26f85d` at 100 %. Otherwise stop and re-plan.
+3. **Assets of P:** `.deploy-assets/859efe9` does not exist yet. Build `859efe9` once (`git checkout --detach 859efe9`, `npm ci`, `npx opennextjs-cloudflare build`) and archive `.open-next/assets/_next` into `.deploy-assets/859efe9`, so N can carry P's chunks.
+4. **Build N** with the production `.env.production.local` and **no** `NEXT_PUBLIC_*` / `E2E_*` / `API_TIMEOUT_MS` in the shell; no `.dev.vars` file in `apps/web` (`E2E_LOCAL_NO_EDGE_CACHE` must never reach production).
+   - Image allowlist must print `fyaourksnjeldsvuedox.supabase.co` (command in the standard procedure).
+   - `npx wrangler deploy --dry-run --outdir ../../.wrangler-dry` (bundles `worker.ts`, uploads nothing); `grep -c "stale-if-error=86400" ../../.wrangler-dry/worker.js` is at least 1; `grep -r "127.0.0.1:8100" .open-next ../../.wrangler-dry` finds nothing; then delete `.wrangler-dry`.
+   - `node scripts/merge-previous-assets.mjs .open-next/assets .deploy-assets/859efe9 .deploy-assets/b9122de` exits 0; secret scan of `.open-next/assets`.
+5. **Bindings:** `npx wrangler versions upload --tag api-resilience --message "API resilience <N_SHA>"`. The upload output must list the same bindings as `da26f85d` (`WORKER_SELF_REFERENCE`, `ASSETS`, `IMAGES`, the `PublicCache` cache setting); no secret changes are part of this release.
+6. **Preview smoke** on the preview URL: pages 200, HIT/MISS as in the table below (stale paths cannot be forced on production data; they were proven on the throwaway Workers).
+7. **Deploy (separate owner approval)** while Render is warm (`/health/live` answers in < 1 s): `npx wrangler versions deploy <N>@100% --yes --message "API resilience <N_SHA>"` with `npx wrangler tail tunhuabinhnham-web` running. Then open `/`, `/san-pham`, `/tin-tuc`, `/lien-he`, `/gioi-thieu` and two product pages once each to fill the new, empty cache partition.
+8. **Production smoke** (below), then watch Workers Logs for `api_upstream_error` for 24 h.
+9. **PR #10** only after the Render workspace usage is checked (see the PR); then watch the real schedule (`gh run list --workflow render-keepalive.yml --event schedule`).
+
+**Production smoke after deploy** (read-only; never stop or break Render to test the error path)
+
+| Check | Expected |
+|---|---|
+| `/`, `/san-pham`, 2–3 `/san-pham/<slug>`, `/tin-tuc`, `/lien-he`, `/gioi-thieu` | 200, products shown; first request `MISS`, second `HIT` |
+| Headers at the client | `Cache-Control: public, max-age=0`; no `Cloudflare-CDN-Cache-Control`, no `Cache-Tag` |
+| Unknown product slug | 404, `private, no-store`, never `HIT` |
+| Router navigation (click a link in the browser) | `?_rsc=` request 200 `text/x-component`; second time `HIT` |
+| Cookie `sb-x-auth-token=1` or `Authorization` on `/` | `private, no-store`, no `Cf-Cache-Status: HIT` |
+| `/admin/login`, `/api/revalidate` without token | private; revalidate 401 |
+| Admin save (owner) | next request to a warmed page is `MISS` |
+| Error path (500 not cached, `STALE` + notice, timeout) | not forced on production: proven on the throwaway Workers and in e2e; confirm from Workers Logs (`api_upstream_error`) and `Cf-Cache-Status: STALE` during the next real Render failure |
+
+**Rollback** (owner approval, or an owner-approved rollback rule): from `apps/web`,
+
+```
+npx wrangler versions deploy da26f85d-8650-42b5-a256-feb0c54afce8@100% -y
+```
+
+`da26f85d` goes back to the old behaviour: a 500 for visitors when an expired page meets a Render failure. Its own cache partition still holds its old entries (`s-maxage=43200`) until they expire.
 - **Kill switch for stale serving.** An admin save, which purges everything, removes every stale entry at once. For a permanent off switch, set `stale-if-error=0` in `EDGE_CDN_CACHE_CONTROL` and deploy a new version.
 
 ## Router (RSC) navigations (added after the preview test)

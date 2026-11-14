@@ -12,7 +12,7 @@ export const EDGE_CACHE_TAG = "public-html";
 export const EDGE_CACHE_CONTROL = "public, max-age=0";
 // 12 h fresh: the owner accepts public pages up to ~12 h stale to spare Render Free (2026-10-24). Then, only while
 // the Worker errors (Render 429/5xx/timeout renders error.tsx = 500), the last good page is served for up to 24 h
-// more instead of the error page (24 h: proposal pending the owner's decision in PR #9; 72 h was the first draft).
+// more instead of the error page (24 h: owner's decision 2026-11-15; 72 h was the first draft).
 // Admin saves purge the tag through /api/revalidate, which deletes entries (stale
 // ones too), so a hidden or changed product never comes back from here. Emergency removal: docs/deployment/EDGE_CACHE_12H.md.
 export const EDGE_CDN_CACHE_CONTROL = "public, max-age=43200, stale-if-error=86400";
@@ -142,6 +142,6 @@ export async function purgeEdgeCache(ctx: unknown): Promise<boolean> {
 
 /** Shown on a page Workers Cache served from its stale-if-error copy because rendering failed (Render down):
  * the stored page can be older than 12 h, so prices and stock may have changed. Client navigations (RSC) keep
- * the page already on screen. ponytail: relies on Cf-Cache-Status reaching the gateway; verify STALE on a preview. */
+ * the page already on screen. Relies on Cf-Cache-Status reaching the gateway (verified on Cloudflare 2026-11-14). */
 export const STALE_NOTICE = '<p role="status" style="margin:0;padding:8px 16px;background:#fff7e6;color:#7a4b00;font-size:14px;line-height:1.4;text-align:center">'
   + "Thông tin có thể chưa được cập nhật mới nhất. Vui lòng liên hệ cửa hàng để xác nhận giá và tình trạng hàng.</p>";

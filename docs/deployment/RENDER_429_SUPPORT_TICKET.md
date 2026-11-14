@@ -20,7 +20,7 @@ Our public website runs on Cloudflare Workers (zone `tunhuabinhnham.com`) and ca
   - No `x-render-origin-server` header; answered in 64–355 ms.
   - A residential request at the same minute got 200 with `x-render-origin-server: uvicorn`.
 - **2026-11-13 17:45:33:** same pattern from colo HKG: 429, `rndr-id: 86e8d3a9-e6c7-4b31`, `cf-ray: a59f97410e77dd4b-HKG`.
-- **2026-11-14 09:39–09:42, 10:17–10:18 and 13:39:** our web Worker failed its API calls within 0.2–0.9 s, while a residential `GET` started at the same time took 44–46 s and then returned 200 (`rndr-id: 36cc5764-c981-408e`, `dc8517e1-d6b8-401c`), i.e. a cold start. The Worker recovered about one minute later.
+- **2026-11-14 09:39–09:42, 10:17–10:18 and 13:39:** our web Worker failed its API calls (`GET /api/v1/products`, the first call of our home and product list pages) within 0.2–0.9 s, while a residential `GET` started at the same time took 44–46 s and then returned 200 (`rndr-id: 36cc5764-c981-408e`, `dc8517e1-d6b8-401c`), i.e. a cold start. The Worker recovered about one minute later. That Worker version did not log the HTTP status it received; our next release logs status, `rndr-id` and duration for every failed API call, and we can send those on request.
 
 Our application returns 429 only on authenticated admin routes and one write endpoint. It never does so on `/health/live` or the public GET routes involved. Because these 429s have no `x-render-origin-server` header, we believe they come from in front of our service.
 
