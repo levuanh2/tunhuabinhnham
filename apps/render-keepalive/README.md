@@ -4,11 +4,11 @@ Standalone Cloudflare Worker (cron only, no URL) that sends `GET /health/live` t
 backend `https://tunhuabinhnham-api.onrender.com`. `/health/live` does not touch the database.
 It is independent of the frontend Worker `tunhuabinhnham-web`.
 
-Schedule (UTC; Vietnam = UTC+7), 37 pings/day here, interleaved with GitHub Actions :07/:37 (owner-approved 2026-11-13; 15-min, earlier 10-min):
+Schedule (UTC; Vietnam = UTC+7), 115 pings/day here, interleaved with GitHub Actions :07/:17/…/:57 (owner-approved 2026-11-15; earlier 30-, 15- and 10-min modes):
 
 | Cron (UTC)        | Vietnam time                       |
 | ----------------- | ---------------------------------- |
-| `22,52 0-17 * * *` | 07:22, 07:52 … 00:22, 00:52        |
+| `2,12,22,32,42,52 23,0-17 * * *` | 06:02, 06:12 … 00:42, 00:52 |
 | `0 18 * * *`      | 01:00 (last ping until 07:00)      |
 
 Each run makes one request with a 120 s timeout, no retries, and logs one JSON line:

@@ -2,7 +2,7 @@
 
 Worker: `tunhuabinhnham-render-keepalive` (cron only, no route, no credentials).
 Target: `GET https://tunhuabinhnham-api.onrender.com/health/live`, 120 s timeout, 0 retries.
-Crons (UTC; Vietnam = UTC+7): `22,52 0-17 * * *` (07:22–00:52 VN; GitHub Actions covers :07/:37) and `0 18 * * *` (01:00 VN).
+Crons (UTC; Vietnam = UTC+7): `2,12,22,32,42,52 23,0-17 * * *` (06:02–00:52 VN every 10 min; GitHub Actions covers :07/:17/…/:57) and `0 18 * * *` (01:00 VN).
 Triggers fire about 50 s after the minute.
 
 ## Failure detection (version 60cf688d, 2026-11-08)
