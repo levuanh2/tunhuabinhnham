@@ -2,7 +2,7 @@
 import openNext from "./.open-next/worker.js";
 // @ts-expect-error -- cloudflare:workers is provided by the Workers runtime.
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
+import { EDGE_CDN_HEADER, STALE_NOTICE, edgeCacheHeaders, hasRequestCredentials, imageCacheHeaders, imageFallbackUrl, isEdgeCacheableRequest, isImageRequest, isProductMove, isRscRequest, purgeEdgeCache, renderState } from "./src/lib/edge-cache";
 import { withSecurityHeaders } from "./src/lib/security-headers";
 
 type Handler = { fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> };
@@ -17,7 +17,12 @@ const SENSITIVE_PATH = /^\/(?:admin(?:\/|$)|api(?:\/|$)|auth(?:\/|$))/;
 /** Security headers on every response; a response without Cache-Control is never stored (V1-CACHE-01). */
 function finalHeaders(source: Headers, forcePrivate = false): Headers {
   const headers = withSecurityHeaders(new Headers(source));
-  if (forcePrivate || headers.has("set-cookie")) headers.set("Cache-Control", "private, no-store, max-age=0");
+  // Workers Cache prefers these over Cache-Control, so only edgeCacheHeaders may ever send them.
+  if (forcePrivate || headers.has("set-cookie")) {
+    headers.delete("CDN-Cache-Control");
+    headers.delete(EDGE_CDN_HEADER);
+    headers.set("Cache-Control", "private, no-store, max-age=0");
+  }
   else if (!headers.has("cache-control")) headers.set("Cache-Control", "private, no-store");
   return headers;
 }
@@ -38,12 +43,16 @@ async function fetchPrivate(request: Request, env: unknown, ctx: unknown): Promi
 
 async function fetchPublic(request: Request, env: unknown, ctx: unknown): Promise<Response> {
   if (!isEdgeCacheableRequest(request)) return fetchPrivate(request, env, ctx);
-  const state = { degraded: false };
+  const state: { degraded: boolean; unavailable?: boolean } = { degraded: false };
   return renderState.run(state, async () => {
     const response = await next.fetch(request, env, ctx);
     // Read the whole body first: rendering may still be fetching data after the headers exist,
     // and the degraded flag is only final once the page is complete.
     const body = await response.arrayBuffer();
+    // A router (RSC) payload rendered while the API was down carries the error boundary with status 200, which looks
+    // like success. 500 instead: Next's router then does a full page load (verified on Cloudflare 2026-11-14), and
+    // that HTML can be the stale-if-error copy with the stale notice.
+    if (state.unavailable && isRscRequest(request)) return new Response(null, { status: 500, headers: finalHeaders(response.headers, true) });
     const cacheHeaders = isImageRequest(request) ? imageCacheHeaders(response) : edgeCacheHeaders(response, state.degraded, isRscRequest(request));
     return finalResponse(request, response, request.method === "HEAD" ? null : body,
       cacheHeaders ? finalHeaders(cacheHeaders) : finalHeaders(response.headers, true));
@@ -90,6 +99,16 @@ export class PublicCache extends WorkerEntrypoint {
   }
 }
 
+type Rewriter = { on(selector: string, handler: { element(element: { prepend(content: string, options: { html: boolean }): void }): void }): Rewriter; transform(response: Response): Response };
+declare const HTMLRewriter: { new (): Rewriter };
+
+// STALE_NOTICE lives in edge-cache.ts: a Workers entry module may only export handlers and entrypoints.
+function withStaleNotice(response: Response): Response {
+  if (response.headers.get("cf-cache-status")?.toUpperCase() !== "STALE") return response;
+  if (!(response.headers.get("content-type") ?? "").startsWith("text/html")) return response;
+  return new HTMLRewriter().on("body", { element(body) { body.prepend(STALE_NOTICE, { html: true }); } }).transform(response);
+}
+
 /** The default entrypoint is uncached, so credentials are checked before any public-cache lookup. */
 const worker = {
   async fetch(request: Request, env: unknown, ctx: GatewayContext): Promise<Response> {
@@ -109,7 +128,7 @@ const worker = {
     }
     if (isImageRequest(request)) return fetchImage(request, env, ctx);
     if (hasRequestCredentials(request)) return fetchPrivate(request, env, ctx);
-    if (isEdgeCacheableRequest(request)) return ctx.exports.PublicCache.fetch(request);
+    if (isEdgeCacheableRequest(request)) return withStaleNotice(await ctx.exports.PublicCache.fetch(request));
     return fetchPrivate(request, env, ctx);
   },
 };

@@ -30,6 +30,7 @@ const withCategory = p => ({ ...p, category: cats.find(c => c.id === p.category_
 const liveCats = () => cats.filter(c => !c.deleted_at).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 // Old slugs of once-public products (product_slugs): each keeps pointing at its product and is never reused.
 const oldSlugs = new Map();
+const flakySeen = new Set(); // e2e-flaky-<id> markers already failed once
 // Mirrors the products_slug_key / product_slugs_slug_key / products_sku_key unique constraints.
 const productClash = (b, id) => products.some(x => x.id !== id && b.slug && x.slug === b.slug) || (b.slug && oldSlugs.has(b.slug) && oldSlugs.get(b.slug) !== id) ? "Slug already exists" : products.some(x => x.id !== id && b.sku && x.sku === b.sku) ? "SKU already exists" : null;
 const raw = [
@@ -81,8 +82,13 @@ http.createServer((req, res) => {
   if (u.pathname === "/__outage" && req.method === "POST") { outage = q.get("on") === "1"; return send(200, { outage }); }
   if (outage && !u.pathname.startsWith("/__") && !path.startsWith("/admin")) return send(503, { error: { message: "Simulated outage" } });
   // Per-request failures for api-outage.spec.ts (parallel-safe, no shared state): a URL containing
-  // "e2e-fail-429" / "e2e-fail-500" gets that status (429 as text/plain, like Render's proxy); "e2e-fail-reset" drops the socket.
-  const fail = req.url.match(/e2e-fail-(429|500|reset)/)?.[1];
+  // "e2e-fail-429" / "e2e-fail-500" gets that status (429 as text/plain, like Render's proxy); "e2e-fail-reset" drops the socket;
+  // "e2e-fail-hang" never answers (the web's API_TIMEOUT_MS must end it).
+  const fail = req.url.match(/e2e-fail-(429|500|reset|hang)/)?.[1];
+  if (fail === "hang") return;
+  // "e2e-flaky-<id>": the first request for that id gets 503, later ones succeed (recovery after an outage).
+  const flaky = req.url.match(/e2e-flaky-[\w-]+/)?.[0];
+  if (flaky && !flakySeen.has(flaky)) { flakySeen.add(flaky); return send(503, { error: { message: "Simulated cold start" } }); }
   if (fail === "reset") return req.socket.destroy();
   if (fail === "429") { res.writeHead(429, { "Content-Type": "text/plain; charset=utf-8" }); return res.end("Too Many Requests"); }
   if (fail === "500") return send(500, { error: { message: "Simulated failure" } });

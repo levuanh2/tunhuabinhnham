@@ -11,10 +11,14 @@ const ERROR = "Chưa tải được dữ liệu";
 const EMPTY = /Chưa có sản phẩm|Không có sản phẩm/;
 const unique = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-for (const kind of ["429", "500", "reset"] as const) {
+// "hang": the fixture never answers; API_TIMEOUT_MS (5 s in CI via .dev.vars, 60 s default) must end the request.
+for (const kind of ["429", "500", "reset", "hang"] as const) {
   test(`product list: API ${kind} shows the error state, not "no products"`, async ({ page }) => {
     const response = await page.goto(`/san-pham?search=e2e-fail-${kind}-${unique()}`);
     expect(response?.status()).toBe(500);
+    // The error page must never reach the edge cache (it would replace the last good copy for every visitor).
+    expect(response?.headers()["cache-control"]).toBe("private, no-store, max-age=0");
+    expect(response?.headers()["cloudflare-cdn-cache-control"]).toBeUndefined();
     await expect(page.getByRole("heading", { name: ERROR })).toBeVisible();
     await expect(page.getByText(EMPTY)).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Thử lại" })).toBeVisible();
@@ -39,4 +43,14 @@ test("an unknown product is still a 404 when the API answers", async ({ page }) 
   const response = await page.goto(`/san-pham/e2e-missing-${unique()}`);
   expect(response?.status()).toBe(404);
   await expect(page.getByText("Không tìm thấy trang")).toBeVisible();
+});
+
+test("the product list recovers on the next request once the API answers again", async ({ page }) => {
+  // The fixture fails only the first request carrying this marker and ignores unknown sort values (sort is forwarded).
+  const url = `/san-pham?sort=e2e-flaky-${unique()}`;
+  expect((await page.goto(url))?.status()).toBe(500);
+  await expect(page.getByRole("heading", { name: ERROR })).toBeVisible();
+  expect((await page.goto(url))?.status()).toBe(200);
+  await expect(page.locator('a[href^="/san-pham/"]').first()).toBeVisible();
+  await expect(page.getByText(ERROR)).toHaveCount(0);
 });
